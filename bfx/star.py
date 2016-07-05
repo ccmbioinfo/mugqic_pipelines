@@ -59,8 +59,8 @@ def align(
     num_threads = config.param('star_align', 'threads', type='int')
     ram_limit = config.param('star_align', 'ram')
     max_ram = int(utils.number_symbol_converter(ram_limit))
-    io_limit = config.param('star_align', 'io_buffer')
-    io_max = int(utils.number_symbol_converter(io_limit))
+    io_limit = config.param('star_align', 'io_buffer', required=False) if config.param('star_align', 'io_buffer', required=False) else ""
+    io_max = int(utils.number_symbol_converter(io_limit)) if io_limit else ""
     stranded = config.param('star_align', 'strand_info')
     wig_prefix = config.param('star_align', 'wig_prefix')
     chimere_segment_min = config.param('star_align','chimere_segment_min', type='int', required=False)
@@ -167,7 +167,7 @@ STAR --runMode genomeGenerate \\
   --genomeFastaFiles {reference_fasta} \\
   --runThreadN {num_threads} \\
   --limitGenomeGenerateRAM {ram} \\
-  --sjdbFileChrStartEnd {junction_file}{gtf}{io_limit_size}{sjdbOverhang}{other_options}""".format(
+  --sjdbFileChrStartEnd {junction_file}{gtf}{sjdbOverhang}{other_options}""".format(
         genome_index_folder=genome_index_folder,
         reference_fasta=reference_fasta,
         num_threads=num_threads if str(num_threads) != "" and isinstance(num_threads, int) and  num_threads > 0 else 1,

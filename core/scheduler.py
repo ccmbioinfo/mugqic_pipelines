@@ -108,6 +108,8 @@ class PBSScheduler(Scheduler):
                     else:
                         job_dependencies = "JOB_DEPENDENCIES="
 
+                    tmpdir = config.param(job.name.split(".")[0], 'tmp_dir', required=False)
+                    mugqic_module = config.param(job.name.split(".")[0], 'module_mugqic', required=False)
                     print("""
 {separator_line}
 # JOB: {job.id}: {job.name}
@@ -117,14 +119,16 @@ JOB_NAME={job.name}
 JOB_DONE={job.done}
 JOB_OUTPUT_RELATIVE_PATH=$STEP/${{JOB_NAME}}_$TIMESTAMP.o
 JOB_OUTPUT=$JOB_OUTPUT_DIR/$JOB_OUTPUT_RELATIVE_PATH
-COMMAND=$(cat << '{limit_string}'
+COMMAND=$(cat << '{limit_string}'{tmpdir_path}{mugqic_module}
 {job.command_with_modules}
 {limit_string}
 )""".format(
                             job=job,
                             job_dependencies=job_dependencies,
                             separator_line=separator_line,
-                            limit_string=os.path.basename(job.done)
+                            limit_string=os.path.basename(job.done),
+                            tmpdir_path="\nTMPDIR="+tmpdir if tmpdir else "",
+                            mugqic_module="\nmodule load "+mugqic_module if mugqic_module else ""
                         )
                     )
 
@@ -142,11 +146,12 @@ exit \$MUGQIC_STATE" | \\
                     cmd += \
                         config.param(job_name_prefix, 'cluster_submit_cmd') + " " + \
                         config.param(job_name_prefix, 'cluster_other_arg') + " " + \
+                        config.param(job_name_prefix, 'cluster_mem', required=False) + " " + \
                         config.param(job_name_prefix, 'cluster_work_dir_arg') + " $OUTPUT_DIR " + \
                         config.param(job_name_prefix, 'cluster_output_dir_arg') + " $JOB_OUTPUT " + \
                         config.param(job_name_prefix, 'cluster_job_name_arg') + " $JOB_NAME " + \
                         config.param(job_name_prefix, 'cluster_walltime') + " " + \
-                        config.param(job_name_prefix, 'cluster_queue') + " " + \
+                        config.param(job_name_prefix, 'cluster_queue', required=False) + " " + \
                         config.param(job_name_prefix, 'cluster_cpu')
                     if job.dependency_jobs:
                         cmd += " " + config.param(job_name_prefix, 'cluster_dependency_arg') + "$JOB_DEPENDENCIES"
@@ -158,6 +163,8 @@ exit \$MUGQIC_STATE" | \\
                         cmd += "\n" + job.id + "=" + job.name
 
                     # Write job parameters in job list file
+                    sleep_length = config.param(job_name_prefix, 'sleep_length', required=False)
+                    cmd += "\nusleep " + sleep_length if sleep_length else ""
                     cmd += "\necho \"$" + job.id + "\t$JOB_NAME\t$JOB_DEPENDENCIES\t$JOB_OUTPUT_RELATIVE_PATH\" >> $JOB_LIST\n"
 
                     print cmd
@@ -218,11 +225,12 @@ class DaemonScheduler(Scheduler):
                             # e.g. "[trimmomatic] cluster_cpu=..." for job name "trimmomatic.readset1"
                             'cluster_submit_cmd': config.param(job.name.split(".")[0], 'cluster_submit_cmd'),
                             'cluster_other_arg': config.param(job.name.split(".")[0], 'cluster_other_arg'),
+                            'cluster_mem': config.param(job.name.split(".")[0], 'cluster_mem', required=False),
                             'cluster_work_dir_arg': config.param(job.name.split(".")[0], 'cluster_work_dir_arg') + " " + pipeline.output_dir,
                             'cluster_output_dir_arg': config.param(job.name.split(".")[0], 'cluster_output_dir_arg') + " " + os.path.join(pipeline.output_dir, "job_output", step.name, job.name + ".o"),
                             'cluster_job_name_arg': config.param(job.name.split(".")[0], 'cluster_job_name_arg') + " " + job.name,
                             'cluster_walltime': config.param(job.name.split(".")[0], 'cluster_walltime'),
-                            'cluster_queue': config.param(job.name.split(".")[0], 'cluster_queue'),
+                            'cluster_queue': config.param(job.name.split(".")[0], 'cluster_queue', required=False),
                             'cluster_cpu': config.param(job.name.split(".")[0], 'cluster_cpu')
                         },
                         "job_done": job.done

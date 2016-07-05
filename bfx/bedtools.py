@@ -42,6 +42,7 @@ def graph(input_bam, output_bed_graph, output_wiggle, library_type="PAIRED_END")
             ['bedtools', 'module_ucsc']
         ],
         command="""\
+export LD_LIBRARY_PATH=/usr/lib64/mysql:$LD_LIBRARY_PATH \\
 nmblines=$(samtools view {samtools_options} {input_bam} | wc -l) && \\
 scalefactor=0$(echo "scale=2; 1 / ($nmblines / 10000000);" | bc) && \\
 genomeCoverageBed -bg -split -scale $scalefactor \\

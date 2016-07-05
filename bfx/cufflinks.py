@@ -88,6 +88,8 @@ cuffdiff {other_options} \\
     )
 
 def cufflinks(input_bam, output_directory, gtf=None):
+    gtf_flag=config.param('cufflinks', 'gtf_flag', required=False)
+    gtf_flag=gtf_flag if gtf_flag else "--GTF-Guide"
 
     return Job(
         [input_bam],
@@ -102,7 +104,7 @@ cufflinks -q {other_options}{gtf} \\
   --num-threads {num_threads} \\
   {input_bam}""".format(
         other_options=config.param('cufflinks', 'other_options', required=False),
-        gtf=" \\\n  --GTF-guide " + gtf if gtf else "",
+        gtf=" \\\n  "+gtf_flag+" " + gtf if gtf else "",
         max_bundle_frags=config.param('cufflinks', 'max_bundle_frags', type='int'),
         library_type=config.param('cufflinks', 'strand_info'),
         output_directory=output_directory,

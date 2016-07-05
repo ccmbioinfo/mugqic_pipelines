@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 
 ################################################################################
@@ -122,6 +123,12 @@ class Job:
                 log.debug("Job " + self.name + " NOT up to date")
                 log.debug("Input, output or .done file missing: " + file)
                 return False
+
+        # Remove any files in the list of input files if it also appears in the output file list
+        # This is because the time of a file that is in the input and output will cause issues with the job checking
+        if config.param('DEFAULT', 'rm_infile_if_out', required=False).lower() in ['yes', 'true', 't', '1']:
+            log.debug("Not checking for time integrity if an output file is the same as the input file")
+            abspath_input_files = [file for file in abspath_input_files if file not in abspath_output_files]
 
         # Retrieve latest input file by modification time i.e. maximum stat mtime
         # Use lstat to avoid following symbolic links

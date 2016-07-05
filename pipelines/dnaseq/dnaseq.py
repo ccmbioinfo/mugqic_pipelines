@@ -47,6 +47,8 @@ from bfx import samtools
 from bfx import snpeff
 from bfx import tools
 from bfx import vcftools
+from bfx import clean
+from bfx import cramtools
 from pipelines import common
 
 log = logging.getLogger(__name__)
@@ -134,7 +136,7 @@ class DnaSeq(common.Illumina):
                         read_group="'@RG" + \
                             "\tID:" + readset.name + \
                             "\tSM:" + readset.sample.name + \
-                            "\tLB:" + (readset.library if readset.library else readset.sample.name) + \
+                            ("\tLB:" + readset.library if readset.library else "") + \
                             ("\tPU:run" + readset.run + "_" + readset.lane if readset.run and readset.lane else "") + \
                             ("\tCN:" + config.param('bwa_mem', 'sequencing_center') if config.param('bwa_mem', 'sequencing_center', required=False) else "") + \
                             "\tPL:Illumina" + \
@@ -922,7 +924,8 @@ pandoc \\
         input_bams = [os.path.join("alignment", sample.name, sample.name + ".sorted.dup.recal.bam") for sample in self.samples]
         nb_jobs = config.param('snp_and_indel_bcf', 'approximate_nb_jobs', type='posint')
         output_directory = "variants/rawBCF"
-        bcftools_view_options = "-bvcg"
+        bcftools_view_options = "-V indels -m -v -O b"
+#        bcftools_view_options = "-bvcg"
 
         if nb_jobs == 1:
             jobs.append(concat_jobs([
@@ -963,7 +966,7 @@ pandoc \\
         bcf = output_file_prefix + "bcf"
         jobs.append(concat_jobs([
             samtools.bcftools_cat(inputs, bcf),
-            samtools.bcftools_view(bcf, output_file_prefix + "flt.vcf")
+            samtools.bcftools_view(bcf, output_file_prefix + "flt.vcf", '-c'),
         ], name = "merge_filter_bcf"))
 
         report_file = os.path.join("report", "DnaSeq.merge_filter_bcf.md")
@@ -1291,6 +1294,28 @@ cp {snv_metrics_prefix}.chromosomeChange.zip report/SNV.chromosomeChange.zip""".
         return jobs
 
 
+    def cramtools_compress_bam(self):
+
+        """
+        Compress BAM files to decrease storage usage.
+        """
+
+        jobs=[]
+
+        for sample in self.samples:
+            alignment_prefix = os.path.join("alignment", sample.name, sample.name + ".sorted.dup.recal")
+
+            job = cramtools.compress_bam(
+                alignment_prefix + ".bam",
+                alignment_prefix + ".cram"
+                )
+
+            job.name = "cramtools_compress_bam." + sample.name
+            jobs.append(job)
+
+        return jobs
+
+
     @property
     def steps(self):
         return [
@@ -1322,6 +1347,7 @@ cp {snv_metrics_prefix}.chromosomeChange.zip report/SNV.chromosomeChange.zip""".
             self.haplotype_caller_dbnsfp_annotation,
             self.haplotype_caller_metrics_vcf_stats,
             self.haplotype_caller_metrics_snv_graph_metrics,
+            self.cramtools_compress_bam,
             self.rawmpileup,
             self.rawmpileup_cat,
             self.snp_and_indel_bcf,

@@ -48,6 +48,8 @@ from bfx import samtools
 from bfx import star
 from bfx import bvatools
 from bfx import rmarkdown
+from bfx import clean
+from bfx import cramtools
 from pipelines import common
 import utils
 
@@ -993,6 +995,27 @@ done""".format(
 
         return jobs
 
+    def cramtools_compress_bam(self):
+
+        """
+        Compress BAM files to decrease storage usage.
+        """
+
+        jobs=[]
+
+        for sample in self.samples:
+            alignment_prefix = os.path.join("alignment", sample.name, sample.name + ".sorted.mdup")
+
+            job = cramtools.compress_bam(
+                alignment_prefix + ".bam",
+                alignment_prefix + ".cram"
+                )
+
+            job.name = "cramtools_compress_bam." + sample.name
+            jobs.append(job)
+
+        return jobs
+
     @property
     def steps(self):
         return [
@@ -1018,7 +1041,8 @@ done""".format(
             self.fpkm_correlation_matrix,
             self.gq_seq_utils_exploratory_analysis_rnaseq,
             self.differential_expression,
-            self.differential_expression_goseq
+            self.differential_expression_goseq,
+            self.cramtools_compress_bam
         ]
 
 if __name__ == '__main__':

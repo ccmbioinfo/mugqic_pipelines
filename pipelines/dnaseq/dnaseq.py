@@ -496,8 +496,18 @@ cp \\
             job.name = "bvatools_depth_of_coverage." + sample.name
             jobs.append(job)
 
-            job = igvtools.compute_tdf(input, input + ".tdf")
-            job.name = "igvtools_compute_tdf." + sample.name
+            move_igv=config.param('igvtools_compute_tdf', 'mv_igv_fol', required=False)
+
+            if move_igv.lower() in ['yes', 'true', 'y', '1']:
+                job = concat_jobs([
+                        igvtools.compute_tdf(input, input + ".tdf"),
+                        Job(command="mv $HOME/igv alignment/" + sample.name),
+                        Job(command="mv igv.log alignment/" + sample.name + "/igv"),
+                        ], name="igvtools_compute_tdf." + sample.name)
+            else:
+                job = igvtools.compute_tdf(input, input + ".tdf")
+                job.name = "igvtools_compute_tdf." + sample.name
+
             jobs.append(job)
 
         return jobs

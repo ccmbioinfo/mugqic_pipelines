@@ -1,0 +1,3 @@
+Sample	Readset	RunType	FASTQ1	FASTQ2
+SampleA	readset1	PAIRED_END	/hpf/largeprojects/ccm/phanbria/genap/brian-testing/rnaseq/data/A07_158N_DIPG8_R1.fastq.gz	/hpf/largeprojects/ccm/phanbria/genap/brian-testing/rnaseq/data/A07_158N_DIPG8_R2.fastq.gz
+SampleB	readset2	PAIRED_END	/hpf/largeprojects/ccm/phanbria/genap/brian-testing/rnaseq/data/A07_158T_DIPG8_R1.fastq.gz	/hpf/largeprojects/ccm/phanbria/genap/brian-testing/rnaseq/data/A07_158T_DIPG8_R2.fastq.gz

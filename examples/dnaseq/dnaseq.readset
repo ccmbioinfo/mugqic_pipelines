@@ -1,0 +1,3 @@
+Sample	Readset	RunType	FASTQ1	FASTQ2
+SampleA	readset1	PAIRED_END	/hpf/largeprojects/ccmbio/pipelineTest/raw_reads/NA12383/runERR243099_1/NA12383.33.pair1.fastq.gz	/hpf/largeprojects/ccmbio/pipelineTest/raw_reads/NA12383/runERR243099_1/NA12383.33.pair2.fastq.gz
+SampleB	readset2	PAIRED_END	/hpf/largeprojects/ccmbio/pipelineTest/raw_reads/NA12383/runERR243099_1/NA12383.HUMlsqXIJAAAPEI-12.33.pair1.fastq.gz	/hpf/largeprojects/ccmbio/pipelineTest/raw_reads/NA12383/runERR243099_1/NA12383.HUMlsqXIJAAAPEI-12.33.pair2.fastq.gz

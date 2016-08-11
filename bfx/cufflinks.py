@@ -52,7 +52,8 @@ formatDenovoCombinedGTF.py \\
         reference_fasta=config.param('cuffcompare', 'genome_fasta', type='filepath'),
         gtf_files=" \\\n  ".join(gtf_files),
         gtf_list=gtf_list
-        )
+        ),
+        local=config.param('cuffcompare', 'use_localhd', required=False)
     )
 
 def cuffdiff(sample_replicate_group_files, gtf, output_directory):
@@ -84,7 +85,8 @@ cuffdiff {other_options} \\
         gtf=gtf,
         # Join replicate bams per sample with a "," then join all sample replicate groups with a " "
         input_files=" \\\n  ".join([",".join(sample_replicate_files) for sample_replicate_files in sample_replicate_group_files])
-        )
+        ),
+        local=config.param('cuffdiff', 'use_localhd', required=False)
     )
 
 def cufflinks(input_bam, output_directory, gtf=None):
@@ -110,7 +112,8 @@ cufflinks -q {other_options}{gtf} \\
         output_directory=output_directory,
         num_threads=config.param('cufflinks', 'threads', type='posint'),
         input_bam=input_bam
-        )
+        ),
+        local=config.param('cufflinks', 'use_localhd', required=False)
     )
 
 def cuffmerge(sample_file, output_directory, gtf_file=None):
@@ -130,7 +133,8 @@ cuffmerge {gtf} \\
         output_directory=output_directory,
         num_threads=config.param('cuffmerge', 'threads', type='posint'),
         sample_file=sample_file
-        )
+        ),
+        local=config.param('cuffmerge', 'use_localhd', required=False)
     )
 
 def cuffquant(input_bam, output_directory, gtf):
@@ -155,7 +159,8 @@ cuffquant -q {other_options} \\
         output_directory=output_directory,
         num_threads=config.param('cuffquant', 'threads', type='posint'),
         input_bam=input_bam
-        )
+        ),
+        local=config.param('cuffquant', 'use_localhd', required=False)
     )
 
 def cuffnorm(input_files, gtf, output_directory, sample_labels):
@@ -180,5 +185,6 @@ cuffnorm -q {other_options} \\
         num_threads=config.param('cuffnorm', 'threads', type='posint'),
         sample_labels=sample_labels,
         input_files=" \\\n  ".join(input_files)
-        )
+        ),
+        local=config.param('cuffnorm', 'use_localhd', required=False)
     )

@@ -51,7 +51,8 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $GATK_JAR \\
         known_sites=config.param('gatk_base_recalibrator', 'known_variants', type='filepath'),
         output=output
         ),
-        removable_files=[output]
+        removable_files=[output],
+        local=config.param('gatk_base_recalibrator', 'use_localhd', required=False)
     )
 
 def callable_loci(input, output, summary):
@@ -78,7 +79,8 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $GATK_JAR \\
         reference_sequence=config.param('gatk_callable_loci', 'genome_fasta', type='filepath'),
         summary=summary,
         output=output
-        )
+        ),
+        local=config.param('gatk_callable_loci', 'use_localhd', required=False)
     )
 
 def cat_variants(variants, output):
@@ -102,7 +104,8 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -cp $GATK_JAR \\
         reference=config.param('gatk_cat_variants', 'genome_fasta', type='filepath'),
         variants="".join(" \\\n  --variant " + variant for variant in variants),
         output=output
-        )
+        ),
+        local=config.param('gatk_cat_variants', 'use_localhd', required=False)
     )
 
 
@@ -126,12 +129,12 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $GATK_JAR \\
         reference=config.param('gatk_combine_variants', 'genome_fasta', type='filepath'),
         variants="".join(" \\\n  --variant:V" + str(idx) + " " + variant for idx,variant in enumerate(variants)),
         output=output
-        )
+        ),
+        local=config.param('gatk_combine_variants', 'use_localhd', required=False)
     )
 
 
 def depth_of_coverage(input, output_prefix, intervals):
-
 
     summary_coverage_thresholds = sorted(config.param('gatk_depth_of_coverage', 'summary_coverage_thresholds', type='list'), key=int)
 
@@ -168,7 +171,8 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $GATK_JAR \\
         summary_coverage_thresholds="".join(" \\\n  --summaryCoverageThreshold " + summary_coverage_threshold for summary_coverage_threshold in summary_coverage_thresholds),
         highest_summary_coverage_threshold=summary_coverage_thresholds[-1],
         nbins=int(summary_coverage_thresholds[-1]) - 1
-        )
+        ),
+        local=config.param('gatk_depth_of_coverage', 'use_localhd', required=False)
     )
 
 def genotype_gvcf(variants, output, options):
@@ -193,7 +197,8 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $GATK_JAR \\
         reference_sequence=config.param('gatk_genotype_gvcf', 'genome_fasta', type='filepath'),
         variants="".join(" \\\n  --variant " + variant for variant in variants),
         output=output
-        )
+        ),
+        local=config.param('gatk_genotype_gvcf', 'use_localhd', required=False)
     )
 
 def haplotype_caller(input, output, intervals=[], exclude_intervals=[]):
@@ -220,7 +225,8 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $GATK_JAR \\
         output=output,
         intervals="".join(" \\\n  --intervals " + interval for interval in intervals),
         exclude_intervals="".join(" \\\n  --excludeIntervals " + exclude_interval for exclude_interval in exclude_intervals)
-        )
+        ),
+        local=config.param('gatk_haplotype_caller', 'use_localhd', required=False)
     )
 
 def mutect(inputNormal, inputTumor, outputStats, outputVCF, intervals=[], exclude_intervals=[]):
@@ -258,7 +264,8 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $MUTECT_JAR 
         outputVCF=outputVCF,
         intervals="".join(" \\\n  --intervals " + interval for interval in intervals),
         exclude_intervals="".join(" \\\n  --excludeIntervals " + exclude_interval for exclude_interval in exclude_intervals)
-        )
+        ),
+        local=config.param('gatk_mutect', 'use_localhd', required=False)
     )
 
 def indel_realigner(input, output, target_intervals, intervals=[], exclude_intervals=[]):
@@ -289,7 +296,8 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $GATK_JAR \\
         intervals="".join(" \\\n  --intervals " + interval for interval in intervals),
         exclude_intervals="".join(" \\\n  --excludeIntervals " + exclude_interval for exclude_interval in exclude_intervals),
         max_reads_in_memory=config.param('gatk_indel_realigner', 'max_reads_in_memory')
-        )
+        ),
+        local=config.param('gatk_indel_realigner', 'use_localhd', required=False)
     )
 
 def print_reads(input, output, base_quality_score_recalibration):
@@ -317,7 +325,8 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $GATK_JAR \\
         reference_sequence=config.param('gatk_print_reads', 'genome_fasta', type='filepath'),
         base_quality_score_recalibration=base_quality_score_recalibration,
         output=output
-        )
+        ),
+        local=config.param('gatk_print_reads', 'use_localhd', required=False)
     )
 
 def realigner_target_creator(input, output, intervals=[], exclude_intervals=[]):
@@ -344,7 +353,8 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $GATK_JAR \\
         output=output,
         intervals="".join(" \\\n  --intervals " + interval for interval in intervals),
         exclude_intervals="".join(" \\\n  --excludeIntervals " + exclude_interval for exclude_interval in exclude_intervals)
-        )
+        ),
+        local=config.param('gatk_realigner_target_creator', 'use_localhd', required=False)
     )
 
 
@@ -372,7 +382,8 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $GATK_JAR \\
         output=output,
         intervals="".join(" \\\n  --intervals " + interval for interval in intervals),
         exclude_intervals="".join(" \\\n  --excludeIntervals " + exclude_interval for exclude_interval in exclude_intervals)
-        )
+        ),
+        local=config.param('gatk_combine_gvcf', 'use_localhd', required=False)
     )
 
 def variant_recalibrator(variants, other_options, recal_output, tranches_output, R_output):
@@ -405,7 +416,8 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $GATK_JAR \\
         tranches_output=tranches_output,
         R_output=R_output
         ),
-        removable_files=[recal_output, tranches_output, R_output]
+        removable_files=[recal_output, tranches_output, R_output],
+        local=config.param('gatk_variant_recalibrator', 'use_localhd', required=False)
     )
         
 def apply_recalibration(variants, recal_input, tranches_input, other_options, apply_recal_output):
@@ -437,6 +449,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $GATK_JAR \\
         recal_input=recal_input,
         tranches_input=tranches_input,
         output=apply_recal_output
-        )
+        ),
+        local=config.param('gatk_apply_recalibration', 'use_localhd', required=False)
     )
 

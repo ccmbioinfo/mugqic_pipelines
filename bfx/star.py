@@ -52,7 +52,8 @@ def align(
         [reads1, reads2],
         [os.path.join(output_directory, bam_name), os.path.join(output_directory, "SJ.out.tab")],
         [['star_align', 'module_star']],
-        removable_files=[os.path.join(output_directory, bam_name)]
+        removable_files=[os.path.join(output_directory, bam_name)],
+        local=config.param('star_align', 'use_localhd', required=False)
     )
     
     ## Get param from config file
@@ -147,7 +148,8 @@ def index(
         [junction_file],
         [os.path.join(genome_index_folder, "SAindex")],
         [['star_index', 'module_star']],
-        removable_files=[genome_index_folder]
+        removable_files=[genome_index_folder],
+        local=config.param('star_index', 'use_localhd', required=False)
     )
 
     ## get param from config filepath

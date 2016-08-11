@@ -35,7 +35,8 @@ def index(input):
 bwa index \\
   {input}""".format(
         input=input
-        )
+        ),
+        local=config.param('bwa_mem', 'use_localhd', required=False)
     )
 
 def mem(in1fastq, in2fastq=None, out_sam=None, read_group=None, ref=None, ini_section='bwa_mem'):
@@ -56,5 +57,6 @@ bwa mem {other_options}{read_group} \\
         in2fastq=" \\\n  " + in2fastq if in2fastq else "",
         out_sam=" \\\n  > " + out_sam if out_sam else ""
         ),
-        removable_files=[out_sam]
+        removable_files=[out_sam],
+        local=config.param('bwa_mem', 'use_localhd', required=False)
     )

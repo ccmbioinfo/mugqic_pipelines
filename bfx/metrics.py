@@ -42,9 +42,13 @@ Rscript $R_TOOLS/DNAsampleMetrics.R \\
         input_directory=input_directory,
         output=output,
         experiment_type=experiment_type
-    ))
+        )
+)
 
 def rnaseqc(sample_file, output_directory, is_single_end=False, gtf_file=None, reference=None, ribosomal_interval_file=None):
+    # NOTE: MODIFICATION TO GET RNASEQC TO WORK:
+    # ribosomal_interval_file = config.param('rnaseqc', 'interval_file', required=False) if config.param('rnaseqc', 'interval_file', required=False) else ""
+
     return Job(
         [sample_file],
         [os.path.join(output_directory, "index.html"), os.path.join(output_directory, "metrics.tsv"), os.path.join(output_directory, "corrMatrixSpearman.txt")],
@@ -72,8 +76,10 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $RNASEQC_JAR
         other_options=" \\\n  " + config.param('rnaseqc', 'other_options', required=False) if config.param('rnaseqc', 'other_options', required=False) else "",
         single_end=" \\\n  -singleEnd" if is_single_end else "",
         ribosomal_interval_file= " \\\n  -rRNA " + ribosomal_interval_file if ribosomal_interval_file else "\\\n  -BWArRNA dummy_rRNA.fa"
+        # ribosomal_interval_file=" \\\n  -rRNA " + ribosomal_interval_file if ribosomal_interval_file else ""
         ),
-        removable_files=["dummy_rRNA.fa"]
+        removable_files=["dummy_rRNA.fa"],
+        local=config.param('rnaseqc', 'use_localhd', required=False)
     )
 
 def rpkm_saturation(count_file, gene_size_file, rpkm_directory, saturation_directory):
@@ -100,7 +106,8 @@ zip -r {saturation_directory}.zip {saturation_directory}""".format(
         threads=config.param('rpkm_saturation', 'threads', type='posint'),
         other_options=config.param('rpkm_saturation', 'other_options', required=False)
         ),
-        removable_files=[saturation_directory]
+        removable_files=[saturation_directory],
+        local=config.param('rpkm_saturation', 'use_localhd', required=False)
     )
 
 def snv_graph_metrics(list, output_basename):

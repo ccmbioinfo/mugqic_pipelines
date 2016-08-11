@@ -34,7 +34,8 @@ def index(input):
 samtools index \\
   {input}""".format(
         input=input
-        )
+        ),
+        local=config.param('samtools', 'use_localhd', required=False)
     )
 
 def faidx(input, filter=None):
@@ -47,7 +48,8 @@ samtools faidx \\
   {input}{filter}""".format(
         input=input,
         filter=filter if filter else ""
-        )
+        ),
+        local=config.param('samtools', 'use_localhd', required=False)
     )
 
 def flagstat(input, output):
@@ -62,7 +64,8 @@ samtools flagstat \\
         input=input,
         output=output
         ),
-        removable_files=[output]
+        removable_files=[output],
+        local=config.param('samtools', 'use_localhd', required=False)
     )
 
 def mpileup(input_bams, output, other_options="", region=None, regionFile=None):
@@ -79,7 +82,8 @@ samtools mpileup {other_options} \\
         region=" \\\n  -r " + region if region else "",
         input_bams="".join([" \\\n  " + input_bam for input_bam in input_bams]),
         output=" \\\n  > " + output if output else ""
-        )
+        ),
+        local=config.param('samtools', 'use_localhd', required=False)
     )
 
 def sort(input_bam, output_prefix, sort_by_name=False):
@@ -98,7 +102,8 @@ samtools sort {other_options}{sort_by_name} \\
         input_bam=input_bam,
         output_prefix=output_prefix
         ),
-        removable_files=[output_bam]
+        removable_files=[output_bam],
+        local=config.param('samtools', 'use_localhd', required=False)
     )
 
 def view(input, output=None, options=""):
@@ -113,7 +118,8 @@ samtools view {options} \\
         input=input,
         output=" \\\n  > " + output if output else ""
         ),
-        removable_files=[output]
+        removable_files=[output],
+        local=config.param('samtools', 'use_localhd', required=False)
     )
 
 def bcftools_cat(inputs, output):
@@ -126,7 +132,8 @@ bcftools concat \\
   {inputs}{output}""".format(
         inputs=" \\\n  ".join(inputs),
         output=" \\\n  > " + output if output else ""
-        )
+        ),
+        local=config.param('samtools', 'use_localhd', required=False)
     )
 
 def bcftools_view(input, output, options="", pair_calling=False):
@@ -141,5 +148,6 @@ bcftools call {pair_calling} {options} \\
         pair_calling="-T pair" if pair_calling else "",
         input=input,
         output=" \\\n  > " + output if output else ""
-        )
+        ),
+        local=config.param('samtools', 'use_localhd', required=False)
     )

@@ -1,0 +1,2 @@
+Sample	Readset	Library	RunType	BED	FASTQ1	FASTQ2
+Agilent-S1	Agilent-S1R	Agilent-S1Lib	PAIRED_END	/hpf/tools/centos6/mugqic-pipelines/latest_hpf/examples/forge/omim.orphanet.bed	/hpf/largeprojects/ccmbio/cheo.variants/data/S1.agilent_1.fq.gz	/hpf/largeprojects/ccmbio/cheo.variants/data/S1.agilent_2.fq.gz

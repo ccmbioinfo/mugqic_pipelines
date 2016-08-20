@@ -86,6 +86,21 @@ samtools mpileup {other_options} \\
         local=config.param('samtools', 'use_localhd', required=False)
     )
 
+def pileup(input_bams, output, other_options=""):
+    return Job(
+        input_bams,
+        [output],
+        [['samtools_pileup', 'module_samtools']],
+        command="""\
+samtools pileup {other_options} \\
+  -f {reference_fasta}{input_bams}{output}""".format(
+        other_options=other_options,
+        reference_fasta=config.param('samtools_pileup', 'genome_fasta', type='filepath'),
+        input_bams="".join([" \\\n " + input_bam for input_bam in input_bams]),
+        output=" \\\n > " + output if output else ""
+        )
+    )
+
 def sort(input_bam, output_prefix, sort_by_name=False):
     output_bam = output_prefix + ".bam"
 
@@ -106,6 +121,28 @@ samtools sort {other_options}{sort_by_name} \\
         local=config.param('samtools', 'use_localhd', required=False)
     )
 
+def varfilter(input, output, ini_section="samtools_varfilter"):
+    other_options = config.param(ini_section, 'other_options', required=False)
+    samtools_perl=config.param(ini_section, 'samtools_perl_call', required=False)
+
+    return Job(
+        [input],
+        [output],
+        [
+            ['samtools_varfilter', 'module_samtools'],
+            ['samtools_varfilter', 'module_perl']
+        ],
+        command="""\
+perl{samtools_perl} varFilter {other_options}{input} \\
+  > {output}
+""".format(
+        samtools_perl=" " + samtools_perl if samtools_perl else "",
+        other_options=other_options + " " if other_options else "",
+        input=input,
+        output=output
+        )
+    )
+
 def view(input, output=None, options=""):
     return Job(
         [input],
@@ -122,6 +159,20 @@ samtools view {options} \\
         local=config.param('samtools', 'use_localhd', required=False)
     )
 
+def bcftools_call(input, output, options=""):
+    return Job(
+        [input],
+        [output],
+        [['bcftools_call', 'module_bcftools']],
+        command="""\
+bcftools call {options} \\
+  {input}{output}""".format(
+        options=options,
+        input=input,
+        output=" \\\n  > " + output if output else ""
+        )
+    )
+
 def bcftools_cat(inputs, output):
     return Job(
         inputs,
@@ -136,18 +187,36 @@ bcftools concat \\
         local=config.param('samtools', 'use_localhd', required=False)
     )
 
-def bcftools_view(input, output, options="", pair_calling=False):
+def bcftools_varfilter(input, output, ini_section="bcftools_varfilter"):
+    other_options = config.param(ini_section, 'other_options', required=False)
+
     return Job(
         [input],
         [output],
-        [['bcftools_view', 'module_bcftools']],
+        [['bcftools_varfilter', 'module_samtools']],
         command="""\
-bcftools call {pair_calling} {options} \\
-  {input}{output}""".format(
-        options=options,
-        pair_calling="-T pair" if pair_calling else "",
-        input=input,
-        output=" \\\n  > " + output if output else ""
-        ),
-        local=config.param('samtools', 'use_localhd', required=False)
+perl {vcfutils} varFilter {other_options}{input} \\
+  > {output}""".format(
+        vcfutils=config.param(ini_section, 'vcfutils_call'),
+        other_options=other_options + " " if other_options else "",
+        input=input if input else "",
+        output=output
+        )
     )
+
+
+# ORIGINAL BCFTOOLS VIEW FUNCTION -- for samtools 0.1.19
+# def bcftools_view(input, output, options="", pair_calling=False):
+#     return Job(
+#         [input],
+#         [output],
+#         [['bcftools_view', 'module_samtools']],
+#         command="""\
+# bcftools view {pair_calling} {options} \\
+#   {input}{output}""".format(
+#         options=options,
+#         pair_calling="-T pair" if pair_calling else "",
+#         input=input,
+#         output=" \\\n  > " + output if output else ""
+#         )
+#     )

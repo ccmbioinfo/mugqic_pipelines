@@ -36,8 +36,7 @@ def mpileupcns(input, output, sampleNamesFile, other_options=None):
             ['varscan', 'module_varscan'],
         ],
         command="""\
-java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $VARSCAN_JAR mpileup2cns {other_options}\\
-  {input} \\
+java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $VARSCAN_JAR mpileup2cns {other_options}{input} \\
   --output-vcf 1 \\
   --vcf-sample-list {sampleNames}{output}""".format(
         tmp_dir=config.param('varscan', 'tmp_dir'),
@@ -46,6 +45,27 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $VARSCAN_JAR
         other_options=other_options,
         input=" \\\n " + input if input else "",
         sampleNames=sampleNamesFile,
+        output=" \\\n  > " + output if output else ""
+        )
+    )
+
+
+def mpileupcns_jacek(input, output, other_options=None):
+
+    return Job(
+        [input],
+        [output],
+        [
+            ['varscan', 'module_java'],
+            ['varscan', 'module_varscan'],
+        ],
+        command="""\
+java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $VARSCAN_JAR mpileup2cns {input}{other_options}{output}""".format(
+        tmp_dir=config.param('varscan', 'tmp_dir'),
+        java_other_options=config.param('varscan', 'java_other_options'),
+        ram=config.param('varscan', 'ram'),
+        input="\\\n  " + input if input else "",
+        other_options=" \\\n  " + other_options,
         output=" \\\n  > " + output if output else ""
         )
     )

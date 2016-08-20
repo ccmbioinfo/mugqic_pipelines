@@ -64,3 +64,39 @@ bcftools \\
     )
 
 
+def norm(input, output, options="", ini_section="bcftools_norm"):
+    
+    return Job(
+        [input],
+        [output],
+        [['bcftools_norm', 'module_bcftools']],
+        command="""\
+bcftools \\
+  norm {options}\\
+  -o {output} \\
+  {input}""".format(
+        options=options + " " if options else "",
+        input=input,
+        output=output
+        )
+    )
+
+
+# BCFTOOLS VIEW FUNCTION -- for samtools >0.1.19
+def view(input, output, options="", ini_section="bcftools_view"):
+
+    return Job(
+        [input],
+        [output],
+        [['bcftools_view', 'module_bcftools']],
+        command="""\
+bcftools \\
+  view {options}\\
+  {input}{output}""".format(
+        options=options + " " if options else "",
+        input=input,
+        output=" \\\n  -o " + output if output else ""
+        )
+    )
+
+

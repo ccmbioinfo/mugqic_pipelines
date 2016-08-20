@@ -184,6 +184,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME
     )
 
 def merge_sam_files(inputs, output):
+    picard_other_options=config.param('picard_merge_sam_files', 'picard_other_options', required=False)
 
     return Job(
         inputs,
@@ -194,7 +195,7 @@ def merge_sam_files(inputs, output):
         ],
         command="""\
 java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME/MergeSamFiles.jar \\
-  VALIDATION_STRINGENCY=SILENT ASSUME_SORTED=true CREATE_INDEX=true \\
+  {picard_other_options}VALIDATION_STRINGENCY=SILENT ASSUME_SORTED=true CREATE_INDEX=true \\
   TMP_DIR={tmp_dir} \\
   {inputs} \\
   OUTPUT={output} \\
@@ -202,6 +203,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME
         tmp_dir=config.param('picard_merge_sam_files', 'tmp_dir'),
         java_other_options=config.param('picard_merge_sam_files', 'java_other_options'),
         ram=config.param('picard_merge_sam_files', 'ram'),
+        picard_other_options=picard_other_options + " " if picard_other_options else "",
         inputs=" \\\n  ".join(["INPUT=" + input for input in inputs]),
         output=output,
         max_records_in_ram=config.param('picard_merge_sam_files', 'max_records_in_ram', type='int')

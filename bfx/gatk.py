@@ -137,6 +137,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $GATK_JAR \\
 def depth_of_coverage(input, output_prefix, intervals):
 
     summary_coverage_thresholds = sorted(config.param('gatk_depth_of_coverage', 'summary_coverage_thresholds', type='list'), key=int)
+    other_options = config.param('gatk_depth_of_coverage', 'other_options', required=False)
 
     return Job(
         [input], 
@@ -154,7 +155,7 @@ def depth_of_coverage(input, output_prefix, intervals):
         ],
         command="""\
 java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $GATK_JAR \\
-  --analysis_type DepthOfCoverage --omitDepthOutputAtEachBase --logging_level ERROR \\
+  --analysis_type DepthOfCoverage --omitDepthOutputAtEachBase --logging_level ERROR {other_options}\\
   --reference_sequence {reference_sequence} \\
   --input_file {input} \\
   --out {output_prefix}{intervals}{summary_coverage_thresholds} \\
@@ -164,6 +165,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $GATK_JAR \\
         tmp_dir=config.param('gatk_depth_of_coverage', 'tmp_dir'),
         java_other_options=config.param('gatk_depth_of_coverage', 'java_other_options'),
         ram=config.param('gatk_depth_of_coverage', 'ram'),
+        other_options=other_options + " " if other_options else "",
         reference_sequence=config.param('gatk_depth_of_coverage', 'genome_fasta', type='filepath'),
         input=input,
         output_prefix=output_prefix,
@@ -269,6 +271,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $MUTECT_JAR 
     )
 
 def indel_realigner(input, output, target_intervals, intervals=[], exclude_intervals=[]):
+    known = config.param('gatk_indel_realigner', 'known_indels', type='filepath', required=False)
 
     return Job(
         [input],
@@ -283,7 +286,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $GATK_JAR \\
   --reference_sequence {reference_sequence} \\
   --input_file {input} \\
   --targetIntervals {target_intervals} \\
-  --out {output}{intervals}{exclude_intervals} \\
+  --out {output}{known}{intervals}{exclude_intervals} \\
   --maxReadsInMemory {max_reads_in_memory}""".format(
         tmp_dir=config.param('gatk_indel_realigner', 'tmp_dir'),
         java_other_options=config.param('gatk_indel_realigner', 'java_other_options'),
@@ -293,6 +296,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $GATK_JAR \\
         input=input,
         target_intervals=target_intervals,
         output=output,
+        known=" \\\n  --knownAlleles " + known if known else "",
         intervals="".join(" \\\n  --intervals " + interval for interval in intervals),
         exclude_intervals="".join(" \\\n  --excludeIntervals " + exclude_interval for exclude_interval in exclude_intervals),
         max_reads_in_memory=config.param('gatk_indel_realigner', 'max_reads_in_memory')
@@ -330,6 +334,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $GATK_JAR \\
     )
 
 def realigner_target_creator(input, output, intervals=[], exclude_intervals=[]):
+    known = config.param('gatk_realigner_target_creator', 'known_indels', type='filepath', required=False)
 
     return Job(
         [input],
@@ -343,7 +348,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $GATK_JAR \\
   --analysis_type RealignerTargetCreator {other_options} \\
   --reference_sequence {reference_sequence} \\
   --input_file {input} \\
-  --out {output}{intervals}{exclude_intervals}""".format(
+  --out {output}{known}{intervals}{exclude_intervals}""".format(
         tmp_dir=config.param('gatk_realigner_target_creator', 'tmp_dir'),
         java_other_options=config.param('gatk_realigner_target_creator', 'java_other_options'),
         ram=config.param('gatk_realigner_target_creator', 'ram'),
@@ -351,6 +356,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $GATK_JAR \\
         reference_sequence=config.param('gatk_realigner_target_creator', 'genome_fasta', type='filepath'),
         input=input,
         output=output,
+        known=" \\\n  --known " + known if known else "",
         intervals="".join(" \\\n  --intervals " + interval for interval in intervals),
         exclude_intervals="".join(" \\\n  --excludeIntervals " + exclude_interval for exclude_interval in exclude_intervals)
         ),

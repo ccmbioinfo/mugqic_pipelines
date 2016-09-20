@@ -24,7 +24,7 @@ def min_max_field(job_logs, field):
     """
     Return name and field of the min and max JobLogs with respect to field
     Return UNDEFINED * 4 if we can't find values
-    :param field: JobLog field
+    :param field: JobLog field - must be able to compare values (<)
     :return: min_name, min_field, max_name, max_field strings
     """
     # Sort the jobs by 'field'
@@ -54,18 +54,24 @@ def summarize_status(job_logs):
 
 
 def get_start_date(job_logs):
+    """
+    return None if we can't find a start date
+    """
     start_dates = [log.start_date for log in job_logs if hasattr(log, 'start_date')]
 
     if len(start_dates) > 0:
         return min(start_dates)
-    return UNDEFINED
+    return None
 
 
 def get_end_date(job_logs):
+    """
+    return None if we can't find a start date
+    """
     end_dates = [log.end_date for log in job_logs if hasattr(log, 'end_date')]
     if len(end_dates) > 0:
         return min(end_dates)
-    return UNDEFINED
+    return None
 
 
 ###################################################################################################
@@ -120,8 +126,12 @@ def get_log_text_report(job_logs, minimal_detail=False):
 
         num_successful, num_active, num_inactive, num_failed = summarize_status(job_logs)
 
-        exec_time = start_date.strftime(OUTPUT_DATE_FORMAT) + ' - ' + end_date.strftime(OUTPUT_DATE_FORMAT) +\
-                    ' (' + str(end_date - start_date) + ')'
+        if start_date and end_date:
+            exec_time = start_date.strftime(OUTPUT_DATE_FORMAT) + ' - ' + end_date.strftime(OUTPUT_DATE_FORMAT) +\
+                        ' (' + str(end_date - start_date) + ')'
+        else:
+            exec_time = UNDEFINED
+
 
         report += '''\
 # Number of jobs: {num_jobs}
@@ -169,23 +179,24 @@ def parse_args():
     parser.add_argument('job_file', help='Path to file containing jobs and associated info')
     parser.add_argument('-r', '--report', help='Display a text report summarizing the jobs and their status', action='store_true')
 
+    # We can't allow 'success', 'nosucess', and 'minimal_detail' together, since minimal_detail is required for status to be defined
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-s', '--success', help='Show successful jobs only', action='store_true')
     group.add_argument('-nos', '--nosuccess', help='Show unsuccessful jobs only i.e. failed or uncompleted jobs', action='store_true')
-    group.add_argument('-m', '--mimimal_detail', help="Only aggregate minimal information about each job", action='store_true')
+    group.add_argument('-m', '--minimal_detail', help="Only aggregate minimal information about each job", action='store_true')
 
     parser.add_argument('-t', '--top_to_bottom', help="Display an indented text showing job dependencies from first completed to last completed", action='store_true')
     parser.add_argument('-b', '--bottom_to_top', help="Display an indented text showing job dependencies from last completed to first completed", action='store_true')
 
     args = parser.parse_args()
 
-    return args.job_file, args.report, args.success, args.nosuccess, args.mimimal_detail
+    return args.job_file, args.report, args.success, args.nosuccess, args.minimal_detail
 
 
 def main():
     job_list_file, report, success_option, no_success_option, minimal_detail = parse_args()
 
-    job_logs = create_job_logs(job_list_file,  success_option, no_success_option, minimal_detail=minimal_detail)
+    job_logs = create_job_logs(job_list_file, success_option, no_success_option, minimal_detail=minimal_detail)
 
     if report:
         print(get_log_text_report(job_logs, minimal_detail=minimal_detail))

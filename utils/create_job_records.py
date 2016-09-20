@@ -211,7 +211,7 @@ def filter_by_success(job_logs, keep_successful, keep_unsuccessful):
     :param keep_unsuccessful: whether to keep jobs that have not succeeded yet (blocked or failed)
     :return: only those JobLogs that search the given criteria
     """
-    is_successful = lambda log: log.MUGQIC_exit_status == 0
+    is_successful = lambda log: log.MUGQIC_exit_status == '0'
 
     if keep_successful:
         job_logs = [log for log in job_logs if is_successful(log)]

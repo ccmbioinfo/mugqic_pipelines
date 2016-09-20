@@ -1,12 +1,4 @@
-#!/usr/bin/env python
-
-"""
-Plays the role of both "view" (report) and "controller" (main)
-"""
-
-import argparse
-
-from create_job_records import JobLog, create_job_logs
+from job_logs import JobLog
 
 
 # All dates are printed in this format, eg. '2016-01-01T09:02:03'
@@ -110,14 +102,17 @@ def format_log(log):
 # REPORT
 ###################################################################################################
 
-def get_log_text_report(job_logs, minimal_detail=False):
+def get_log_text_report(job_logs, summary=False):
     """
     Unassigned fields are given the value 'N/A'
+
+    :param job_logs: list of JobLogs
+    :param summary: whether to include a summary
     :return: report string
     """
     report = ''
 
-    if not minimal_detail:
+    if not summary:
         start_date = get_start_date(job_logs)
         end_date = get_end_date(job_logs)
 
@@ -127,7 +122,7 @@ def get_log_text_report(job_logs, minimal_detail=False):
         num_successful, num_active, num_inactive, num_failed = summarize_status(job_logs)
 
         if start_date and end_date:
-            exec_time = start_date.strftime(OUTPUT_DATE_FORMAT) + ' - ' + end_date.strftime(OUTPUT_DATE_FORMAT) +\
+            exec_time = start_date.strftime(OUTPUT_DATE_FORMAT) + ' - ' + end_date.strftime(OUTPUT_DATE_FORMAT) + \
                         ' (' + str(end_date - start_date) + ')'
         else:
             exec_time = UNDEFINED
@@ -166,40 +161,3 @@ EXTRA_VIRTUAL_MEM_PCT\tLIMITS\tQUEUE\tUSERNAME\tGROUP\tSESSION\tACCOUNT\tNODES\t
     return report
 
 
-###################################################################################################
-# MAIN
-###################################################################################################
-
-def parse_args():
-    '''
-    Build the argparse.ArgumentParser and parse arguments
-    :return: arguments
-    '''
-    parser = argparse.ArgumentParser(description='Display information about a set of jobs')
-    parser.add_argument('job_file', help='Path to file containing jobs and associated info')
-    parser.add_argument('-r', '--report', help='Display a text report summarizing the jobs and their status', action='store_true')
-
-    # We can't allow 'success', 'nosucess', and 'minimal_detail' together, since minimal_detail is required for status to be defined
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument('-s', '--success', help='Show successful jobs only', action='store_true')
-    group.add_argument('-nos', '--nosuccess', help='Show unsuccessful jobs only i.e. failed or uncompleted jobs', action='store_true')
-    group.add_argument('-m', '--minimal_detail', help="Only aggregate minimal information about each job", action='store_true')
-
-    parser.add_argument('-t', '--top_to_bottom', help="Display an indented text showing job dependencies from first completed to last completed", action='store_true')
-    parser.add_argument('-b', '--bottom_to_top', help="Display an indented text showing job dependencies from last completed to first completed", action='store_true')
-
-    args = parser.parse_args()
-
-    return args.job_file, args.report, args.success, args.nosuccess, args.minimal_detail
-
-
-def main():
-    job_list_file, report, success_option, no_success_option, minimal_detail = parse_args()
-
-    job_logs = create_job_logs(job_list_file, success_option, no_success_option, minimal_detail=minimal_detail)
-
-    if report:
-        print(get_log_text_report(job_logs, minimal_detail=minimal_detail))
-
-if __name__ == '__main__':
-    main()

@@ -27,6 +27,7 @@ class JobLog:
         for key in kwargs:
             setattr(self, key, kwargs[key])
 
+
 class JobDependencies:
     """
     Data container for the dependencies of a job
@@ -34,6 +35,11 @@ class JobDependencies:
     """
     def __init__(self, dependency_string):
         self.dependencies = dependency_string.split(':')
+
+    # This allows us to iterate over instances of this class
+    # Eg. "for dep in dependencies:..."
+    def __iter__(self):
+        return iter(self.dependencies)
 
     def __str__(self):
         return ':'.join(str(dep) for dep in self.dependencies)
@@ -130,15 +136,6 @@ def get_user():
         return run_command(['whoami'])
     except:
         return None
-
-
-# Necessary for Python versions < 2.7
-def to_seconds(td):
-    """
-    :param td: datetime.timedelta
-    :return: int
-    """
-    return td.seconds + td.days * 24 * 3600
 
 
 def percent(num):

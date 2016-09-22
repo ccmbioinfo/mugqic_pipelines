@@ -1,3 +1,8 @@
+"""
+Format a tabular text report
+Plays the role of "view" in MVC
+"""
+
 from job_logs import JobLog
 
 
@@ -62,7 +67,7 @@ def get_end_date(job_logs):
     """
     end_dates = [log.end_date for log in job_logs if hasattr(log, 'end_date')]
     if len(end_dates) > 0:
-        return min(end_dates)
+        return max(end_dates)
     return None
 
 
@@ -112,7 +117,7 @@ def get_log_text_report(job_logs, summary=False):
     """
     report = ''
 
-    if not summary:
+    if summary:
         start_date = get_start_date(job_logs)
         end_date = get_end_date(job_logs)
 

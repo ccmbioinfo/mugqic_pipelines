@@ -1,6 +1,6 @@
 """
 This module aggregates all the required information associated with a job list file
-Plays the role of "model"
+Plays the role of "model" in MVC
 """
 
 import subprocess, re, os
@@ -27,6 +27,13 @@ class JobLog:
         for key in kwargs:
             setattr(self, key, kwargs[key])
 
+    # Useful for debugging purposese
+    def __repr__(self):
+        try:
+            return self.job_name + ' (' + self.job_id + ')'
+        except:
+            return 'Undefined JobLog instance'
+
 
 class JobDependencies:
     """
@@ -34,7 +41,11 @@ class JobDependencies:
     The actual values are stored as a list of job ids (eg. ['123', '456'])
     """
     def __init__(self, dependency_string):
-        self.dependencies = dependency_string.split(':')
+        # Eg. '123:456' -> ['123', '456']
+        self.dependencies = [id for id in dependency_string.split(':') if id != '']
+
+    def __len__(self):
+        return len(self.dependencies)
 
     # This allows us to iterate over instances of this class
     # Eg. "for dep in dependencies:..."
@@ -90,9 +101,6 @@ class MemorySize:
     # The default representation of a memory size in Gb
     def __str__(self):
         return '{0:.2f}'.format(float(self.bytes) / 1024 ** 3) + ' GiB'
-
-    def __repr__(self):
-        return self.__str__()
 
 
 ###################################################################################################
@@ -208,7 +216,8 @@ def filter_by_success(job_logs, keep_successful, keep_unsuccessful):
     :param keep_unsuccessful: whether to keep jobs that have not succeeded yet (blocked or failed)
     :return: only those JobLogs that search the given criteria
     """
-    is_successful = lambda log: log.MUGQIC_exit_status == '0'
+    is_successful = lambda log: hasattr(log, 'MUGQIC_exit_status')\
+                                and log.MUGQIC_exit_status == '0'
 
     if keep_successful:
         job_logs = [log for log in job_logs if is_successful(log)]
@@ -243,7 +252,7 @@ def assign_cpu_to_real_time_ratio(job_logs):
     :return: modified list of JobLogs
     """
     for log in job_logs:
-        if hasattr(log, 'cput') and hasattr(log, 'walltime') and log.walltime != 0:
+        if hasattr(log, 'cput') and hasattr(log, 'walltime') and log.walltime.total_seconds() != 0:
             log.cpu_to_real_time_ratio = percent(log.cput.total_seconds() / log.walltime.total_seconds())
 
     return job_logs
@@ -441,6 +450,7 @@ def create_job_logs(job_list_file, keep_successful, keep_unsuccessful, minimal_d
     """
     Aggregate information about each job and return a list of JobLogs
 
+    If the information for a field cannot be found, then the field is not defined
     :param job_list_file: path to the job list file
     :param keep_successful: whether to keep the successful jobs
     :param keep_unsuccessful:  whether to keep the unsuccessful or blocked jobs

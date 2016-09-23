@@ -52,9 +52,9 @@ def main():
         print(get_log_text_report(job_logs, summary=not args.minimal_detail))
 
     if args.dependency_first:
-        print(dependency_graph(job_logs, dependency_first=True))
+        print(dependency_graph(job_logs, dependencies_first=True))
     if args.depender_first:
-        print(dependency_graph(job_logs, dependency_first=False))
+        print(dependency_graph(job_logs, dependencies_first=False))
 
 
 if __name__ == '__main__':

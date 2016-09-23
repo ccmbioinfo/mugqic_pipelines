@@ -161,7 +161,7 @@ REAL_TIME\tSTART_DATE\tEND_DATE\tCPU_TIME\tCPU_REAL_TIME_RATIO\tPHYSICAL_MEM\tVI
 EXTRA_VIRTUAL_MEM_PCT\tLIMITS\tQUEUE\tUSERNAME\tGROUP\tSESSION\tACCOUNT\tNODES\tPATH
 '''
 
-    report += '\n'.join([format_log(log) for log in job_logs])
+    report += '\n'.join([format_log(log) for log in job_logs]) + '\n'
 
     return report
 

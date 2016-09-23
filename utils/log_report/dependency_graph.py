@@ -20,12 +20,12 @@ def lookup_id(job_logs, id):
     return next(log for log in job_logs if log.job_id == id)
 
 
-def create_dependency_graph(job_logs, dependency_first=True):
+def create_dependency_graph(job_logs, dependencies_first=True):
     """
     read the job_logs and return a dependency graph, where each node is a joblog
 
     :param job_logs: list of joblogs
-    :param dependency_first: whether edges go from dependency to depender
+    :param dependencies_first: whether edges go from dependency to depender
     :return: networkx.digraph
     """
     graph = networkx.DiGraph()
@@ -37,7 +37,7 @@ def create_dependency_graph(job_logs, dependency_first=True):
             # look the log associated with this id
             dependency = lookup_id(job_logs, id)
 
-            if dependency_first:
+            if dependencies_first:
                 graph.add_edge(dependency, log)
             else:
                 graph.add_edge(log, dependency)
@@ -66,18 +66,21 @@ def render_dependencies(node):
 
 def render_status(node):
     status_to_display = dict({
-        'SUCCESS' : ' + COMPLETED',
+        'SUCCESS' : '',
         'FAILED' : ' - FAILED',
-        'ACTIVE' : ' <- Active',
-        'INACTIVE' : ' -> Pending'
+        'ACTIVE' : ' <- ACTIVE',
+        'INACTIVE' : ''
 
     })
-    return status_to_display[node.status]
+    return status_to_display[node.status] if hasattr(node, 'status') else ''
 
 
 def render_node(node, num_indents):
     """
     Render only this node with the given indentation
+
+    Resulting string is of the following form:
+    <job_id>    <job_name> [dependencies] [status]
 
     :param node: JobLog
     :param num_indents: between job id and job name
@@ -90,33 +93,41 @@ def render_node(node, num_indents):
            render_status(node) + '\n'
 
 
-def render_nodes(nodes, graph, rendered_nodes=set(), num_indents=1):
+def render_nodes(nodes, graph, rendered_nodes=None, num_indents=1):
     """
-    Render then nodes in order of smallest associated text to largest
+    Render nodes as an indented list
 
-    :param nodes:
-    :param graph:
+    First, order the nodes by height and then render each one.
+    When assembling the final string, display the shortest texts first
+
+    :param nodes: list of JobLogs
+    :param graph: networkx.DiGraph
     :param rendered_nodes: set of nodes that have been displayed already
     :param num_indents: number of indentations between <job_id> and <job_name>
     :return: str representing nodes
     """
-    node_texts = []
+    # If no rendered_nodes are given, then assume the empty set
+    rendered_nodes = set() if rendered_nodes == None else rendered_nodes
+
+    # List of strings associated with each node
+    node_strings = []
 
     for node in sort_by_height(nodes, graph):
-    # for node in nodes:
         # We will only render the node if all of its predecessors have been rendered above it
         if set(graph.predecessors(node)) <= rendered_nodes:
             rendered_nodes.add(node)
 
-            node_texts.append(render_node(node, num_indents) +
+            # Render this node and as many of its successors as possible
+            node_strings.append(render_node(node, num_indents) +
                               render_nodes(graph.successors(node), graph, rendered_nodes, num_indents + 1))
 
-    return ''.join(sorted(node_texts, key=lambda t: len(t.split())))
+    # Make sure that the shortest strings are listed first
+    return ''.join(sorted(node_strings, key=lambda s: len(s.split())))
 
 
 def dep_graph_to_text(graph):
     """
-    :param graph: networkx.digraph
+    :param graph: networkx.DiGraph
     :return: str
     """
     text = ''
@@ -130,10 +141,16 @@ def dep_graph_to_text(graph):
 # main
 ###################################################################################################
 
-def dependency_graph(job_logs, dependency_first=True):
+def dependency_graph(job_logs, dependencies_first=True):
     """
-    :param dependency_first: whether the leftmost jobs should be the dependencies of other jobs
+    :param dependencies_first: whether the leftmost jobs should be the dependencies of other jobs
     :return: text representing dependency graph
     """
-    graph = create_dependency_graph(job_logs, dependency_first)
-    return dep_graph_to_text(graph)
+    graph = create_dependency_graph(job_logs, dependencies_first)
+
+    if dependencies_first:
+        header = '# Dependency jobs listed first:\n'
+    else:
+        header = '# Depender jobs listed first:\n'
+
+    return header + dep_graph_to_text(graph)

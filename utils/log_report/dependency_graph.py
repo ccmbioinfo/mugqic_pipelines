@@ -1,38 +1,40 @@
 #!/usr/bin/env python
 
 """
-Visualize job dependencies
+visualize job dependencies
 
-See dependency_graph below
+see dependency_graph below
 """
 
 import networkx
 
 
 ###################################################################################################
-# CREATE GRAPH
+# create graph
 ###################################################################################################
 
 def lookup_id(job_logs, id):
     """
-    Find the JobLog with this id
+    find the joblog with this id
     """
     return next(log for log in job_logs if log.job_id == id)
 
 
 def create_dependency_graph(job_logs, dependency_first=True):
     """
-    Read the job_logs and return a dependency graph, where each node is a JobLog
+    read the job_logs and return a dependency graph, where each node is a joblog
 
-    :param job_logs: list of JobLogs
+    :param job_logs: list of joblogs
     :param dependency_first: whether edges go from dependency to depender
-    :return: networkx.DiGraph
+    :return: networkx.digraph
     """
     graph = networkx.DiGraph()
 
     for log in job_logs:
+        graph.add_node(log)
+
         for id in log.job_dependencies:
-            # Look the log associated with this id
+            # look the log associated with this id
             dependency = lookup_id(job_logs, id)
 
             if dependency_first:
@@ -44,71 +46,88 @@ def create_dependency_graph(job_logs, dependency_first=True):
 
 
 ###################################################################################################
-# RENDER GRAPH
+# render graph
 ###################################################################################################
 
-def recursive_subgraph(nodes, graph):
-    return set().union(*({node} | networkx.descendants(graph, node) for node in nodes))
+def height(node, graph):
+    try:
+        return max([1 + height(succ, graph) for succ in graph.successors(node)])
+    except ValueError:
+        return 0
 
 
 def sort_by_height(nodes, graph):
+    return sorted(nodes, key=lambda n: height(n, graph))
+
+
+def render_dependencies(node):
+    return ' (' + str(node.job_dependencies) + ')' if len(node.job_dependencies) > 0 else ''
+
+
+def render_status(node):
+    status_to_display = dict({
+        'SUCCESS' : ' + COMPLETED',
+        'FAILED' : ' - FAILED',
+        'ACTIVE' : ' <- Active',
+        'INACTIVE' : ' -> Pending'
+
+    })
+    return status_to_display[node.status]
+
+
+def render_node(node, num_indents):
     """
-    Sort the nodes in graph by the longest distance to a leaf
+    Render only this node with the given indentation
 
-    Take the nodes into a subgraph, and call 'topological_sort' on that new graph
-    :param nodes: list of JobLogs
-    :param graph: networkx.Digraph
-    :return: sorted list of JobLogs
+    :param node: JobLog
+    :param num_indents: between job id and job name
+    :return: string representing this node
     """
-    subgraph = graph.subgraph(recursive_subgraph(nodes, graph))
-    return [node for node in reversed(networkx.topological_sort(subgraph)) if node in nodes]
+    return node.job_id +\
+           num_indents * '|  ' +\
+           node.job_name +\
+           render_dependencies(node) +\
+           render_status(node) + '\n'
 
 
-def render_node(log, graph, text, covered_ids, num_indents=0):
+def render_nodes(nodes, graph, rendered_nodes=set(), num_indents=1):
     """
-    :param log: JobLog
-    :param graph: networkx.Digraph
-    :param text: text to append to
-    :param covered_ids: set of job ids
-    :param num_indents: number of tabs to indent this node
-    :return: text, set of JobLogs that were covered in this render
+    Render then nodes in order of smallest associated text to largest
+
+    :param nodes:
+    :param graph:
+    :param rendered_nodes: set of nodes that have been displayed already
+    :param num_indents: number of indentations between <job_id> and <job_name>
+    :return: str representing nodes
     """
-    dependency_string = '(' + str(log.job_dependencies) + ')' if len(log.job_dependencies) > 0 else ''
-    #TODO: status string
-    # status_string = ' <- Running' if hasattr(log, 'status') and log.status == 'INACTIVE' else ''
+    node_texts = []
 
-    text += log.job_id + '|  ' * (num_indents + 1) + log.job_name + ' ' + dependency_string + '\n'
-    # text += log.job_id + '|\t' * (num_indents + 1) + log.job_name + ' ' + dependency_string + status_string + '\n'
+    for node in sort_by_height(nodes, graph):
+    # for node in nodes:
+        # We will only render the node if all of its predecessors have been rendered above it
+        if set(graph.predecessors(node)) <= rendered_nodes:
+            rendered_nodes.add(node)
 
-    covered_ids.add(log.job_id)
+            node_texts.append(render_node(node, num_indents) +
+                              render_nodes(graph.successors(node), graph, rendered_nodes, num_indents + 1))
 
-    # for successor in graph.successors(log):
-    for successor in sort_by_height(graph.successors(log), graph):
-        if set(successor.job_dependencies) <= covered_ids:
-            # Render this node too
-            text, covered_ids = render_node(successor, graph, text, covered_ids, num_indents + 1)
-
-    return text, covered_ids
+    return ''.join(sorted(node_texts, key=lambda t: len(t.split())))
 
 
 def dep_graph_to_text(graph):
     """
-    :param graph: networkx.Digraph
+    :param graph: networkx.digraph
     :return: str
     """
     text = ''
     roots = [node for node in graph.nodes() if len(graph.predecessors(node)) == 0]
-    covered_ids = set()
+    covered_logs = set()
 
-    for index, root in enumerate(sort_by_height(roots, graph)):
-    # for index, root in enumerate(roots):
-        text, covered_ids = render_node(root, graph, text, covered_ids=covered_ids, num_indents=0)
-
-    return text
+    return render_nodes(roots, graph)
 
 
 ###################################################################################################
-# MAIN
+# main
 ###################################################################################################
 
 def dependency_graph(job_logs, dependency_first=True):

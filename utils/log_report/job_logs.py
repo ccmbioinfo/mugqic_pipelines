@@ -18,9 +18,7 @@ class JobLog:
                  'status', 'exit_status', 'MUGQIC_exit_status',
                  'walltime', 'start_date', 'end_date', 'cput', 'cpu_to_real_time_ratio',
                  'mem', 'vmem', 'vmem_to_mem_ratio', 'limits', 'queue',
-                 'username', 'group', 'session', 'account',
-                 'nodes', 'path']
-
+                 'username', 'group', 'nodes', 'path']
     # You can initialize a JobLog via keyword arguments, eg:
     # JobLog(job_id='123', mem='40Gb', job_dependencies = ['456', '789'])
     def __init__(self, **kwargs):
@@ -200,7 +198,11 @@ def parse_cluster_job_log_paths(job_output_dir, job_logs):
             with open(log.path) as f:
                 for line in f.readlines():
                     if RE.search('MUGQICexitStatus:(\S+)', line):
-                        log.MUGQIC_exit_status = RE.group(1)
+                        status = RE.group(1)
+
+                        # Assign status based on the MUGQIC exit status
+                        log.MUGQIC_exit_status = status
+                        log.status = 'SUCCESS' if status == '0' else 'FAILED'
 
     return job_logs
 
@@ -223,24 +225,6 @@ def filter_by_success(job_logs, keep_successful, keep_unsuccessful):
         job_logs = [log for log in job_logs if is_successful(log)]
     elif keep_unsuccessful:
         job_logs = [log for log in job_logs if not is_successful(log)]
-
-    return job_logs
-
-
-###################################################################################################
-# ASSIGN COMPUTED FIELDS
-###################################################################################################
-
-def assign_status(job_logs):
-    for log in job_logs:
-        if hasattr(log, 'MUGQIC_exit_status') and log.MUGQIC_exit_status == '0':
-            log.status = 'SUCCESS'
-        elif hasattr(log, 'end_date'):
-            log.status = 'FAILED'
-        elif hasattr(log, 'start_date'):
-            log.status = 'ACTIVE'
-        else:
-            log.status = 'INACTIVE'
 
     return job_logs
 
@@ -314,7 +298,10 @@ def get_all_showjobs_output(job_list_filename, job_log_list):
 
     # Run a 'showjobs' query on the specified date range for this user
     try:
-        showjobs_results = run_command(['showjobs'] + start_date_option + end_date_option + user_option)
+        # showjobs_results = run_command(['showjobs'] + start_date_option + end_date_option + user_option)
+        # DEBUG
+        showjobs_results = run_command(['cat', 'rna_showjobs.txt'] + start_date_option + end_date_option + user_option)
+
     except:
         return None
 
@@ -412,18 +399,26 @@ def parse_checkjob_output(checkjob_results, job_log):
     for index, line in enumerate(checkjob_results):
         if RE.search('^job (\d+)$', line):
             conditional_assign(job_log, 'job_full_id', RE.group(1))
-        elif RE.search('^Completion Code: (\d+) *Time: (\S+)$', line):
+        elif RE.search('^State: (\S+)', line):
+            state = RE.group(1)
+            if state == 'Idle':
+                conditional_assign(job_log, 'status', 'INACTIVE')
+            elif state == 'Running':
+                conditional_assign(job_log, 'status', 'ACTIVE')
+            elif state == 'Removed':
+                conditional_assign(job_log, 'status', 'FAILED')
+        elif RE.search('^Completion Code: (\d+) +Time: (.*)$', line):
             conditional_assign(job_log, 'exit_status', RE.group(1))
             # We have to add in the current year manually
-            conditional_assign(job_log, 'end_date', datetime.strptime(RE.group(2) + str(datetime.now().year), '%a %b %d %H:%M:%S %Y'))
+            conditional_assign(job_log, 'end_date', datetime.strptime(RE.group(2) + ' ' + str(datetime.now().year), '%a %b %d %H:%M:%S %Y'))
         elif RE.search('^Creds: *user:(\S+) *group:(\S+) *class:(\S+)', line):
             conditional_assign(job_log, 'username', RE.group(1))
             conditional_assign(job_log, 'group', RE.group(2))
         # Only assign the walltime if the job has finished
         elif RE.search('^WallTime:\s+(\d+):(\d+):(\d+)', line) and hasattr(job_log, 'MUGQIC_exit_status'):
-            conditional_assign(job_log, 'walltime', timedelta(hours=RE.group(1), minutes=RE.group(2), seconds=RE.group(3)))
-        elif RE.search('^StartTime: *(\S+)$', line):
-            conditional_assign(job_log, 'start_date', datetime.strptime(RE.group(1) + str(datetime.now().year), '%a %b %d %H:%M:%S %Y'))
+            conditional_assign(job_log, 'walltime', timedelta(hours=int(RE.group(1)), minutes=int(RE.group(2)), seconds=int(RE.group(3))))
+        elif RE.search('^StartTime: (.*)$', line):
+            conditional_assign(job_log, 'start_date', datetime.strptime(RE.group(1) + ' ' + str(datetime.now().year), '%a %b %d %H:%M:%S %Y'))
         elif RE.search('^Allocated Nodes:', line):
             # This field's value is on the following line, for example
             # Allocated Nodes:
@@ -432,12 +427,17 @@ def parse_checkjob_output(checkjob_results, job_log):
             conditional_assign(job_log, 'nodes', next_line)
         elif RE.search('^OuptutFile: *(\S+):(//\S+)$', line):
             conditional_assign(job_log, 'path', os.path.abspath(RE.group(1)))
-        elif RE.search('^Submit Args:', line) and not hasattr(job_log, 'limits'):
-            if RE.search('(nodes:\d+)', line):
-                job_log.limits = RE.group(1)
-            # Add more colon-delimited information to the limits field
-            if RE.search('(ppn=\d+)', line):
-                job_log.limits = ':' + job_log.limits if hasattr(job_log, 'limits') else RE.group(1)
+        elif RE.search('^Submit Args:', line):
+            # Try to match each limit pattern
+            for pattern in ['(nodes:\d+)', '(ppn=\d+)', '(walltime=\d+:\d+:\d+)',
+                            '(vmem=\d+\S)', '(mem=\d+\S)']:
+                # If we have found a resource limitation, add to a colon-delimited text
+                # Eg. ppn=1:walltime=24:00:00:vmem=10g
+                if RE.search(pattern, line):
+                    if hasattr(job_log, 'limits'):
+                        job_log.limits += ':' + RE.group(1)
+                    else:
+                        job_log.limits = RE.group(1)
 
     return job_log
 
@@ -472,18 +472,18 @@ def create_job_logs(job_list_file, keep_successful, keep_unsuccessful, minimal_d
         id_to_showjobs_entry = get_showjobs_output(job_list_file, job_logs)
 
         for log in job_logs:
+            # Fill in fields using information from showjobs
             if id_to_showjobs_entry:
                 log = parse_showjobs_output(id_to_showjobs_entry, log)
 
+            # Fill in fields using information from checkjob
             checkjob_results = get_checkjob_output(log.job_id)
             log = parse_checkjob_output(checkjob_results, log)
 
+        # TODO: some more information can be gathered from the 'qstat' command (eg. session, account)
 
-        job_logs = assign_status(job_logs)
         job_logs = assign_cpu_to_real_time_ratio(job_logs)
         job_logs = assign_vmem_to_mem_ratio(job_logs)
 
 
     return job_logs
-
-

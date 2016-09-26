@@ -40,12 +40,13 @@ def summarize_status(job_logs):
              SUCCESS, ACTIVE, INACTIVE, FAILED
     If 'status' is not defined on all jobs, return UNDEFINED's instead
     """
+    statuses = [log.status for log in job_logs if hasattr(log, 'status')]
     # If every job has a status, return a breakdown of the jobs
-    if len(filter(lambda log: hasattr(log, 'status'), job_logs)) > 0:
-        return sum(log.status == 'SUCCESS' for log in job_logs), \
-               sum(log.status == 'ACTIVE' for log in job_logs), \
-               sum(log.status == 'INACTIVE' for log in job_logs), \
-               sum(log.status == 'FAILED' for log in job_logs)
+    if len(statuses) > 0:
+        return sum(status == 'SUCCESS' for status in statuses), \
+               sum(status == 'ACTIVE' for status in statuses), \
+               sum(status == 'INACTIVE' for status in statuses), \
+               sum(status == 'FAILED' for status in statuses)
     else:
         return UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED
 

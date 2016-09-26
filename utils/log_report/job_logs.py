@@ -20,7 +20,7 @@ class JobLog:
                  'mem', 'vmem', 'vmem_to_mem_ratio', 'limits', 'queue',
                  'username', 'group', 'nodes', 'path']
     # You can initialize a JobLog via keyword arguments, eg:
-    # JobLog(job_id='123', mem='40Gb', job_dependencies = ['456', '789'])
+    # JobLog(job_id='123', limits='ppn=2', mem='40Gb')
     def __init__(self, **kwargs):
         for key in kwargs:
             setattr(self, key, kwargs[key])
@@ -36,9 +36,13 @@ class JobLog:
 class JobDependencies:
     """
     Data container for the dependencies of a job
-    The actual values are stored as a list of job ids (eg. ['123', '456'])
+
+    You can iterate over this container, or call 'str' on it to get a colon-delimited string
     """
     def __init__(self, dependency_string):
+        """
+        :param dependency_string: str from job list file, eg '123:456'
+        """
         # Eg. '123:456' -> ['123', '456']
         self.dependencies = [id for id in dependency_string.split(':') if id != '']
 
@@ -46,18 +50,22 @@ class JobDependencies:
         return len(self.dependencies)
 
     # This allows us to iterate over instances of this class
-    # Eg. "for dep in dependencies:..."
+    # Eg. "for id in dependencies:..."
     def __iter__(self):
         return iter(self.dependencies)
 
+    # Eg: '123:456:987'
     def __str__(self):
         return ':'.join(str(dep) for dep in self.dependencies)
 
 
 class RE:
     """
-    Wrapper to make regex matching easier
-    Do the 'search', then access the results with 'group'
+    Wrapper for perl-like regex matching
+
+    Eg:
+    if RE.match(<pattern>, <text>):
+        do_something(RE.group(1), RE.group(1))
     """
     @classmethod
     def search(cls, pattern, string, flag=0):
@@ -70,6 +78,9 @@ class RE:
 
     @classmethod
     def group(cls, num):
+        """
+        :return: the 'num'th expression captured in parentheses
+        """
         return cls.groups[num - 1]
 
 
@@ -298,9 +309,7 @@ def get_all_showjobs_output(job_list_filename, job_log_list):
 
     # Run a 'showjobs' query on the specified date range for this user
     try:
-        # showjobs_results = run_command(['showjobs'] + start_date_option + end_date_option + user_option)
-        # DEBUG
-        showjobs_results = run_command(['cat', 'rna_showjobs.txt'] + start_date_option + end_date_option + user_option)
+        showjobs_results = run_command(['showjobs'] + start_date_option + end_date_option + user_option)
 
     except:
         return None
@@ -480,7 +489,7 @@ def create_job_logs(job_list_file, keep_successful, keep_unsuccessful, minimal_d
             checkjob_results = get_checkjob_output(log.job_id)
             log = parse_checkjob_output(checkjob_results, log)
 
-        # TODO: some more information can be gathered from the 'qstat' command (eg. session, account)
+        # TODO: more fields can be gathered from the 'qstat' command (eg. session, account)
 
         job_logs = assign_cpu_to_real_time_ratio(job_logs)
         job_logs = assign_vmem_to_mem_ratio(job_logs)

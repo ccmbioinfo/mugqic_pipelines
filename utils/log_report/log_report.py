@@ -8,6 +8,7 @@ Plays "controller" role of MVC
 
 import argparse
 
+# Scripts that should be located in the script directory
 from job_logs import create_job_logs
 from table_report import get_log_text_report
 from dependency_graph import dependency_graph
@@ -20,11 +21,12 @@ from dependency_graph import dependency_graph
 def parse_args():
     '''
     Build the argparse.ArgumentParser and parse arguments
-    :return: all args
+    :return: args.{job_file, report, dependency_first, depender_first, success, nosuccess, minimal_detail}
     '''
     parser = argparse.ArgumentParser(description='Display information about a set of jobs')
     parser.add_argument('job_file', help='Path to file containing jobs and associated info')
 
+    # The user must specify at least one of '--report', '--dependendency-first', or '--depender-first'
     parser.add_argument('-r', '--report', help='Display a text report summarizing the jobs and their status', action='store_true')
     parser.add_argument('-dy', '--dependency-first', help="Display an indented text showing job dependencies from first completed to last completed", action='store_true')
     parser.add_argument('-dr', '--depender-first', help="Display an indented text showing job dependencies from last completed to first completed", action='store_true')

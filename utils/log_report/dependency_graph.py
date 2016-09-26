@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 
 """
-visualize job dependencies
+Visualize job dependencies.  See 'dependency_graph' below
 
-see dependency_graph below
+This script requires networkx to function.  On the hpf, this is installed under:
+mugqic/python/2.7.11
+python/2.7.11
+python/3.4.0
 """
 
 import networkx
@@ -143,6 +146,7 @@ def dep_graph_to_text(graph):
 
 def dependency_graph(job_logs, dependencies_first=True):
     """
+    :param job_logs: iterable of JobLogs
     :param dependencies_first: whether the leftmost jobs should be the dependencies of other jobs
     :return: text representing dependency graph
     """

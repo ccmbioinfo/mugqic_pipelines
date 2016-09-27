@@ -111,6 +111,10 @@ class MemorySize:
     def __str__(self):
         return '{0:.2f}'.format(float(self.bytes) / 1024 ** 3) + ' GiB'
 
+    # We must define the '<' so we can sort the MemorySizes later
+    def __lt__(self, other):
+        return self.bytes < other.bytes
+
 
 ###################################################################################################
 # HELPERS
@@ -137,6 +141,10 @@ def run_command(cmd_list):
 
     if ret_code != 0 or output.strip() == '':
         raise Exception('Command ' + str(cmd_list) + ' failed or did not return output')
+
+    # If the output isn't a string, decode it
+    if not isinstance(output, str):
+        output = output.decode('utf-8')
 
     return output.strip()
 
@@ -310,7 +318,6 @@ def get_all_showjobs_output(job_list_filename, job_log_list):
     # Run a 'showjobs' query on the specified date range for this user
     try:
         showjobs_results = run_command(['showjobs'] + start_date_option + end_date_option + user_option)
-
     except:
         return None
 

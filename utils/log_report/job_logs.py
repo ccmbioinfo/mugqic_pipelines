@@ -135,6 +135,9 @@ def run_command(cmd_list):
     :return: stdout of command results, with leading and trailing whitespace removed
     :raises: Exception if command fails
     """
+    # DEBUG
+    # print('Running command: ' + ' '.join(cmd_list))
+
     process = subprocess.Popen(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output, err = process.communicate()
     ret_code = process.wait()
@@ -151,9 +154,12 @@ def run_command(cmd_list):
 
 def get_file_date(filename):
     """
-    :return: seconds since epoch of date file status last changed
+    :return: seconds since epoch of date file status last changed, or None if the date can't be found
     """
-    return int(os.path.getctime(filename))
+    try:
+        return int(os.path.getctime(filename))
+    except:
+        return None
 
 
 def get_user():
@@ -283,14 +289,12 @@ def get_end_date(job_log_list):
     :param job_log_list: list of JobLogs
     :return: the maximum end date of all jobs in format YYYY-MM-DD, or None if we can't find it
     """
-    # The end dates of all the jobs in Unix timestamp
     try:
-        end_date_timestamps = [int(get_file_date(log.path)) for log in job_log_list]
-    except:
-        return None
+        # The end dates of all the jobs in Unix timestamps
+        # Filter out all 'None' values when we can't find a date
+        end_date_timestamps = filter(None, [get_file_date(log.path) for log in job_log_list])
 
-    # Return the maximum date
-    try:
+        # Return the maximum date
         end_date = max(datetime.fromtimestamp(stamp) for stamp in end_date_timestamps)
         return end_date.strftime('%Y-%m-%d')
     except:
@@ -383,7 +387,13 @@ def parse_showjobs_output(id_to_showjobs_entry, job_log):
         elif RE.search('^Queue Name *: (\S+)$', line):
             job_log.queue = RE.group(1)
         elif RE.search('^Exit Code *: (\S+)$', line):
-            job_log.exit_status = RE.group(1)
+            status = RE.group(1)
+            job_log.exit_status = status
+            # status is SUCCESS if and only if exit_status == '0'
+            if status == '0':
+                conditional_assign(job_log, 'status', 'SUCCESS')
+            else:
+                conditional_assign(job_log, 'status', 'FAILED')
         elif RE.search('^End Time *: (.*)$', line):
             job_log.end_date = datetime.strptime(RE.group(1), '%a %b %d %X %Y')
 

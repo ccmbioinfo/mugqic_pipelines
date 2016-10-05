@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-
-# Epignetic pipeline for RRBS sequential data
+# Epigenetics pipeline for RRBS/WGSB data
 
 # Python Standard Modules
 import argparse
@@ -49,10 +48,13 @@ class Episeq(common.Illumina):
             merge_directory = os.path.join("merged", sample.name)
             merge_prefix = os.path.join(merge_directory, sample.name)
             mkdir_job = Job(command="mkdir -p " + merge_directory)
-            # If one readset in a sample is of a particular type, then all readsets are assumed to be of that type as well
+            # If one readset in a sample is of a particular type,
+            # then all readsets are assumed to be of that type as well
             run_type = sample.readsets[0].run_type
 
-            # Samples with only one readset do not require to be merged. A symbolic link to the FASTQ files are made instead
+            job = []
+            # Samples with only one readset do not require to be merged.
+            # A symbolic link to the FASTQ files are made instead
             if len(sample.readsets) == 1:
                 target_fastq1 = sample.readsets[0].fastq1
                 if run_type == "PAIRED_END":
@@ -106,6 +108,7 @@ class Episeq(common.Illumina):
             trim_directory = os.path.join("trimmed", sample.name)
             trim_prefix = os.path.join(trim_directory, sample.name)
             run_type = sample.readsets[0].run_type
+            output_files = []
 
             # Trim Galoree has no built in option to change the filenames of the output
             # Below are the default output names when running in paired or single mode
@@ -136,6 +139,33 @@ class Episeq(common.Illumina):
                     )
                 )], name="trim_galore." + sample.name)
             jobs.append(job)
+
+        return jobs
+
+    def bismark_prepare_genome(self):
+        """
+        Bismark requires a processed reference genome to compare with the epigenome.
+        """
+        ref_seq = config.param('bismark_prepare', 'genome_file', type='filepath')
+        local_ref_seq = os.path.join(os.getcwd(), os.path.basename(ref_seq))
+        output_idx = "Bisulfite_Genome"
+
+        # Run bismark
+        run_job = Job([local_ref_seq], [output_idx],
+                      module_entries=[["bismark_prepare", "module_bowtie2"],
+                                      ["bismark_prepare", "module_samtools"]],  # Bismark module from main no mugqic...
+                      command="""\
+                      module load bismark/0.15
+                      bismark_genome_preparation --verbose --yes --bowtie2 {work_dir}""".format(work_dir=os.getcwd()))
+
+        if not os.path.samefile(os.path.dirname(ref_seq), os.getcwd()):
+            # Copy reference file to output directory
+            move_job = Job([ref_seq], [local_ref_seq],
+                           command="cp " + ref_seq + " " + os.getcwd())
+            jobs = concat_jobs([move_job, run_job], name="bismark_prepare_genome")
+
+        else:
+            jobs = concat_jobs([run_job], name="bismark_prepare_genome")
 
         return jobs
 
@@ -378,6 +408,7 @@ class Episeq(common.Illumina):
         return [
             self.merge_fastq,
             self.trim_galore,
+            self.bismark_prepare_genome,
             self.bismark_align,
             self.bismark_methylation_caller,
             self.differential_methylated_pos,

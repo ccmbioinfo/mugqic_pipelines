@@ -146,14 +146,14 @@ class Episeq(common.Illumina):
         """
         Bismark requires a processed reference genome to compare with the epigenome.
         """
-        ref_seq = config.param('bismark_prepare', 'genome_file', type='filepath')
+        ref_seq = config.param('bismark_prepare_genome', 'genome_file', type='filepath')
         local_ref_seq = os.path.join(os.getcwd(), os.path.basename(ref_seq))
         output_idx = "Bisulfite_Genome"
 
         # Run bismark
         run_job = Job([local_ref_seq], [output_idx],
-                      module_entries=[["bismark_prepare", "module_bowtie2"],
-                                      ["bismark_prepare", "module_samtools"]],  # Bismark module from main no mugqic...
+                      module_entries=[["bismark_prepare_genome", "module_bowtie2"],
+                                      ["bismark_prepare_genome", "module_samtools"]],
                       command="""\
                       module load bismark/0.15
                       bismark_genome_preparation --verbose --yes --bowtie2 {work_dir}""".format(work_dir=os.getcwd()))
@@ -192,7 +192,7 @@ class Episeq(common.Illumina):
             job = concat_jobs([
                 mkdir_job,
                 Job(
-                    input_files,
+                    input_files.append("Bisulfite_Genome"),
                     [readset_sam],
                     [["bismark_align", "module_bowtie2"],
                      ["bismark_align", "module_samtools"]],
@@ -205,7 +205,7 @@ class Episeq(common.Illumina):
                         fastq1=input_files[0],
                         fastq2=input_files[1] if run_type == "PAIRED_END" else "",
                         basename=sample.name + '_aligned',
-                        bs_refgene=config.param("bismark_align", "bs_refgene", type="dirpath")
+                        bs_refgene="Bisulfite_Genome"
                     )
                 )], name="bismark_align." + sample.name)
 

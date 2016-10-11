@@ -45,12 +45,6 @@ def generate_readset(entries, readset_file='./episeq.readset', data_root='.'):
     :param readset_file: The output readset file to write to.
     :type readset_file: str
     """
-    try:
-        if os.path.exists(readset_file):  # Let's not clobber anything important
-            raise ValueError("Output file already exist: " + readset_file)
-    except IOError:
-        pass
-
     with open(readset_file, 'w') as readsets:
         fieldnames = ['Sample', 'Readset', 'RunType', 'FASTQ1', 'FASTQ2']
         writer = csv.DictWriter(readsets, fieldnames=fieldnames, delimiter='\t', quoting=csv.QUOTE_NONE)
@@ -81,7 +75,7 @@ def generate_readset(entries, readset_file='./episeq.readset', data_root='.'):
                 print ('%s will not be included in this run because its files are missing.' % entry[1])
                 continue  # Don't write anything about missing samples
 
-            writer.writerow({'Sample': entry[0], 'Readset': entry[1], 'RunType': entry[2],
+            writer.writerow({'Sample': entry[0], 'Readset': entry[1], 'RunType': entry[2] + "_END",
                              'FASTQ1': fastq1, 'FASTQ2': fastq2})
 
             if entry[0] not in [run[0] for run in uniq_study]:

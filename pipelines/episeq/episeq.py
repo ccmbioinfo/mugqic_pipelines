@@ -147,27 +147,30 @@ class Episeq(common.Illumina):
         Bismark requires a processed reference genome to compare with the epigenome.
         """
         ref_seq = config.param('bismark_prepare_genome', 'genome_file', type='filepath')
-        local_ref_seq = os.path.join(os.getcwd(), os.path.basename(ref_seq))
-        output_idx = "Bisulfite_Genome"
+        local_ref_seq = os.path.join('bismark_prepare_genome', os.path.basename(ref_seq))
+        output_idx = "bismark_prepare_genome/Bisulfite_Genome"
 
-        # Copy reference file to output directory
-        move_job = Job([ref_seq], [local_ref_seq],
-                        command="cp " + ref_seq + " " + os.getcwd())
-        # Run bismark
-        run_job = Job([local_ref_seq], [output_idx],
-                      module_entries=[["bismark_prepare_genome", "module_bowtie2"],
-                                      ["bismark_prepare_genome", "module_samtools"]],
-                      command="""\
-                      module load bismark/0.15
-                      bismark_genome_preparation --verbose --yes --bowtie2 {work_dir}""".format(work_dir=os.getcwd()),
-                      name="bismark_prepare_genome")
-
-        if not os.path.samefile(os.path.dirname(ref_seq), os.getcwd()):
-            jobs = [concat_jobs([move_job, run_job], name="bismark_prepare_genome")]
+        if not os.path.isfile(local_ref_seq):
+            run_job = Job([ref_seq], [output_idx],
+                          module_entries=[["bismark_prepare_genome", "module_bowtie2"],
+                                          ["bismark_prepare_genome", "module_samtools"]],
+                          command="""\
+                          module load bismark/0.15
+                          cp {src} {work_dir}
+                          bismark_genome_preparation --verbose --yes --bowtie2 {work_dir}""".format(work_dir='bismark_prepare_genome', src=ref_seq),
+                          name="bismark_prepare_genome")
         else:
-            jobs = [run_job]
+            # Run bismark
+            run_job = Job([ref_seq], [output_idx],
+                          module_entries=[["bismark_prepare_genome", "module_bowtie2"],
+                                          ["bismark_prepare_genome", "module_samtools"]],
+                          command="""\
+                          module load bismark/0.15
+                          bismark_genome_preparation --verbose --yes --bowtie2 {work_dir}""".format(work_dir='bismark_prepare_genome'),
+                          name="bismark_prepare_genome")
 
-        return jobs
+
+        return [run_job]
 
     def bismark_align(self):
 
@@ -192,7 +195,7 @@ class Episeq(common.Illumina):
             job = concat_jobs([
                 mkdir_job,
                 Job(
-                    input_files + ["Bisulfite_Genome"],
+                    input_files + ["bismark_prepare_genome/Bisulfite_Genome"],
                     [readset_sam],
                     [["bismark_align", "module_bowtie2"],
                      ["bismark_align", "module_samtools"]],

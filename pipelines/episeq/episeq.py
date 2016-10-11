@@ -150,6 +150,9 @@ class Episeq(common.Illumina):
         local_ref_seq = os.path.join(os.getcwd(), os.path.basename(ref_seq))
         output_idx = "Bisulfite_Genome"
 
+        # Copy reference file to output directory
+        move_job = Job([ref_seq], [local_ref_seq],
+                        command="cp " + ref_seq + " " + os.getcwd())
         # Run bismark
         run_job = Job([local_ref_seq], [output_idx],
                       module_entries=[["bismark_prepare_genome", "module_bowtie2"],
@@ -160,12 +163,9 @@ class Episeq(common.Illumina):
                       name="bismark_prepare_genome")
 
         if not os.path.samefile(os.path.dirname(ref_seq), os.getcwd()):
-            # Copy reference file to output directory
-            move_job = Job([ref_seq], [local_ref_seq],
-                           command="cp " + ref_seq + " " + os.getcwd())
-            jobs = concat_jobs([move_job, run_job], name="bismark_prepare_genome")
+            jobs = [concat_jobs([move_job, run_job], name="bismark_prepare_genome")]
         else:
-            jobs = run_job
+            jobs = [run_job]
 
         return jobs
 
@@ -192,20 +192,19 @@ class Episeq(common.Illumina):
             job = concat_jobs([
                 mkdir_job,
                 Job(
-                    input_files.append("Bisulfite_Genome"),
+                    input_files + ["Bisulfite_Genome"],
                     [readset_sam],
                     [["bismark_align", "module_bowtie2"],
                      ["bismark_align", "module_samtools"]],
                     command="""\
     module load bismark/0.15
-    bismark -q --non_directional {other_options} --output_dir {directory} --basename {basename} {bs_refgene} -1 {fastq1} -2 {fastq2}
+    bismark -q --non_directional {other_options} --output_dir {directory} --basename {basename} ./Bisulfite_Genome -1 {fastq1} -2 {fastq2}
     """.format(
                         directory=align_directory,
                         other_options=config.param("bismark_align", "other_options"),
                         fastq1=input_files[0],
                         fastq2=input_files[1] if run_type == "PAIRED_END" else "",
-                        basename=sample.name + '_aligned',
-                        bs_refgene="Bisulfite_Genome"
+                        basename=sample.name + '_aligned'
                     )
                 )], name="bismark_align." + sample.name)
 

@@ -156,16 +156,16 @@ class Episeq(common.Illumina):
                                       ["bismark_prepare_genome", "module_samtools"]],
                       command="""\
                       module load bismark/0.15
-                      bismark_genome_preparation --verbose --yes --bowtie2 {work_dir}""".format(work_dir=os.getcwd()))
+                      bismark_genome_preparation --verbose --yes --bowtie2 {work_dir}""".format(work_dir=os.getcwd()),
+                      name="bismark_prepare_genome")
 
         if not os.path.samefile(os.path.dirname(ref_seq), os.getcwd()):
             # Copy reference file to output directory
             move_job = Job([ref_seq], [local_ref_seq],
                            command="cp " + ref_seq + " " + os.getcwd())
             jobs = concat_jobs([move_job, run_job], name="bismark_prepare_genome")
-
         else:
-            jobs = concat_jobs([run_job], name="bismark_prepare_genome")
+            jobs = run_job
 
         return jobs
 

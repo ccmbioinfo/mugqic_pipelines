@@ -38,7 +38,6 @@ def generate_readset(entries, readset_file='./episeq.readset', data_root='.'):
     eligible, the first file in the list is taken. Unless otherwise specified, the current working
     directory is used as the search location.
 
-    :raise IOError: Will refuse to clobber any existing files.
     :param data_root: The directory which we use to look for fastq/bam files.
     :type data_root: str
     :param entries: A set of sample information that is parsed from the SRA run table.

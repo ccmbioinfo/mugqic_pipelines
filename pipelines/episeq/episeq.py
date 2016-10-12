@@ -148,7 +148,7 @@ class Episeq(common.Illumina):
         """
         ref_seq = config.param('bismark_prepare_genome', 'genome_file', type='filepath')
         local_ref_seq = os.path.join('bismark_prepare_genome', os.path.basename(ref_seq))
-        output_idx = "bismark_prepare_genome/Bisulfite_Genome"
+        output_idx = "Bisulfite_Genome"
 
         if not os.path.isfile(local_ref_seq):
             run_job = Job([ref_seq], [output_idx],
@@ -156,8 +156,8 @@ class Episeq(common.Illumina):
                                           ["bismark_prepare_genome", "module_samtools"]],
                           command="""\
                           module load bismark/0.15
-                          cp {src} {work_dir}
-                          bismark_genome_preparation --verbose --yes --bowtie2 {work_dir}""".format(work_dir='bismark_prepare_genome', src=ref_seq),
+                          cp {src} .
+                          bismark_genome_preparation --verbose --bowtie2 .""".format(src=ref_seq),
                           name="bismark_prepare_genome")
         else:
             # Run bismark
@@ -166,7 +166,7 @@ class Episeq(common.Illumina):
                                           ["bismark_prepare_genome", "module_samtools"]],
                           command="""\
                           module load bismark/0.15
-                          bismark_genome_preparation --verbose --yes --bowtie2 {work_dir}""".format(work_dir='bismark_prepare_genome'),
+                          bismark_genome_preparation --verbose --bowtie2 .""",
                           name="bismark_prepare_genome")
 
 
@@ -195,13 +195,13 @@ class Episeq(common.Illumina):
             job = concat_jobs([
                 mkdir_job,
                 Job(
-                    input_files + ["bismark_prepare_genome/Bisulfite_Genome"],
+                    input_files + ["Bisulfite_Genome"],
                     [readset_sam],
                     [["bismark_align", "module_bowtie2"],
                      ["bismark_align", "module_samtools"]],
                     command="""\
     module load bismark/0.15
-    bismark -q --non_directional {other_options} --output_dir {directory} --basename {basename} ./Bisulfite_Genome -1 {fastq1} -2 {fastq2}
+    bismark -q --non_directional {other_options} --output_dir {directory} --basename {basename} . -1 {fastq1} -2 {fastq2}
     """.format(
                         directory=align_directory,
                         other_options=config.param("bismark_align", "other_options"),

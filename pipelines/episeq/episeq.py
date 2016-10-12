@@ -169,7 +169,6 @@ class Episeq(common.Illumina):
     bismark_genome_preparation --verbose --bowtie2 .""",
                           name="bismark_prepare_genome")
 
-
         return [run_job]
 
     def bismark_align(self):

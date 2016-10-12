@@ -1,7 +1,7 @@
 #!/bin/bash
 
 /hpf/projects/brudno/lmichael/mugqic_pipelines/pipelines/episeq/episeq.py \
- -s 1-7\
+ -s 1-7 \
  -o /hpf/projects/brudno/lmichael/episeq_run/output \
  -j pbs \
  -l debug \

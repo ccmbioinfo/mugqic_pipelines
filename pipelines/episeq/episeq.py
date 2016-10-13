@@ -108,6 +108,7 @@ class Episeq(common.Illumina):
             trim_directory = os.path.join("trimmed", sample.name)
             trim_prefix = os.path.join(trim_directory, sample.name)
             run_type = sample.readsets[0].run_type
+            protocol = sample.readsets[0].library
             output_files = []
 
             # Trim Galoree has no built in option to change the filenames of the output
@@ -129,9 +130,10 @@ class Episeq(common.Illumina):
                     output_files,
                     command="""\
     module load trim_galore/0.4.1
-    trim_galore --rrbs {library_type} {other_options} --output_dir {directory} {fastq1} {fastq2}
+    trim_galore {protocol} {library_type} {other_options} --output_dir {directory} {fastq1} {fastq2}
     """.format(
                         library_type="--non_directional --paired" if run_type == "PAIRED_END" else "",
+                        protocol = '--rrbs' if protocol == 'RRBS' else '',
                         other_options=config.param("trim_galore", "other_options"),
                         directory=trim_directory,
                         fastq1=input_files[0],

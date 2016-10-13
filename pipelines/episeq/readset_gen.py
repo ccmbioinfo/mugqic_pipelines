@@ -25,7 +25,7 @@ def parse_manifest(manifest_file):
         reader = csv.DictReader(manifest, delimiter='\t', quoting=csv.QUOTE_NONE,
                                 skipinitialspace=True, strict=True)
         entries = [[line['SRA_Sample_s'], line['Run_s'], line['LibraryLayout_s'], line['SRA_Study_s'],
-                    line['Assay_Type_s'], line['LibrarySelection']] for line in reader]
+                    line['Assay_Type_s'], line['LibrarySelection_s']] for line in reader]
     return entries
 
 

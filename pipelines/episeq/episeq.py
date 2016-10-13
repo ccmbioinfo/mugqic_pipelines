@@ -130,10 +130,11 @@ class Episeq(common.Illumina):
                     output_files,
                     command="""\
     module load trim_galore/0.4.1
-    trim_galore {protocol} {library_type} {other_options} --output_dir {directory} {fastq1} {fastq2}
+    trim_galore {protocol} {library_type} {non_directional} {other_options} --output_dir {directory} {fastq1} {fastq2}
     """.format(
-                        library_type="--non_directional --paired" if run_type == "PAIRED_END" else "",
-                        protocol = '--rrbs' if protocol == 'RRBS' else '',
+                        library_type="--paired" if run_type == "PAIRED_END" else "",
+                        protocol='--rrbs' if protocol == 'RRBS' else '',
+                        non_directional='--non_directional' if protocol == 'RRBS' and run_type == 'PAIRED_END' else '',
                         other_options=config.param("trim_galore", "other_options"),
                         directory=trim_directory,
                         fastq1=input_files[0],

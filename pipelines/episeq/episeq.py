@@ -134,8 +134,6 @@ class Episeq(common.Illumina):
 
         jobs = []
         for sample in self.samples:
-            output_files = []
-
             for readset in sample.readsets:
                 run_type = readset.run_type
                 protocol = readset.library
@@ -143,6 +141,7 @@ class Episeq(common.Illumina):
                 fq1_out = os.path.join(trim_directory, os.path.splitext(readset.fastq1))
                 fq2_out = os.path.join(trim_directory, os.path.splitext(readset.fastq2))
                 # trimmed/sample.name/readset.name/sample.name_readset.name_R1_val_1.fq.gz
+                output_files = []
 
                 # Trim Galoree has no built in option to change the filenames of the output
                 # Below are the default output names when running in paired or single mode
@@ -159,10 +158,12 @@ class Episeq(common.Illumina):
                     Job(
                         input_files,
                         output_files,
+                        ['trim_galore', 'module_fastqc'],
                         command="""\
     module load trim_galore/0.4.1
-    trim_galore {protocol} {library_type} {non_directional} {other_options} --output_dir {directory} {fastq1} {fastq2}\
-    --fastqc --fastqc_args "--outdir {directory} --dir {directory} --threads
+    module load cutadapt/1.10
+    trim_galore {protocol} {library_type} {non_directional} {other_options} --output_dir {directory} --fastqc\
+    --fastqc_args "--outdir {directory} --dir {directory} --threads" {fastq1} {fastq2}
         """.format(
                             library_type="--paired" if run_type == "PAIRED_END" else "",
                             protocol='--rrbs' if protocol == 'RRBS' else '',
@@ -175,7 +176,6 @@ class Episeq(common.Illumina):
                         )
                     )], name="trim_galore." + readset.name)
                 jobs.append(job)
-
         return jobs
 
     def bismark_align(self):

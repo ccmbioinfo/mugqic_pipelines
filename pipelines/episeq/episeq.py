@@ -139,7 +139,7 @@ class Episeq(common.Illumina):
                         directory=trim_directory,
                         fastq1=input_files[0],
                         fastq2=input_files[1] if run_type == "PAIRED_END" else ""
-                    )
+                    )  # Add --fastqc?
                 )], name="trim_galore." + sample.name)
             jobs.append(job)
 

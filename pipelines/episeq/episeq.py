@@ -96,55 +96,6 @@ class Episeq(common.Illumina):
 
         return jobs
 
-    def trim_galore(self):
-
-        """
-        This step trims raw FASTQ files for quality control using Trim Galore! [link]
-        """
-
-        jobs = []
-        for sample in self.samples:
-            merge_prefix = os.path.join("merged", sample.name, sample.name)
-            trim_directory = os.path.join("trimmed", sample.name)
-            trim_prefix = os.path.join(trim_directory, sample.name)
-            run_type = sample.readsets[0].run_type
-            protocol = sample.readsets[0].library
-            output_files = []
-
-            # Trim Galoree has no built in option to change the filenames of the output
-            # Below are the default output names when running in paired or single mode
-            if run_type == "PAIRED_END":
-                input_files = [merge_prefix + "_R1.fastq.gz",
-                               merge_prefix + "_R2.fastq.gz"]
-                output_files = [trim_prefix + "_R1_val_1.fq.gz",
-                                trim_prefix + "_R2_val_2.fq.gz"]
-            elif run_type == "SINGLE_END":
-                input_files = [merge_prefix + "_R1.fastq.gz"]
-                output_files = [trim_prefix + "_R1_trimmed.fq.gz"]
-
-            mkdir_job = Job(command="mkdir -p " + trim_directory)
-            job = concat_jobs([
-                mkdir_job,
-                Job(
-                    input_files,
-                    output_files,
-                    command="""\
-    module load trim_galore/0.4.1
-    trim_galore {protocol} {library_type} {non_directional} {other_options} --output_dir {directory} {fastq1} {fastq2}
-    """.format(
-                        library_type="--paired" if run_type == "PAIRED_END" else "",
-                        protocol='--rrbs' if protocol == 'RRBS' else '',
-                        non_directional='--non_directional' if protocol == 'RRBS' and run_type == 'PAIRED_END' else '',
-                        other_options=config.param("trim_galore", "other_options"),
-                        directory=trim_directory,
-                        fastq1=input_files[0],
-                        fastq2=input_files[1] if run_type == "PAIRED_END" else ""
-                    )
-                )], name="trim_galore." + sample.name)
-            jobs.append(job)
-
-        return jobs
-
     def bismark_prepare_genome(self):
         """
         Bismark requires a processed reference genome to compare with the epigenome.
@@ -173,6 +124,59 @@ class Episeq(common.Illumina):
                           name="bismark_prepare_genome")
 
         return [run_job]
+
+    def trim_galore(self):
+
+        """
+        This step trims raw FASTQ files for quality control using Trim Galore! and runs fastqc at the end,
+        courtesy of trim galore.
+        """
+
+        jobs = []
+        for sample in self.samples:
+            output_files = []
+
+            for readset in sample.readsets:
+                run_type = readset.run_type
+                protocol = readset.library
+                trim_directory = os.path.join("trimmed", sample.name, readset.name)
+                fq1_out = os.path.join(trim_directory, os.path.splitext(readset.fastq1))
+                fq2_out = os.path.join(trim_directory, os.path.splitext(readset.fastq2))
+                # trimmed/sample.name/readset.name/sample.name_readset.name_R1_val_1.fq.gz
+
+                # Trim Galoree has no built in option to change the filenames of the output
+                # Below are the default output names when running in paired or single mode
+                if run_type == "PAIRED_END":
+                    input_files = [readset.fastq1, readset.fastq2]
+                    output_files = [fq1_out + "_R1_val_1.fq.gz", fq2_out + "_R2_val_2.fq.gz"]
+                elif run_type == "SINGLE_END":
+                    input_files = [readset.fastq1]
+                    output_files = [fq1_out + "_R1_trimmed.fq.gz"]
+
+                mkdir_job = Job(command="mkdir -p " + trim_directory)
+                job = concat_jobs([
+                    mkdir_job,
+                    Job(
+                        input_files,
+                        output_files,
+                        command="""\
+    module load trim_galore/0.4.1
+    trim_galore {protocol} {library_type} {non_directional} {other_options} --output_dir {directory} {fastq1} {fastq2}\
+    --fastqc --fastqc_args "--outdir {directory} --dir {directory} --threads
+        """.format(
+                            library_type="--paired" if run_type == "PAIRED_END" else "",
+                            protocol='--rrbs' if protocol == 'RRBS' else '',
+                            non_directional='--non_directional' if run_type == 'PAIRED_END' and protocol == 'RRBS'
+                            else '',
+                            other_options=config.param("trim_galore", "other_options"),
+                            directory=trim_directory,
+                            fastq1=input_files[0],
+                            fastq2=input_files[1] if run_type == "PAIRED_END" else ""
+                        )
+                    )], name="trim_galore." + readset.name)
+                jobs.append(job)
+
+        return jobs
 
     def bismark_align(self):
 

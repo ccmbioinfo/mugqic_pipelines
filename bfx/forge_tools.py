@@ -322,7 +322,7 @@ def roh(input, output, roh_file):
             ["roh", "module_mugqic_tools"]
         ],
         command="""\
-{script_path}/sripts/annotate_roh.pl \\
+{script_path}/scripts/annotate_roh.pl \\
   --rohFile {roh_file} \\
   --vcf {input} > {output}""".format(
             script_path=config.param("DEFAULT", "forge_location"),

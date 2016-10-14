@@ -106,8 +106,8 @@ foreach my $sampleName (@sampleNames)
 
 	(-e "${VCF_FOLDER}/${sampleName}.flt.vcf") and print STDERR "Variants file ${VCF_FOLDER}/${sampleName}.flt.vcf already exists. OVERWRITING this file.\n";
 	runCommand("cp ${IN_VCF_FOLDER}/${sampleName}.flt.vcf ${VCF_FOLDER}/${sampleName}.flt.vcf");
-
 	updateVCFList("${sampleName}.flt.vcf", $sampleName, $vcflist);
+
 }
 
 if (!$skipBuildingFile)

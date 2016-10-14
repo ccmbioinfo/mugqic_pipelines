@@ -12,7 +12,7 @@ sub replaceDelimiters($);
 
 (@ARGV == 0) and usage("");
 
-my ($vcfFile, $exonVarsFile, $allVarsFile, $allVarsExtendedFile, $dbsnpFile, $thgFile, $consFile, $tableFile, $siftFile, $polyphenFile, $mtFile, $lrtFile, $gerpFile, $dgvFile, $segdupFile, $includeAll, $includeSynonymous, $includeIntronic, $includeUTR, $help, $verbose);
+my ($vcfFile, $exonVarsFile, $allVarsFile, $allVarsExtendedFile, $dbsnpFile, $thgFile, $consFile, $tableFile, $siftFile, $polyphenFile, $mtFile, $lrtFile, $gerpFile, $dgvFile, $segdupFile, $exacFile, $clinvarFile, $includeAll, $includeSynonymous, $includeIntronic, $includeUTR, $help, $verbose);
 GetOptions(	'vcf=s' => \$vcfFile,			#the original VCF file that was annotated - needed only to retain the VCF header
 			'exonvars=s' => \$exonVarsFile, #annovar_out.exonic_variant_function
 			'allvars=s' => \$allVarsFile,   #annovar_out.variant_function (use to check if there are any splice site SNPs)
@@ -28,6 +28,8 @@ GetOptions(	'vcf=s' => \$vcfFile,			#the original VCF file that was annotated - 
 			'gerp=s' => \$gerpFile,         #annovar_out.hg19_ljb_gerp+++_dropped
 			'dgv=s' => \$dgvFile,           #annovar_out.hg19_dgv
 			'segdup=s' => \$segdupFile,     #annovar_out.hg19_genomicSuperDups
+			'exac=s' => \$exacFile,		#annovar_out.hg19_exac03
+			'clinvar=s' => \$clinvarFile,	#annovar_out.hg19_clinvar
 			'includeAll' => \$includeAll,
 			'includeSynonymous' => \$includeSynonymous,
 			'includeIntronic' => \$includeIntronic,
@@ -268,7 +270,6 @@ sub handleVariantFunctionLine($$$$)
 }
 # Now all mutations that we are going to process are in the %soi hash table
 
-
 if ($dbsnpFile)
 {
 	while (<DBSNP_FILE>)
@@ -324,39 +325,57 @@ if ($tableFile)
 
 		    $variantInfoToAdd{$varKey} .= ";THGMAF=$line[5]";
 
-		    my $numScore = $line[5];
+		    my $numScore = $line[7];
 		    if (looks_like_number($numScore)) {
 			$variantInfoToAdd{$varKey} .= ";SIFT=$numScore";
 		    }
 
-		    my $numScore = $line[7];
+		    my $numScore = $line[9];
 		    if (looks_like_number($numScore)) {
 			$variantInfoToAdd{$varKey} .= ";PP2_HDIV=$numScore"; # Originally, just "PP2" -- let's se if this is okay
 		    }
 
-		    my $numScore = $line[9];
+		    my $numScore = $line[11];
 		    if (looks_like_number($numScore)) {
 			$variantInfoToAdd{$varKey} .= ";PP2_HVAR=$numScore"; 
 		    }
 
-		    my $numScore = $line[11];
+		    my $numScore = $line[13];
 		    if (looks_like_number($numScore)) {
 			$variantInfoToAdd{$varKey} .= ";LRT=$numScore";
 		    }
 
-		    my $numScore = $line[13];
+		    my $numScore = $line[15];
 		    if (looks_like_number($numScore)) {
 			$variantInfoToAdd{$varKey} .= ";MT=$numScore";
 		    }
 
-		    my $numScore = $line[26];
+		    my $numScore = $line[27];
+		    if (looks_like_number($numScore)) {
+			$variantInfoToAdd{$varKey} .= ";CADD_Phred=$numScore";
+		    }
+
+		    my $numScore = $line[28];
 		    if (looks_like_number($numScore)) {
 			$variantInfoToAdd{$varKey} .= ";GERP=$numScore";
 		    }
 
-		    my $numScore = $line[27];
+		    my $numScore = $line[32];
 		    if (looks_like_number($numScore)) {
-			$variantInfoToAdd{$varKey} .= ";PHC=$numScore";
+			$variantInfoToAdd{$varKey} .= ";EXAC=$numScore";
+		    }
+
+		    # Modified:
+		    # 	CLINVAR output had ";"-separated fields which could have caused problems when trying to separate other field, so here
+		    # 	the separator of fields have been changed from ";" to ":" 
+		    if ($line[33] ne ".") {
+		        $line[33] =~ tr/;/:/;
+		    	$variantInfoToAdd{$varKey} .= ";CLINVAR=$line[33]";
+		    }
+
+		    if ($line[34] ne ".") {
+		        $line[34] =~ tr/;/:/;
+		        $variantInfoToAdd{$varKey} .= ";PHC=$line[34]";
 		    }
 	        }
 	}

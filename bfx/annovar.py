@@ -66,12 +66,13 @@ def combine_annovar_files(vcf_file, exonic_vars, var_fn, var_fn_extended, table_
             ['combine_annovar_files', 'module_mugqic_tools']
         ],
         command="""\
-/hpf/largeprojects/ccmbio/kng/mcgill_jacek/mugqic-2.2.0/utils/combine_annovar_files.pl \\
+{script_path}/scripts/combine_annovar_files.pl \\
   --vcf {vcf_file} \\
   --exonvars {exonic_vars} \\
   --allvars {var_fn} \\
   --allvarsExtended {var_fn_extended} \\
   --table {table_file}{other_options} > {output}""".format(
+	    script_path=config.param("DEFAULT","forge_location"),
             vcf_file=vcf_file,
             exonic_vars=exonic_vars,
             var_fn=var_fn,

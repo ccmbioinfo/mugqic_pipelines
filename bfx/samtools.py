@@ -193,7 +193,7 @@ def bcftools_varfilter(input, output, ini_section="bcftools_varfilter"):
     return Job(
         [input],
         [output],
-        [['bcftools_view', 'module_bcftools']],
+        [['bcftools_varfilter', 'module_samtools']],
         command="""\
 perl {vcfutils} varFilter {other_options}{input} \\
   > {output}""".format(

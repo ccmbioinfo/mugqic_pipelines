@@ -8,7 +8,7 @@ sub fitsSSEProfile($$$$$$$$);
 
 (@ARGV == 0) and usage("");
 
-my ($vcfFile, $variantType, $minReadCount, $minAltCount, $minSNVReadRatio, $minIndelReadRatio, $minQuality, $minMapQ, $cnvMaxP, $maxCNVs, $filterVarTypes, $keepOnlyVarTypes, $filterSSE, $filterRandoms, $prevSeenThreshold, $maxMAF, $printFilteredFile, $doNotRemoveFiltered, $help, $verbose);
+my ($vcfFile, $variantType, $minReadCount, $minAltCount, $minSNVReadRatio, $minIndelReadRatio, $minQuality, $minMapQ, $cnvMaxP, $maxCNVs, $filterVarTypes, $keepOnlyVarTypes, $filterSSE, $filterRandoms, $prevSeenThreshold, $maxMAF, $minQD, $minReadPosRankSumIndel, $maxFSIndel, $minReadPosRankSumSNP, $maxFSSNP, $minMapQSNP, $minMQRankSumSNP, $printFilteredFile, $doNotRemoveFiltered, $help, $verbose);
 GetOptions(	'vcf=s' => \$vcfFile,
 			'variantType=s', \$variantType,
 			'minReadCount=i', \$minReadCount,
@@ -25,6 +25,13 @@ GetOptions(	'vcf=s' => \$vcfFile,
 			'filterRandoms', \$filterRandoms,
 			'prevSeenThreshold=i', \$prevSeenThreshold,
 			'maxMAF=f', \$maxMAF,
+			'minQD=f', \$minQD,
+			'minReadPosRankSumIndel=f', \$minReadPosRankSumIndel,
+			'maxFSIndel=f', \$maxFSIndel,
+			'minReadPosRankSumSNP=f', \$minReadPosRankSumSNP,
+			'maxFSSNP=f', \$maxFSSNP,
+			'minMapQSNP=i', \$minMapQSNP,
+			'minMQRankSumSNP=f', \$minMQRankSumSNP,
 			'printFiltered=s' => \$printFilteredFile,
 			'doNotRemoveFiltered' => \$doNotRemoveFiltered,
 			'help|h' => \$help,
@@ -51,6 +58,13 @@ my $variantTypeStrict = 0;
 (defined $filterVarTypes) or $filterVarTypes = "";
 (defined $prevSeenThreshold) or $prevSeenThreshold = 9999999;
 (defined $maxMAF) or $maxMAF = 9;
+(defined $minQD) or $minQD = 2.0;
+(defined $minReadPosRankSumIndel) or $minReadPosRankSumIndel = -20.0;
+(defined $maxFSIndel) or $maxFSIndel = 200.0;
+(defined $minReadPosRankSumSNP) or $minReadPosRankSumSNP = -8.0;
+(defined $maxFSSNP) or $maxFSSNP = 60.0;
+(defined $minMapQSNP) or $minMapQSNP = 30;
+(defined $minMQRankSumSNP) or $minMQRankSumSNP = -12.5;
 (defined $filterSSE) or $filterSSE = 1;
 my $numCNVs = 0;
 
@@ -141,6 +155,11 @@ while(<VCF_FILE>)
 	my $thgMaf = 0;
 	my $evsMaf = 0;
 	my $cnvPval = 0;
+
+	my $qd = 0;
+	my $readposranksum = 0;
+	my $fs = 0;
+	my $mqranksum = 0;
 	
 	($vcfInfo =~ /VT=([^;\t]+)/)		and $variation = $1;
 	($vcfInfo =~ /ALTC=([^;\t]+)/)		and $altCount = $1;
@@ -151,8 +170,21 @@ while(<VCF_FILE>)
 	($vcfInfo =~ /PSN=([^;\t]+)/)		and $numPrevSamples = $1;
 	($vcfInfo =~ /THGMAF=([^;\t]+)/)	and $thgMaf = $1;
 	($vcfInfo =~ /EVSMAF=([^;\t]+)/)	and $evsMaf = $1;
+	($vcfInfo =~ /QD=([^;\t]+)/)		and $qd = $1;
+	($vcfInfo =~ /ReadPosRankSum=([^;\t]+)/)	and $readposranksum = $1;
+	($vcfInfo =~ /FS=([^;\t]+)/)		and $fs = $1;
+	($vcfInfo =~ /MQRankSum=([^;\t]+)/)	and $mqranksum = $1;
 	
-	my $isIndel = ($vcfLine[3] eq "-" or $vcfLine[4] eq "-");
+
+	
+
+	#my $isIndel = ($vcfLine[3] eq "-" or $vcfLine[4] eq "-");
+	my $isIndel = (length($vcfLine[3]) != length($vcfLine[4]));
+	my $isSNP = (length($vcfLine[3]) == length($vcfLine[4]));
+
+
+
+
 	my $isCNV = 0;
 	if ($vcfInfo =~ /SVTYPE=CNV/)
 	{
@@ -163,64 +195,77 @@ while(<VCF_FILE>)
 	
 	if ($filterVarTypes && $variation && $filterVarTypes =~ /^$variation$|^$variation,|,$variation$|,$variation,/)
 	{
-		$newFilter = "Variant type excluded";
+		$newFilter = "Variant_type_excluded";
 	}
 	elsif ($keepOnlyVarTypes && $variation && $keepOnlyVarTypes !~ /^$variation$|^$variation,|,$variation$|,$variation,/)
 	{
-		$newFilter = "Variant type excluded";
+		$newFilter = "Variant_type_excluded";
 	}
 	if ($isCNV)
 	{
 		if ($isCNV and defined $cnvMaxP and $cnvPval > $cnvMaxP)
 		{
-			$newFilter = "CNV P val > $cnvMaxP";
+			$newFilter = "CNV_P_val>$cnvMaxP";
 		}
 		elsif ($isCNV and not exists $topCNVs{"$chr\t$pos"})
 		{
-			$newFilter = "CNV not in top $maxCNVs CNVs";
+			$newFilter = "CNV_not_in_top_$maxCNVs"+"_CNVs";
 		}
 	}
 	else
 	{
 		if (defined $qual and $qual < $minQuality)
 		{
-			$newFilter = "Qual < $minQuality";
+			$newFilter = "Qual<$minQuality";
 		}
 		elsif ($readCount < $minReadCount)
 		{
-			$newFilter = "Read depth < $minReadCount";
+			$newFilter = "Read_depth<$minReadCount";
 		}
 		elsif ($altCount < $minAltCount)
 		{
-			$newFilter = "Alt count < $minAltCount";
+			$newFilter = "Alt_count<$minAltCount";
 		}
 		elsif ($mapQ < $minMapQ)
 		{
-			$newFilter = "MapQ < $minMapQ";
+			$newFilter = "MapQ<$minMapQ";
 		}
 		elsif ($numPrevSamples > $prevSeenThreshold)
 		{
-			$newFilter = "num prev seen samples > $prevSeenThreshold";
+			$newFilter = "num_prev_seen_samples>$prevSeenThreshold";
 		}
 		elsif ($thgMaf > $maxMAF or $evsMaf > $maxMAF)
 		{
-			$newFilter = "MAF > $maxMAF";
+			$newFilter = "MAF>$maxMAF";
 		}
 		elsif ($variantTypeStrict and ($variation =~ /extended/))
 		{
-			$newFilter = "Extended splicing variant";
+			$newFilter = "Extended_splicing_variant";
 		}
 		elsif (!$isIndel and ($altCount / $readCount) < $minSNVReadRatio)
 		{
-			$newFilter = "Alt read ratio < $minSNVReadRatio";
+			$newFilter = "Alt_read_ratio<$minSNVReadRatio";
 		}
 		elsif ($isIndel and ($altCount / $readCount) < $minIndelReadRatio)
 		{
-			$newFilter = "Alt read ratio < $minIndelReadRatio";
+			$newFilter = "Alt_read_ratio<$minIndelReadRatio";
 		}
+
+
+		elsif ($isIndel and ($readposranksum < $minReadPosRankSumIndel or $qd < $minQD or $fs > $maxFSIndel))
+		{
+			$newFilter = "Indel_failed_GATKHardIndel_filter(ReadPosRankSum,QD_or_FS)";
+		}	
+
+		elsif ($isSNP and ($mapQ < $minMapQSNP or $mqranksum < $minMQRankSumSNP or $readposranksum < $minReadPosRankSumSNP or $qd < $minQD or $fs > $maxFSSNP))
+		{
+			$newFilter = "SNP_failed_GATKHardSNP_filter(MQ,MQRanksum,ReadPosRankSum,QD_or_FS)";
+		}	
+
+
 		elsif ($filterRandoms and $chr =~ /random|Un_/)
 		{
-			$newFilter = "random or unassembled chromosome";
+			$newFilter = "random_or_unassembled_chromosome";
 		}
 		if ($filterSSE and $dp4 and $pv4)
 		{
@@ -229,7 +274,7 @@ while(<VCF_FILE>)
 			if (defined $strandBias and defined $baseQBias and defined $mapQBias and defined $endDistBias
 				and fitsSSEProfile($fwdRef, $revRef, $fwdAlt, $revAlt, $strandBias, $baseQBias, $mapQBias, $endDistBias))
 			{
-				$newFilter = "Probable SSE";
+				$newFilter = "Probable_SSE";
 			}
 		}
 	}

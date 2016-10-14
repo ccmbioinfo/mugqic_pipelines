@@ -217,6 +217,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $GATK_JAR \\
   --analysis_type HaplotypeCaller {options} \\
   --reference_sequence {reference_sequence} \\
   --input_file {input} \\
+  --dontUseSoftClippedBases \\
   --out {output}{intervals}{exclude_intervals}""".format(
         tmp_dir=config.param('gatk_haplotype_caller', 'tmp_dir'),
         java_other_options=config.param('gatk_haplotype_caller', 'java_other_options'),

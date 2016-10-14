@@ -3,7 +3,7 @@
 Episeq Pipeline
 ===============
 
-The Episeq pipeline takes FASTQ or BAM files (unsorted) as input
+The Episeq pipeline takes FASTQ or BAM files (unsorted) as input and produces an differential analysis in the methylome. Currently, only WGSB and RRSB are supported.
 
 
 Usage
@@ -59,36 +59,41 @@ Steps:
 4- bismark_methylation_caller
 5- differential_methylated_pos
 6- differential_methylated_regions
-
 ```
+
 1- merge_fastq
 --------------
-This step merges FASTQ files for samples with multiple readsets or creates symbolic links of FASTQ
-files for samples with only a single readset
+This step merges multiple readsets that belong to the same sample. Merging is done by simply concatenating the `FASTQ` files. The output is a sample with one readset that has either a pair of FASTQs (paired end libraries) or one FASTQ (single end libraries). This step can be ignored if the readset contains `.BAM` files.
 
 2- trim_galore
 --------------
-This step trims raw FASTQ files for quality control using Trim Galore! [link]
+This step helps improve the alignment efficiency by performing quality trimming via the open source package Trim Galore!. Briefly, this package addresses many of the issues that occur when analyzing RRBS libraries. The pipeline does trimming using only the default options in Trim Galore!. Additional options such as stricter or more relaxed trimming can be entered through the `other_options` parameter in the configuration file. Output files are gzipped `.fq` files. This step can be ignored if the readset contains `.BAM` files.
 
-3- bismark_align
+3- bismark_prepare_genome
+-------------------------
+This step takes in a reference genome fasta file and convert the sequence for methylation alignment and sequencing. This is a pre-processing step for bismark_align. The step will copy the reference genome to the output directory (if needed), and create the methylome sequence in the directory called `Bisulfite_Genome`, which contains two subdirectories within it. This step only needs to be done once within a project's output folder.
+
+4- bismark_align
 ----------------
-This step aligns trimmed reads to a bisulfite converted reference genome using Bismark [link]
+This step aligns the trimmed reads to a reference genome from `bismark_prepare_genome`. The alignment is done by the open source package Bismark using the default options for RRBS libraries. Additional options can be entered through the "`other_options`" parameter in the configuration file. Output files are `.sam` files. This step can be ignored if the readset contains `.BAM` files
 
-4- bismark_methylation_caller
+5- bismark_methylation_caller
 -----------------------------
 This step extracts the methylation call for every single cytosine analyzed from the Bismark result files.
 The following input files are accepted:
     1.	Bismark result files from previous alignment step
-    2.	BAM files (unsorted) from readset file
+    2.	`BAM` files (unsorted) from readset file
 
-5- differential_methylated_pos
+6- differential_methylated_pos
 ------------------------------
 This step finds a list of differentially methylated CpG sites with respect to a categorical
-phenotype (controls vs. cases). The BedGraph files from the previous methylation calling step are first combined
-to a BSRaw object with the R package BiSeq. Then, the dmpFinder function from the R package minfi is used to
+phenotype (controls vs. cases). The `BedGraph` files from the previous methylation calling step are first combined
+to a `BSRaw` object with the R package `BiSeq`. Then, the `dmpFinder` function from the R package `minfi` is used to
 compute a F-test statistic on the beta values for the assayed CpGs in each sample. A p-value is then returned
 for each site with the option of correcting them for multiple testing. Differential analysis is done for each
 contrast specified in the design file
 
-6- differential_methylated_regions
+7- differential_methylated_regions
 ----------------------------------
+This step runs the bumphunting algorithm to locate regions of differential methylation. CpG sites with an average methylation level difference < `delta_beta_threshold` between cases and controls are ignored in the permutation scheme. 
+WARNING: This step is slow and requires large amounts of memory!

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-
-# Epignetic pipeline for RRBS sequential data
+# Epigenetics pipeline for RRBS/WGSB data
 
 # Python Standard Modules
 import argparse
@@ -49,10 +48,13 @@ class Episeq(common.Illumina):
             merge_directory = os.path.join("merged", sample.name)
             merge_prefix = os.path.join(merge_directory, sample.name)
             mkdir_job = Job(command="mkdir -p " + merge_directory)
-            # If one readset in a sample is of a particular type, then all readsets are assumed to be of that type as well
+            # If one readset in a sample is of a particular type,
+            # then all readsets are assumed to be of that type as well
             run_type = sample.readsets[0].run_type
 
-            # Samples with only one readset do not require to be merged. A symbolic link to the FASTQ files are made instead
+            job = []
+            # Samples with only one readset do not require to be merged.
+            # A symbolic link to the FASTQ files are made instead
             if len(sample.readsets) == 1:
                 target_fastq1 = sample.readsets[0].fastq1
                 if run_type == "PAIRED_END":
@@ -106,6 +108,8 @@ class Episeq(common.Illumina):
             trim_directory = os.path.join("trimmed", sample.name)
             trim_prefix = os.path.join(trim_directory, sample.name)
             run_type = sample.readsets[0].run_type
+            protocol = sample.readsets[0].library
+            output_files = []
 
             # Trim Galoree has no built in option to change the filenames of the output
             # Below are the default output names when running in paired or single mode
@@ -126,18 +130,49 @@ class Episeq(common.Illumina):
                     output_files,
                     command="""\
     module load trim_galore/0.4.1
-    trim_galore --rrbs {library_type} {other_options} --output_dir {directory} {fastq1} {fastq2}
+    trim_galore {protocol} {library_type} {non_directional} {other_options} --output_dir {directory} {fastq1} {fastq2}
     """.format(
-                        library_type="--non_directional --paired" if run_type == "PAIRED_END" else "",
+                        library_type="--paired" if run_type == "PAIRED_END" else "",
+                        protocol='--rrbs' if protocol == 'RRBS' else '',
+                        non_directional='--non_directional' if protocol == 'RRBS' and run_type == 'PAIRED_END' else '',
                         other_options=config.param("trim_galore", "other_options"),
                         directory=trim_directory,
                         fastq1=input_files[0],
                         fastq2=input_files[1] if run_type == "PAIRED_END" else ""
-                    )
+                    )  # Add --fastqc?
                 )], name="trim_galore." + sample.name)
             jobs.append(job)
 
         return jobs
+
+    def bismark_prepare_genome(self):
+        """
+        Bismark requires a processed reference genome to compare with the epigenome.
+        """
+        ref_seq = config.param('bismark_prepare_genome', 'genome_file', type='filepath')
+        local_ref_seq = os.path.join('bismark_prepare_genome', os.path.basename(ref_seq))
+        output_idx = "Bisulfite_Genome"
+
+        if not os.path.isfile(local_ref_seq):
+            run_job = Job([ref_seq], [output_idx],
+                          module_entries=[["bismark_prepare_genome", "module_bowtie2"],
+                                          ["bismark_prepare_genome", "module_samtools"]],
+                          command="""\
+    cp {src} .
+    module load bismark/0.15
+    bismark_genome_preparation --verbose --bowtie2 .""".format(src=ref_seq),
+                          name="bismark_prepare_genome")
+        else:
+            # Run bismark
+            run_job = Job([ref_seq], [output_idx],
+                          module_entries=[["bismark_prepare_genome", "module_bowtie2"],
+                                          ["bismark_prepare_genome", "module_samtools"]],
+                          command="""\
+    module load bismark/0.15
+    bismark_genome_preparation --verbose --bowtie2 .""",
+                          name="bismark_prepare_genome")
+
+        return [run_job]
 
     def bismark_align(self):
 
@@ -162,20 +197,19 @@ class Episeq(common.Illumina):
             job = concat_jobs([
                 mkdir_job,
                 Job(
-                    input_files,
+                    input_files + ["Bisulfite_Genome"],
                     [readset_sam],
                     [["bismark_align", "module_bowtie2"],
                      ["bismark_align", "module_samtools"]],
                     command="""\
     module load bismark/0.15
-    bismark -q --non_directional {other_options} --output_dir {directory} --basename {basename} {bs_refgene} -1 {fastq1} -2 {fastq2}
+    bismark -q --non_directional {other_options} --output_dir {directory} --basename {basename} . -1 {fastq1} -2 {fastq2}
     """.format(
                         directory=align_directory,
                         other_options=config.param("bismark_align", "other_options"),
                         fastq1=input_files[0],
                         fastq2=input_files[1] if run_type == "PAIRED_END" else "",
-                        basename=sample.name + '_aligned',
-                        bs_refgene=config.param("bismark_align", "bs_refgene", type="dirpath")
+                        basename=sample.name + '_aligned'
                     )
                 )], name="bismark_align." + sample.name)
 
@@ -378,6 +412,7 @@ class Episeq(common.Illumina):
         return [
             self.merge_fastq,
             self.trim_galore,
+            self.bismark_prepare_genome,
             self.bismark_align,
             self.bismark_methylation_caller,
             self.differential_methylated_pos,

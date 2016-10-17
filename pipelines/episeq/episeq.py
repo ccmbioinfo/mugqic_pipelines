@@ -111,7 +111,10 @@ class Episeq(common.Illumina):
                           command="""\
     cp {src} .
     module load bismark/0.15
-    bismark_genome_preparation --verbose --bowtie2 .""".format(src=ref_seq),
+    bismark_genome_preparation {verbose} --bowtie2 .""".format(
+                              src=ref_seq,
+                              verbose='--verbose' if config.param('bismark_genome_preparation', 'verbose_logging',
+                                                                  required=False, type='boolean') else ''),
                           name="bismark_prepare_genome")
         else:
             # Run bismark
@@ -120,7 +123,9 @@ class Episeq(common.Illumina):
                                           ["bismark_prepare_genome", "module_samtools"]],
                           command="""\
     module load bismark/0.15
-    bismark_genome_preparation --verbose --bowtie2 .""",
+    bismark_genome_preparation {verbose} --bowtie2 .""".format(
+                              verbose='--verbose' if config.param('bismark_genome_preparation', 'verbose_logging',
+                                                                  required=False, type='boolean') else ''),
                           name="bismark_prepare_genome")
 
         return [run_job]

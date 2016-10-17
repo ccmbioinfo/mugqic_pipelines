@@ -274,17 +274,15 @@ class Episeq(common.Illumina):
             2.	BAM files (unsorted) from readset file
         """
 
-        aligned_samples = []
         jobs = []
 
         for sample in self.samples:
             # Either select aligned sample from previous alignment step or aligned BAM/SAM files in readset file
-            aligned_sample = os.path.join("aligned", sample.name, sample.name + "_aligned_pe.sam.gz")
-            aligned_sample = self.select_input_files([[readset.bam for readset in sample.readsets], [
-                os.path.join("aligned", sample.name, sample.name + "_aligned_pe.sam.gz")]])
+            merged_sample = self.select_input_files([[readset.bam for readset in sample.readsets], [
+                os.path.join("merged", sample.name + ".merged.bam")]])
             run_type = sample.readsets[0].run_type
             job = Job(
-                aligned_sample,
+                merged_sample,
                 [os.path.join("methyl_calls", sample.name + "_aligned_pe.sam.bismark.cov.gz")],
                 command="""\
         mkdir -p {directory}

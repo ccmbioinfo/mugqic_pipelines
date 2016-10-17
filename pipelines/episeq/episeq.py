@@ -175,6 +175,7 @@ class Episeq(common.Illumina):
                             else '',
                             other_options=config.param("trim_galore", "other_options"),
                             directory=trim_directory,
+                            fastqc=config.param('trim_galore', 'fastqc'),
                             fastq1=input_files[0],
                             fastq2=input_files[1] if run_type == "PAIRED_END" else ""
                         )
@@ -183,7 +184,6 @@ class Episeq(common.Illumina):
         return jobs
 
     def bismark_align(self):
-
         """
         This step aligns trimmed reads to a bisulfite converted reference genome using Bismark [link]
         """
@@ -191,42 +191,82 @@ class Episeq(common.Illumina):
         # Multicore funtionality for Bismark is currently not supported when using the option --basename
         jobs = []
         for sample in self.samples:
-            trim_prefix = os.path.join("trimmed", sample.name, sample.name)
-            align_directory = os.path.join("aligned", sample.name)
-            readset_sam = os.path.join(align_directory, sample.name + "_aligned_pe.sam.gz")
-            run_type = sample.readsets[0].run_type
+            for readset in sample.readsets:
+                trim_prefix = os.path.join("trimmed", sample.name, readset.name)
+                align_directory = os.path.join("aligned", sample.name)
+                readset_sam = os.path.join(align_directory, readset.name + "_aligned_pe.bam.gz")
+                run_type = readset.run_type
 
-            if run_type == "PAIRED_END":
-                input_files = [trim_prefix + "_R1_val_1.fq.gz", trim_prefix + "_R2_val_2.fq.gz"]
-            elif run_type == "SINGLE_END":
-                input_files = [trim_prefix + "_R1_trimmed.fq.gz"]
+                if run_type == "PAIRED_END":
+                    input_files = [os.path.join(trim_prefix, os.path.splitext(readset.fastq1)[0] + "_R1_val_1.fq.gz"),
+                                   os.path.join(trim_prefix, os.path.splitext(readset.fastq2)[0] + "_R2_val_2.fq.gz")]
+                elif run_type == "SINGLE_END":
+                    input_files = [os.path.join(trim_prefix, os.path.splitext(readset.fastq1)[0] + "_R1_trimmed.fq.gz")]
 
-            mkdir_job = Job(command="mkdir -p " + align_directory)
-            job = concat_jobs([
-                mkdir_job,
-                Job(
-                    input_files + ["Bisulfite_Genome"],
-                    [readset_sam],
-                    [["bismark_align", "module_bowtie2"],
-                     ["bismark_align", "module_samtools"]],
-                    command="""\
-    module load bismark/0.15
-    bismark -q --non_directional {other_options} --output_dir {directory} --basename {basename} . -1 {fastq1} -2 {fastq2}
-    """.format(
-                        directory=align_directory,
-                        other_options=config.param("bismark_align", "other_options"),
-                        fastq1=input_files[0],
-                        fastq2=input_files[1] if run_type == "PAIRED_END" else "",
-                        basename=sample.name + '_aligned'
-                    )
-                )], name="bismark_align." + sample.name)
-
-            jobs.append(job)
-
+                mkdir_job = Job(command="mkdir -p " + align_directory)
+                job = concat_jobs([
+                    mkdir_job,
+                    Job(
+                        input_files + ["Bisulfite_Genome"],
+                        [readset_sam],
+                        [["bismark_align", "module_bowtie2"],
+                         ["bismark_align", "module_samtools"],
+                         ['bismark_align', 'module_perl']],
+                        command="""\
+        module load bismark/0.15
+        bismark -q --non_directional {other_options} --output_dir {directory} --basename {basename} . -1 {fastq1} -2 {fastq2}
+        """.format(
+                            directory=align_directory,
+                            other_options=config.param("bismark_align", "other_options"),
+                            fastq1=input_files[0],
+                            fastq2=input_files[1] if run_type == "PAIRED_END" else "",
+                            basename=readset.name + '_aligned'
+                        )
+                    )], name="bismark_align." + readset.name)
+                jobs.append(job)
         return jobs
 
-    def bismark_methylation_caller(self):
+    def picard_merge_readsets(self):
+        """
 
+        :return:
+        :rtype:
+        """
+
+        jobs = []
+        for sample in self.samples:
+            readsets = [os.path.join('aligned', sample.name,
+                                     readset.name + "_aligned_pe.sam.gz") for readset in sample.readsets]
+            merge_prefix = 'merged'
+            output_bam = os.path.join(merge_prefix, sample.name + '.merged.bam')
+
+            mkdir_job = Job(command='mkdir -p ' + merge_prefix)
+
+            if len(sample.readsets) > 1:
+                job = concat_jobs([mkdir_job,
+                                   picard.merge_sam_files(readsets, output_bam)])
+            elif len(sample.readsets) == 1:
+                readset_bam = readsets[0]
+                if os.path.isabs(readset_bam):
+                    target_readset_bam = readset_bam
+                else:
+                    target_readset_bam = os.path.relpath(readset_bam, merge_prefix)
+                readset_index = re.sub("\.bam$", ".bai", readset_bam)
+                target_readset_index = re.sub("\.bam$", ".bai", target_readset_bam)
+                output_idx = re.sub("\.bam$", ".bai", output_bam)
+
+                job = concat_jobs([
+                    mkdir_job,
+                    Job([readset_bam], [output_bam], command="ln -s -f " + target_readset_bam + " " + output_bam,
+                        removable_files=[output_bam]),
+                    Job([readset_index], [output_idx],
+                        command="ln -s -f " + target_readset_index + " " + output_idx, removable_files=[output_idx])],
+                    name="symlink_readset_sample_bam." + sample.name)
+            else:
+                raise ValueError('Sample ' + sample.name + ' has no readsets!')
+            jobs.append(job)
+
+    def bismark_methylation_caller(self):
         """
         This step extracts the methylation call for every single cytosine analyzed from the Bismark result files.
         The following input files are accepted:

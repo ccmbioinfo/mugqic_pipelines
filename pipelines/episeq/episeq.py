@@ -292,9 +292,8 @@ class Episeq(common.Illumina):
                     directory="methyl_calls",
                     library_type="--paired-end" if run_type == "PAIRED_END" else "--single-end",
                     other_options=config.param("bismark_methylation_caller", "other_options"),
-                    sample=" ".join(aligned_sample),
-                    cores=config.param("bismark_methylation_caller", "cores", type="int") / 3
-                ),
+                    sample=" ".join(merged_sample),
+                    cores=config.param('bismark_methylation_caller', 'cluster_cpu').split('=')[-1]),
                 name="bismark_methylation_caller." + sample.name)
 
             jobs.append(job)
@@ -441,7 +440,7 @@ class Episeq(common.Illumina):
                     group=tuple(sample_group),
                     coverage=config.param("differential_methylated_regions", "read_coverage", type="int"),
                     sample_names=tuple([sample.name for sample in contrast_samples]),
-                    cores=config.param("differential_methylated_regions", "cores", type="int"),
+                    cores=config.param('bismark_methylation_caller', 'cluster_cpu').split('=')[-1],
                     delta_beta_threshold=config.param("differential_methylated_regions", "delta_beta_threshold",
                                                       type="float"),
                     permutations=config.param("differential_methylated_regions", "permutations", type="int"),

@@ -143,8 +143,8 @@ class Episeq(common.Illumina):
                 run_type = readset.run_type
                 protocol = readset.library
                 trim_directory = os.path.join("trimmed", sample.name, readset.name)
-                fq1_out = os.path.join(trim_directory, os.path.splitext(readset.fastq1))
-                fq2_out = os.path.join(trim_directory, os.path.splitext(readset.fastq2))
+                fq1_out = os.path.join(trim_directory, os.path.splitext(readset.fastq1)[0])
+                fq2_out = os.path.join(trim_directory, os.path.splitext(readset.fastq2)[0])
                 # trimmed/sample.name/readset.name/sample.name_readset.name_R1_val_1.fq.gz
                 output_files = []
 
@@ -167,8 +167,7 @@ class Episeq(common.Illumina):
                         command="""\
     module load trim_galore/0.4.1
     module load cutadapt/1.10
-    trim_galore {protocol} {library_type} {non_directional} {other_options} --output_dir {directory} --fastqc\
-    --fastqc_args "--outdir {directory} --dir {directory} --threads" {fastq1} {fastq2}
+    trim_galore {protocol} {library_type} {non_directional} {other_options} --output_dir {directory} {fastq1} {fastq2}
         """.format(
                             library_type="--paired" if run_type == "PAIRED_END" else "",
                             protocol='--rrbs' if protocol == 'RRBS' else '',

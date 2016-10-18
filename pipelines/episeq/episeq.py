@@ -143,9 +143,8 @@ class Episeq(common.Illumina):
                 run_type = readset.run_type
                 protocol = readset.library
                 trim_directory = os.path.join("trimmed", sample.name, readset.name)
-                fq1_out = os.path.join(trim_directory, os.path.splitext(readset.fastq1)[0])
-                fq2_out = os.path.join(trim_directory, os.path.splitext(readset.fastq2)[0])
-                # trimmed/sample.name/readset.name/sample.name_readset.name_R1_val_1.fq.gz
+                fq1_out = os.path.join(trim_directory, readset.name)
+                fq2_out = os.path.join(trim_directory, readset.name)
                 output_files = []
 
                 # Trim Galoree has no built in option to change the filenames of the output
@@ -167,13 +166,14 @@ class Episeq(common.Illumina):
                         command="""\
     module load trim_galore/0.4.1
     module load cutadapt/1.10
-    trim_galore {protocol} {library_type} {non_directional} {other_options} --output_dir {directory} --fastqc_args "-t 4" {fastq1} {fastq2}
+    trim_galore {protocol} {library_type} {non_directional} {other} --output_dir {directory} \
+    --fastqc_args "-t 4" {fastq1} {fastq2}
         """.format(
                             library_type="--paired" if run_type == "PAIRED_END" else "",
                             protocol='--rrbs' if protocol == 'RRBS' else '',
                             non_directional='--non_directional' if run_type == 'PAIRED_END' and protocol == 'RRBS'
                             else '',
-                            other_options=config.param("trim_galore", "other_options"),
+                            other=config.param("trim_galore", "other_options"),
                             directory=trim_directory,
                             fastq1=input_files[0],
                             fastq2='' if run_type == "SINGLE_END" else input_files[1]
@@ -197,10 +197,10 @@ class Episeq(common.Illumina):
                 run_type = readset.run_type
 
                 if run_type == "PAIRED_END":
-                    input_files = [os.path.join(trim_prefix, os.path.splitext(readset.fastq1)[0] + "_R1_val_1.fq.gz"),
-                                   os.path.join(trim_prefix, os.path.splitext(readset.fastq2)[0] + "_R2_val_2.fq.gz")]
+                    input_files = [os.path.join(trim_prefix, readset.name + "_R1_val_1.fq.gz"),
+                                   os.path.join(trim_prefix, readset.name + "_R2_val_2.fq.gz")]
                 elif run_type == "SINGLE_END":
-                    input_files = [os.path.join(trim_prefix, os.path.splitext(readset.fastq1)[0] + "_R1_trimmed.fq.gz")]
+                    input_files = [os.path.join(trim_prefix, readset.name + "_R1_trimmed.fq.gz")]
 
                 mkdir_job = Job(command="mkdir -p " + align_directory)
                 job = concat_jobs([
@@ -210,13 +210,14 @@ class Episeq(common.Illumina):
                         [readset_sam],
                         [["bismark_align", "module_bowtie2"],
                          ["bismark_align", "module_samtools"]],
-                         # ['bismark_align', 'module_perl']],  //Do not import. Bismark is expecting /usr/bin/perl. Will raise errors otherwise.
+                        # ['bismark_align', 'module_perl']],
+                        # Do not import. Bismark is expecting /usr/bin/perl. Will raise errors otherwise.
                         command="""\
         module load bismark/0.15
-        bismark -q --non_directional {other_options} --output_dir {directory} --basename {basename} . -1 {fastq1} -2 {fastq2}
+        bismark -q --non_directional {other} --output_dir {directory} --basename {basename} . -1 {fastq1} -2 {fastq2}
         """.format(
                             directory=align_directory,
-                            other_options=config.param("bismark_align", "other_options"),
+                            other=config.param("bismark_align", "other_options"),
                             fastq1=input_files[0],
                             fastq2=input_files[1] if run_type == "PAIRED_END" else "",
                             basename=readset.name + '_aligned'
@@ -244,7 +245,7 @@ class Episeq(common.Illumina):
             if len(sample.readsets) > 1:
                 job = concat_jobs([mkdir_job,
                                    picard.merge_sam_files(readsets, output_bam)],
-                                   name="readset_bam_merge." + sample.name)
+                                  name="readset_bam_merge." + sample.name)
             elif len(sample.readsets) == 1:
                 readset_bam = readsets[0]
                 if os.path.isabs(readset_bam):
@@ -288,13 +289,13 @@ class Episeq(common.Illumina):
                 command="""\
         mkdir -p {directory}
         module load bismark/0.15
-        bismark_methylation_extractor {library_type} {other_options} --output {directory} --multicore {cores} --bedGraph {sample}
+        bismark_methylation_extractor {library_type} {other} --output {directory} --multicore {core} --bedGraph {sample}
         """.format(
                     directory="methyl_calls",
                     library_type="--paired-end" if run_type == "PAIRED_END" else "--single-end",
-                    other_options=config.param("bismark_methylation_caller", "other_options"),
+                    other=config.param("bismark_methylation_caller", "other_options"),
                     sample=" ".join(merged_sample),
-                    cores=config.param('bismark_methylation_caller', 'cluster_cpu').split('=')[-1]),
+                    core=config.param('bismark_methylation_caller', 'cluster_cpu').split('=')[-1]),
                 name="bismark_methylation_caller." + sample.name)
 
             jobs.append(job)
@@ -384,6 +385,11 @@ class Episeq(common.Illumina):
 
     def differential_methylated_regions(self):
 
+        """
+
+        :return:
+        :rtype:
+        """
         jobs = []
 
         for contrast in self.contrasts:
@@ -455,9 +461,13 @@ class Episeq(common.Illumina):
 
     @property
     def steps(self):
+        """
+
+        :return: list
+        """
         return [
-            self.trim_galore,
             self.bismark_prepare_genome,
+            self.trim_galore,
             self.bismark_align,
             self.picard_merge_readsets,
             self.bismark_methylation_caller,

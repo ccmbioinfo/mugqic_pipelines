@@ -163,11 +163,11 @@ class Episeq(common.Illumina):
                     Job(
                         input_files,
                         output_files,
-                        ['trim_galore', 'module_fastqc'],
+                        [['trim_galore', 'module_fastqc']],
                         command="""\
     module load trim_galore/0.4.1
     module load cutadapt/1.10
-    trim_galore {protocol} {library_type} {non_directional} {other_options} --output_dir {directory} {fastq1} {fastq2}
+    trim_galore {protocol} {library_type} {non_directional} {other_options} --output_dir {directory} --fastqc_args "-t 4" {fastq1} {fastq2}
         """.format(
                             library_type="--paired" if run_type == "PAIRED_END" else "",
                             protocol='--rrbs' if protocol == 'RRBS' else '',
@@ -175,9 +175,8 @@ class Episeq(common.Illumina):
                             else '',
                             other_options=config.param("trim_galore", "other_options"),
                             directory=trim_directory,
-                            fastqc=config.param('trim_galore', 'fastqc'),
                             fastq1=input_files[0],
-                            fastq2=input_files[1] if run_type == "PAIRED_END" else ""
+                            fastq2='' if run_type == "SINGLE_END" else input_files[1]
                         )
                     )], name="trim_galore." + readset.name)
                 jobs.append(job)
@@ -210,8 +209,8 @@ class Episeq(common.Illumina):
                         input_files + ["Bisulfite_Genome"],
                         [readset_sam],
                         [["bismark_align", "module_bowtie2"],
-                         ["bismark_align", "module_samtools"],
-                         ['bismark_align', 'module_perl']],
+                         ["bismark_align", "module_samtools"]],
+                         # ['bismark_align', 'module_perl']],  //Do not import. Bismark is expecting /usr/bin/perl. Will raise errors otherwise.
                         command="""\
         module load bismark/0.15
         bismark -q --non_directional {other_options} --output_dir {directory} --basename {basename} . -1 {fastq1} -2 {fastq2}
@@ -236,7 +235,7 @@ class Episeq(common.Illumina):
         jobs = []
         for sample in self.samples:
             readsets = [os.path.join('aligned', sample.name,
-                                     readset.name + "_aligned_pe.sam.gz") for readset in sample.readsets]
+                                     readset.name + "_aligned_pe.bam.gz") for readset in sample.readsets]
             merge_prefix = 'merged'
             output_bam = os.path.join(merge_prefix, sample.name + '.merged.bam')
 
@@ -244,7 +243,8 @@ class Episeq(common.Illumina):
 
             if len(sample.readsets) > 1:
                 job = concat_jobs([mkdir_job,
-                                   picard.merge_sam_files(readsets, output_bam)])
+                                   picard.merge_sam_files(readsets, output_bam)],
+                                   name="readset_bam_merge." + sample.name)
             elif len(sample.readsets) == 1:
                 readset_bam = readsets[0]
                 if os.path.isabs(readset_bam):
@@ -265,6 +265,7 @@ class Episeq(common.Illumina):
             else:
                 raise ValueError('Sample ' + sample.name + ' has no readsets!')
             jobs.append(job)
+        return jobs
 
     def bismark_methylation_caller(self):
         """
@@ -455,10 +456,10 @@ class Episeq(common.Illumina):
     @property
     def steps(self):
         return [
-            self.merge_fastq,
             self.trim_galore,
             self.bismark_prepare_genome,
             self.bismark_align,
+            self.picard_merge_readsets,
             self.bismark_methylation_caller,
             self.differential_methylated_pos,
             self.differential_methylated_regions

@@ -182,6 +182,9 @@ class Episeq(common.Illumina):
 
         The genome should be in fasta format and note that this step always copies the genome to the output directory.
 
+        Input: A reference sequence file as specified by user. Configuration is set in the episeq.ini file.
+        Output: A directory called Bisulfite_Genome.
+
         :return jobs: A list of jobs that needs to be executed in this step.
         :rtype list(Job):
         """
@@ -194,18 +197,18 @@ class Episeq(common.Illumina):
                           module_entries=[["bismark_prepare_genome", "module_bowtie2"],
                                           ["bismark_prepare_genome", "module_samtools"]],
                           command="""\
-    cp {src} .
-    module load bismark/0.15
-    bismark_genome_preparation --verbose --bowtie2 .""".format(src=ref_seq),
+                            cp {src} .
+                            module load bismark/0.15
+                            bismark_genome_preparation --verbose --bowtie2 .""".format(src=ref_seq),
+                          removable_files=[local_ref_seq],
                           name="bismark_prepare_genome")
-        else:
-            # Run bismark
+        else:  # In the off-chance that someone put the file in the output directory.
             run_job = Job([ref_seq], [output_idx],
                           module_entries=[["bismark_prepare_genome", "module_bowtie2"],
                                           ["bismark_prepare_genome", "module_samtools"]],
                           command="""\
-    module load bismark/0.15
-    bismark_genome_preparation --verbose --bowtie2 .""",
+                            module load bismark/0.15
+                            bismark_genome_preparation --verbose --bowtie2 .""",
                           name="bismark_prepare_genome")
 
         return [run_job]
@@ -403,7 +406,8 @@ class Episeq(common.Illumina):
 
         """
         Similar to differential_methylated_positions, this step looks at methylation patterns on a larger, regional
-        level. On a chromosomal level and genome level, this step compares large-scale differences in methylation.
+        level. This step compares large-scale differences in methylation as opposed to comparing local methylation
+        sites.
 
         Input: Methylation data (methyl_calls/)
         Output: A CSV file in differential_methylated_regions/

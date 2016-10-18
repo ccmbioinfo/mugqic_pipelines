@@ -5,6 +5,10 @@ Episeq Pipeline
 
 The Episeq pipeline takes FASTQ or BAM files (unsorted) as input and produces an differential analysis in the methylome. Currently, only WGSB and RRSB data are supported.
 
+Please ensure that you have Python 2.7.10 available and loaded before executing this pipeline. Otherwise, the program will quit.
+
+In the current working directory, you should have filled out the readset, design and configuration (`.ini`) file. Please refer to the Episeq User Manual for more information and instructions.
+
 
 Usage
 -----
@@ -65,18 +69,19 @@ Steps:
 1- bismark_prepare_genome
 -------------------------
 This step takes in a reference genome fasta file and convert the sequence for methylation alignment and sequencing. This is a pre-processing step for bismark_align. The step will copy the reference genome to the output directory (if needed), and create the methylome sequence in the directory called `Bisulfite_Genome`, which contains two subdirectories within it. This step only needs to be done once within a project's output folder.
+Note that this step can take several hours, depending on the size of the genome.
 
 2- trim_galore
 --------------
-This step helps improve the alignment efficiency by performing quality trimming via the open source package Trim Galore!. Briefly, this package addresses many of the issues that occur when analyzing RRBS libraries. The pipeline does trimming using only the default options in Trim Galore!. Additional options such as stricter or more relaxed trimming can be entered through the `other_options` parameter in the configuration file. Output files are gzipped `.fq` files. This step can be ignored if the readset contains `.BAM` files.
+This step helps improve the alignment efficiency by performing quality trimming via the open source package Trim Galore!. Briefly, this package addresses many of the issues that occur when analyzing RRBS libraries. The pipeline does trimming using only the default options in Trim Galore!. Additional options such as stricter or more relaxed trimming can be entered through the `other_options` parameter in the configuration file. Output files are gzipped `.fq` files. This step can be ignored if the readset has a `.BAM` file.
 
 3- bismark_align
 ----------------
-This step aligns the trimmed reads to a reference genome from `bismark_prepare_genome`. The alignment is done by the open source package Bismark using the default options for RRBS libraries. Additional options can be entered through the "`other_options`" parameter in the configuration file. Output files are `.sam` files. This step can be ignored if the readset contains `.BAM` files
+This step aligns the trimmed reads to a reference genome from `bismark_prepare_genome`. The alignment is done by the open source package Bismark using the default options for RRBS libraries. Additional options can be entered through the "`other_options`" parameter in the configuration file. Output files are `.bam` files, but may be configured to output `cram` or `sam` files. This step can be ignored if the readset contains `.BAM` files
 
 4- picard_merge_sam_files
 -------------------------
-
+This step combines all readsets together to form a single `.bam` file for each sample. This is often required when multiple libraries or multiplexing is done before sequencing. Merging at this step allows us to parallelize the pipeline as much as we can before aggregating. `bismark_align` will merge any paired reads into a single file, which takes care some of the work for us.
 
 5- bismark_methylation_caller
 -----------------------------

@@ -245,7 +245,7 @@ class Episeq(common.Illumina):
             if len(sample.readsets) > 1:
                 job = concat_jobs([mkdir_job,
                                    picard.merge_sam_files(readsets, output_bam)],
-                                  name="readset_bam_merge." + sample.name)
+                                  name="picard_merge_sam_files." + sample.name)  # Name must be set to match picard
             elif len(sample.readsets) == 1:
                 readset_bam = readsets[0]
                 if os.path.isabs(readset_bam):

@@ -226,7 +226,7 @@ class Episeq(common.Illumina):
                 jobs.append(job)
         return jobs
 
-    def picard_merge_readsets(self):
+    def picard_merge_sam_files(self):
         """
 
         :return:
@@ -469,7 +469,7 @@ class Episeq(common.Illumina):
             self.bismark_prepare_genome,
             self.trim_galore,
             self.bismark_align,
-            self.picard_merge_readsets,
+            self.picard_merge_sam_files,
             self.bismark_methylation_caller,
             self.differential_methylated_pos,
             self.differential_methylated_regions

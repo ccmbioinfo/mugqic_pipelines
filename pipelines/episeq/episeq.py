@@ -23,6 +23,8 @@ and QC step would be too slow if we merge readsets together, so we decided to tr
 the alignment phase allows us to convert out fastQ files to BAM files. This allows us to merge paired datasets into
 one BAM file per readset without explicitly doing so. After this, readsets are combined to run the differential
 analysis steps.
+
+Steps (1 and 2) and (6 and 7) run concurrently while all other steps run sequentially.
 """
 
 # Python Standard Modules
@@ -215,6 +217,9 @@ class Episeq(common.Illumina):
 
         This step requires bismark_prepare_genome and the relevant trim_galore step.
 
+        Input: Trimmed version of input files. (trimmed/*)
+        Output: A BAM/SAM file in aligned/<sample_name>/*
+
         - [Set uneccessary files as removeable!]
         - [Get bismark into mugqic_pipelines modules]
 
@@ -268,6 +273,12 @@ class Episeq(common.Illumina):
         The following input files are accepted:
             1.	Bismark result files from previous alignment step
             2.	BAM files (unsorted) from readset file
+
+        Input: Merged sample files (merged/)
+        Output: Methylation calls in BedGraph format. (methyl_calls/)
+
+        :return jobs: A list of jobs that needs to be executed in this step.
+        :rtype list(Job):
         """
 
         aligned_samples = []
@@ -308,6 +319,14 @@ class Episeq(common.Illumina):
         compute a F-test statistic on the beta values for the assayed CpGs in each sample. A p-value is then returned
         for each site with the option of correcting them for multiple testing. Differential analysis is done for each
         contrast specified in the design file
+
+        The values from the design files dictates how the samples are treated and compared.
+
+        Input: Methylation data (methyl_calls/)
+        Output: A CSV file in differential_methylated_positions/
+
+        :return jobs: A list of jobs that needs to be executed in this step.
+        :rtype list(Job):
         """
 
         jobs = []
@@ -382,6 +401,16 @@ class Episeq(common.Illumina):
 
     def differential_methylated_regions(self):
 
+        """
+        Similar to differential_methylated_positions, this step looks at methylation patterns on a larger, regional
+        level. On a chromosomal level and genome level, this step compares large-scale differences in methylation.
+
+        Input: Methylation data (methyl_calls/)
+        Output: A CSV file in differential_methylated_regions/
+
+        :return jobs: A list of jobs that needs to be executed in this step.
+        :rtype list(Job):
+        """
         jobs = []
 
         for contrast in self.contrasts:

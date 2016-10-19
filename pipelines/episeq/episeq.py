@@ -151,7 +151,7 @@ class Episeq(common.Illumina):
                 # Below are the default output names when running in paired or single mode
                 if run_type == "PAIRED_END":
                     input_files = [readset.fastq1, readset.fastq2]
-                    output_files = [fq1_out + "_val_1.fq.gz", fq2_out + "_val_2.fq.gz"]
+                    output_files = [fq1_out + "_1_val_1.fq.gz", fq2_out + "_1_val_2.fq.gz"]
                 elif run_type == "SINGLE_END":
                     input_files = [readset.fastq1]
                     output_files = [fq1_out + "_trimmed.fq.gz"]
@@ -197,8 +197,8 @@ class Episeq(common.Illumina):
                 run_type = readset.run_type
 
                 if run_type == "PAIRED_END":
-                    input_files = [os.path.join(trim_prefix, readset.name + "_val_1.fq.gz"),
-                                   os.path.join(trim_prefix, readset.name + "_val_2.fq.gz")]
+                    input_files = [os.path.join(trim_prefix, readset.name + "_1_val_1.fq.gz"),
+                                   os.path.join(trim_prefix, readset.name + "_2_val_2.fq.gz")]
                 elif run_type == "SINGLE_END":
                     input_files = [os.path.join(trim_prefix, readset.name + "_trimmed.fq.gz")]
 

@@ -224,7 +224,7 @@ sub handleVariantFunctionLine($$$$)
 		$variantLines{$varKey} = join("\t", @line[7..$#line]);
 		my @info = split(/:/, $line[1]);
 		(my $geneName) = split(/[;:(,]/, $info[0]);
-		$variantInfoToAdd{$varKey} = ";VT=${variantType};GENE=${geneName};DTLS=$line[1]";
+		$variantInfoToAdd{$varKey} = ";VT=${variantType};GENE=${geneName};DTLS=".replaceDelimiters($line[1]);
 
 		my $dp4 = "";
 		my ($altCount, $readCount);
@@ -693,5 +693,7 @@ sub replaceDelimiters($)
     my $text = shift;
 	# Replace any occurrences of ";" or "\t", which are delimiters in VCF
 	$text =~ s/[;\t]/-/;
+    # Replace spaces with underscores (spaces not allowed until v4.3 VCF)
+	$text =~ s/ /_/;
     return $text;
 }

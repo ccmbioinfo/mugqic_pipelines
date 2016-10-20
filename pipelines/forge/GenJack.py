@@ -37,6 +37,9 @@ from bfx import bvatools
 from bfx import bcftools
 from bfx import tabix
 from bfx import annovar
+from bfx import vt
+from bfx import vep
+from bfx import gemini
 
 from pipelines import common
 
@@ -999,7 +1002,7 @@ cp \\
 
 	for sample in self.samples:
 		jobs.append(concat_jobs([
-		    bcftools.multiToIndivVQSR2(input, sample.name, os.path.join(os.path.join("variants",sample.name), sample.name+".hc.vqsr.vcf"))		
+		    bcftools.multiToIndivVQSR2(input, sample.name, os.path.join(os.path.join("variants",sample.name), sample.name+".hc.vqsr.vcf"))
 		    ], name="multi_to_individual_VQSR"+sample.name))
 
 	return jobs
@@ -1009,16 +1012,16 @@ cp \\
 #####################################################################################################
     def individual_VQSR_GVCF_intersect(self):
 	"""
-	This function was added to handle multi-sample run of the pipeline. The previous "variant_recalibrator" step which creates VQSR 
+	This function was added to handle multi-sample run of the pipeline. The previous "variant_recalibrator" step which creates VQSR
 	tranches, should be run on multiple samples. Then the following steps should be performed:
-	1) Trim the "sample.hc.g.vcf" file for each sample so that "bcftools isec" can work with it. This involves removing all lines with 
+	1) Trim the "sample.hc.g.vcf" file for each sample so that "bcftools isec" can work with it. This involves removing all lines with
 	   only <NON_REF> in the ALT field and removing the ",<NON_REF>" phrase from other lines that have allele(s) in the ALT field
-	   The resulting file is "sample.hc.g.trimmed.vcf" 
+	   The resulting file is "sample.hc.g.trimmed.vcf"
 	2) Create a "sample.PASSvqsr.vcf" subset of these individual vqsr files, which contain only variants that have "PASS"ed the vqsr filter
-	3) Find the intersection of "sample.PASSvqsr.vcf" file with the "sample.hc.g.trimmed.vcf" gvcf file of each sample. The latter file 
+	3) Find the intersection of "sample.PASSvqsr.vcf" file with the "sample.hc.g.trimmed.vcf" gvcf file of each sample. The latter file
 	   contains the original DP, MQ, etc. parameters.
 	"""
-	
+
             
 	jobs=[]
 
@@ -1188,7 +1191,7 @@ cp \\
         jobs = []
 
 	variants_directory = os.path.join(self.output_dir, "variants")
-	
+
         for sample in self.samples:
 
             vcf_file = os.path.join(variants_directory, sample.name + ".flt.vcf")
@@ -1207,6 +1210,65 @@ cp \\
 
         return jobs
 
+
+    def normalize_vcf(self):
+        """
+        Normalize the vcf using vt
+        """
+
+        jobs = []
+
+        for sample in self.samples:
+
+            vcf_file = os.path.join("annotation", sample.name, sample.name + ".annovar_out.combined.vcf")
+
+            job = vt.decompose_and_normalize_mnps(vcf_file, sample.name + ".annovar_out.normalized.vcf.gz")
+            job.name = "normalize_vcf." + sample.name
+            jobs.append(job)
+
+        return jobs
+
+
+    def gemini_annotate(self):
+        """
+        Annotate using SnpEff or VEP
+        """
+
+        jobs = []
+
+        # TODO: make path locations configurable
+        # TODO: add support for snpeff
+        for sample in self.samples:
+
+            vcf_file = os.path.join("annotation", sample.name, sample.name + ".annovar_out.normalized.vcf.gz")
+            # TODO: don't name with vep
+            out_file = os.path.join("annotation", sample.name, sample.name + ".vep-annotated.vcf")
+
+            job = vep.annotate(vcf_file, out_file)
+            job.name = "vep." + sample.name
+            jobs.append(job)
+
+        return jobs
+
+
+    def gemini_load_to_db(self):
+        """
+        Load each vcf into a db
+        """
+
+        jobs = []
+
+        for sample in self.samples:
+
+            # TODO: don't name with vep
+            vcf_file = os.path.join("annotation", sample.name, sample.name + ".vep-annotated.vcf")
+            db_name = os.path.join("annotation", sample.name, sample.name + ".gemini.db")
+
+            job = gemini.gemini_annotations(vcf_file, db_name, os.path.join("annotation", sample.name))
+            job.name = "gemini_load_to_db." + sample.name
+            jobs.append(job)
+
+        return jobs
 
 
     def prev_seen(self):
@@ -1429,7 +1491,7 @@ cp \\
                 forge_tools.homozygosity(vcf_file, output_hom),
                 forge_tools.homozygosity(light_vcf, light_hom),
                 forge_tools.homozygosity(all_vcf, all_hom),
-		
+
                 forge_tools.predict_roh(all_hom, roh_file),
 
                 forge_tools.roh(output_hom, output_roh, roh_file),
@@ -1548,10 +1610,10 @@ cp \\
             self.merge_and_call_combined_gvcf, #19
             self.variant_recalibrator, #20
 
-	    self.multi_to_individual_VQSR, #21
-	    self.individual_VQSR_GVCF_intersect, #22
+            self.multi_to_individual_VQSR, #21
+            self.individual_VQSR_GVCF_intersect, #22
 
-	    self.varfilter, #23
+            self.varfilter, #23
 
             # Part two of the pipeline
             self.update_master_variants, #24

@@ -242,10 +242,35 @@ class Episeq(common.Illumina):
 
             mkdir_job = Job(command='mkdir -p ' + merge_prefix)
 
+            # I want to use Picard Tools v2.0.1, which has a different syntax than v1.x
             if len(sample.readsets) > 1:
+                picard_v2 = Job(
+                    readsets,
+                    [output_bam, re.sub("\.([sb])am$", ".\\1ai", output_bam)],
+                    [
+                        ['picard_merge_sam_files', 'module_java'],
+                        ['picard_merge_sam_files', 'module_picard']
+                    ],
+                    command="""\
+                    java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} \\
+                      -jar $PICARD_HOME/picard.jar MergeSamFiles \\
+                      VALIDATION_STRINGENCY=SILENT ASSUME_SORTED=true CREATE_INDEX=true \\
+                      TMP_DIR={tmp_dir} \\
+                      {inputs} \\
+                      OUTPUT={output} \\
+                      MAX_RECORDS_IN_RAM={max_records_in_ram}""".format(
+                        tmp_dir=config.param('picard_merge_sam_files', 'tmp_dir'),
+                        java_other_options=config.param('picard_merge_sam_files', 'java_other_options'),
+                        ram=config.param('picard_merge_sam_files', 'ram'),
+                        inputs=" \\\n  ".join(["INPUT=" + in_put for in_put in readsets]),
+                        output=output_bam,
+                        max_records_in_ram=config.param('picard_merge_sam_files', 'max_records_in_ram', type='int')),
+                    removable_files=[output_bam, re.sub("\.([sb])am$", ".\\1ai", output_bam)],
+                    local=config.param('picard_merge_sam_files', 'use_localhd', required=False))
                 job = concat_jobs([mkdir_job,
-                                   picard.merge_sam_files(readsets, output_bam)],
+                                   picard_v2],
                                   name="picard_merge_sam_files." + sample.name)  # Name must be set to match picard
+
             elif len(sample.readsets) == 1:
                 readset_bam = readsets[0]
                 if os.path.isabs(readset_bam):

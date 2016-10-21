@@ -292,15 +292,15 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME
                         ['picard_merge_sam_files', 'module_picard']
                     ],
                     command="""\
-                    java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} \\
-                      -jar $PICARD_HOME/picard.jar MergeSamFiles \\
-                      VALIDATION_STRINGENCY=SILENT ASSUME_SORTED=true CREATE_INDEX=true \\
-                      TMP_DIR={tmp_dir} \\
-                      {inputs} \\
-                      OUTPUT={output} \\
-                      USE_THREADING=true \\
-                      SORT_ORDER=unsorted \\
-                      MAX_RECORDS_IN_RAM={max_records_in_ram}""".format(
+    java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} \\
+      -jar $PICARD_HOME/picard.jar MergeSamFiles \\
+      VALIDATION_STRINGENCY=SILENT ASSUME_SORTED=true CREATE_INDEX=true \\
+      TMP_DIR={tmp_dir} \\
+      {inputs} \\
+      OUTPUT={output} \\
+      USE_THREADING=true \\
+      SORT_ORDER=unsorted \\
+      MAX_RECORDS_IN_RAM={max_records_in_ram}""".format(
                         tmp_dir=config.param('picard_merge_sam_files', 'tmp_dir'),
                         java_other_options=config.param('picard_merge_sam_files', 'java_other_options'),
                         ram=config.param('picard_merge_sam_files', 'ram'),

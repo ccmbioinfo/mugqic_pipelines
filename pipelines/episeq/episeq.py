@@ -351,6 +351,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME
             job = Job(
                 merged_sample,
                 [os.path.join("methyl_calls", sample.name + "_aligned_pe.sam.bismark.cov.gz")],
+                [['bismark_methylation_caller', 'module_samtools']],
                 command="""\
         mkdir -p {directory}
         module load bismark/0.15

@@ -117,7 +117,6 @@ class Episeq(common.Illumina):
                                                                   required=False, type='boolean') else ''),
                           name="bismark_prepare_genome")
         else:
-            # Run bismark
             run_job = Job([ref_seq], [output_idx],
                           module_entries=[["bismark_prepare_genome", "module_bowtie2"],
                                           ["bismark_prepare_genome", "module_samtools"]],
@@ -193,7 +192,7 @@ class Episeq(common.Illumina):
             for readset in sample.readsets:
                 trim_prefix = os.path.join("trimmed", sample.name, readset.name)
                 align_directory = os.path.join("aligned", sample.name)
-                readset_sam = os.path.join(align_directory, readset.name + "_aligned_pe.bam.gz")
+                readset_sam = os.path.join(align_directory, readset.name + "_aligned_pe.bam")
                 run_type = readset.run_type
 
                 if run_type == "PAIRED_END":
@@ -236,7 +235,7 @@ class Episeq(common.Illumina):
         jobs = []
         for sample in self.samples:
             readsets = [os.path.join('aligned', sample.name,
-                                     readset.name + "_aligned_pe.bam.gz") for readset in sample.readsets]
+                                     readset.name + "_aligned_pe.bam") for readset in sample.readsets]
             merge_prefix = 'merged'
             output_bam = os.path.join(merge_prefix, sample.name + '.merged.bam')
 

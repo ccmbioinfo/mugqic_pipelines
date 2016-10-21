@@ -257,7 +257,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME
                                    ram=config.param('picard_sort_sam', 'ram'),
                                    input=infile,
                                    output=outfile[0],
-                                   sort_order='coordinate',
+                                   sort_order='unsorted',
                                    max_records_in_ram=config.param('picard_sort_sam', 'max_records_in_ram', type='int')
                                ),
                                removable_files=outfile,
@@ -275,8 +275,8 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME
 
         jobs = []
         for sample in self.samples:
-            readsets = [os.path.join('sorted', sample.name,
-                                     readset.name + "_aligned_pe_sorted.bam") for readset in sample.readsets]
+            readsets = [os.path.join('aligned', sample.name,
+                                     readset.name + "_aligned_pe.bam") for readset in sample.readsets]
             merge_prefix = 'merged'
             output_bam = os.path.join(merge_prefix, sample.name + '.merged.bam')
 
@@ -298,6 +298,9 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME
                       TMP_DIR={tmp_dir} \\
                       {inputs} \\
                       OUTPUT={output} \\
+                      ASSUME_SORTED=true \\
+                      USE_THREADING=true \\
+                      SORT_ORDER=unsorted \\
                       MAX_RECORDS_IN_RAM={max_records_in_ram}""".format(
                         tmp_dir=config.param('picard_merge_sam_files', 'tmp_dir'),
                         java_other_options=config.param('picard_merge_sam_files', 'java_other_options'),
@@ -535,7 +538,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME
             self.bismark_prepare_genome,
             self.trim_galore,
             self.bismark_align,
-            self.picard_sort_sam,
+#            self.picard_sort_sam,
             self.picard_merge_sam_files,
             self.bismark_methylation_caller,
             self.differential_methylated_pos,

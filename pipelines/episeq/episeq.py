@@ -235,13 +235,13 @@ class Episeq(common.Illumina):
         jobs = []
         for sample in self.samples:
             for readset in sample.readsets:
-                infile = [os.path.join('aligned',sample.name,readset.name + '_aligned_pe.bam')]
+                infile = os.path.join('aligned', sample.name, readset.name + '_aligned_pe.bam')
                 job_dir = os.path.join('sorted', sample.name)
                 outfile = [os.path.join(job_dir, readset.name + '_aligned_pe_sorted.bam'),
                            os.path.join(job_dir, readset.name + '_aligned_pe_sorted.bai')]
 
                 mkdir_job = Job(command='mkdir -p ' + job_dir)
-                sort_job = Job(infile, outfile,
+                sort_job = Job([infile], outfile,
                                [['picard_sort_sam_files', 'module_java'],
                                 ['picard_sort_sam_files', 'module_picard']],
                                command="""\

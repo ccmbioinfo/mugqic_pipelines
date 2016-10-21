@@ -225,6 +225,47 @@ class Episeq(common.Illumina):
                 jobs.append(job)
         return jobs
 
+    def picard_sort_sam(self):
+        """
+
+        :return:
+        :rtype:
+        """
+
+        jobs = []
+        for sample in self.samples:
+            for readset in sample.readsets:
+                infile = [os.path.join('aligned',sample.name,readset.name + '_aligned_pe.bam')]
+                job_dir = os.path.join('sorted', sample.name)
+                outfile = [os.path.join(job_dir, readset.name + '_aligned_pe_sorted.bam'),
+                           os.path.join(job_dir, readset.name + '_aligned_pe_sorted.bai')]
+
+                mkdir_job = Job(command='mkdir -p ' + job_dir)
+                sort_job = Job(infile, outfile,
+                               [['picard_sort_sam_files', 'module_java'],
+                                ['picard_sort_sam_files', 'module_picard']],
+                               command="""\
+java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME/picard.jar SortSam \\
+  VALIDATION_STRINGENCY=SILENT CREATE_INDEX=true \\
+  TMP_DIR={tmp_dir} \\
+  INPUT={input} \\
+  OUTPUT={output} \\
+  SORT_ORDER={sort_order} \\
+  MAX_RECORDS_IN_RAM={max_records_in_ram}""".format(
+                                   tmp_dir=config.param('picard_sort_sam', 'tmp_dir'),
+                                   java_other_options=config.param('picard_sort_sam', 'java_other_options'),
+                                   ram=config.param('picard_sort_sam', 'ram'),
+                                   input=infile,
+                                   output=outfile,
+                                   sort_order='coordinate',
+                                   max_records_in_ram=config.param('picard_sort_sam', 'max_records_in_ram', type='int')
+                               ),
+                               removable_files=outfile,
+                               local=config.param('picard_sort_sam', 'use_localhd', required=False))
+                job = concat_jobs([mkdir_job, sort_job], name="picard_sort_sam." + readset.name)
+                jobs.append(job)
+        return jobs
+
     def picard_merge_sam_files(self):
         """
 
@@ -234,8 +275,8 @@ class Episeq(common.Illumina):
 
         jobs = []
         for sample in self.samples:
-            readsets = [os.path.join('aligned', sample.name,
-                                     readset.name + "_aligned_pe.bam") for readset in sample.readsets]
+            readsets = [os.path.join('sorted', sample.name,
+                                     readset.name + "_aligned_pe_sorted.bam") for readset in sample.readsets]
             merge_prefix = 'merged'
             output_bam = os.path.join(merge_prefix, sample.name + '.merged.bam')
 

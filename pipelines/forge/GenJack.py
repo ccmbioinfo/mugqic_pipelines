@@ -1221,15 +1221,16 @@ cp \\
         for sample in self.samples:
 
             vcf_file = os.path.join("annotation", sample.name, sample.name + ".annovar_out.combined.vcf")
+            out_file = os.path.join("annotation", sample.name, sample.name + ".annovar_out.normalized.vcf.gz")
 
-            job = vt.decompose_and_normalize_mnps(vcf_file, sample.name + ".annovar_out.normalized.vcf.gz")
+            job = vt.decompose_and_normalize_mnps(vcf_file, out_file)
             job.name = "normalize_vcf." + sample.name
             jobs.append(job)
 
         return jobs
 
 
-    def gemini_annotate(self):
+    def gemini_annotation(self):
         """
         Annotate using SnpEff or VEP
         """
@@ -1245,7 +1246,7 @@ cp \\
             out_file = os.path.join("annotation", sample.name, sample.name + ".vep-annotated.vcf")
 
             job = vep.annotate(vcf_file, out_file)
-            job.name = "vep." + sample.name
+            job.name = "gemini_annotation." + sample.name
             jobs.append(job)
 
         return jobs
@@ -1621,15 +1622,18 @@ cp \\
             self.convert2annovar, #25
             self.annovar_annotation, #26
             self.combine_annovar_files, #27
-            self.prev_seen, #28
-            self.gene_mutation_counts, #29
-            self.evs, #30
-            self.omim, #31
-            self.filter, #32
-            self.homozygosity, #33
-            self.allele_ratio_metrics, #34
-            self.vcf2columns, #35
-            self.ucsc_link #36
+            self.normalize_vcf, #28
+            self.gemini_annotation,
+            self.gemini_load_to_db, #30
+            self.prev_seen,
+            self.gene_mutation_counts,
+            self.evs,
+            self.omim,
+            self.filter,
+            self.homozygosity,
+            self.allele_ratio_metrics,
+            self.vcf2columns,
+            self.ucsc_link
         ]
 
 if __name__ == '__main__':

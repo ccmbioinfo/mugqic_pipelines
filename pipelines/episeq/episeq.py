@@ -298,7 +298,6 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME
                       TMP_DIR={tmp_dir} \\
                       {inputs} \\
                       OUTPUT={output} \\
-                      ASSUME_SORTED=true \\
                       USE_THREADING=true \\
                       SORT_ORDER=unsorted \\
                       MAX_RECORDS_IN_RAM={max_records_in_ram}""".format(

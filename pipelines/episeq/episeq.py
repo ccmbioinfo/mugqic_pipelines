@@ -534,6 +534,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME
             self.bismark_prepare_genome,
             self.trim_galore,
             self.bismark_align,
+            self.picard_sort_sam,
             self.picard_merge_sam_files,
             self.bismark_methylation_caller,
             self.differential_methylated_pos,

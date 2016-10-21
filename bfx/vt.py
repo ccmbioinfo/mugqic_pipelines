@@ -34,7 +34,8 @@ def decompose_and_normalize_mnps(input, vt_output):
         [vt_output],
         [
             ['DEFAULT', 'module_htslib'],
-            ['decompose_and_normalize_mnps', 'module_vt']
+            ['decompose_and_normalize_mnps', 'module_vt'],
+            ['DEFAULT', 'module_tabix']
         ],
         command="""\
 zcat {input} | sed 's/ID=AD,Number=./ID=AD,Number=R/' | vt decompose -s - | vt normalize -r {reference_sequence} - | bgzip -cf > {vt_output} \\

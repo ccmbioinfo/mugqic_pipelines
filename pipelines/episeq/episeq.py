@@ -256,7 +256,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME
                                    java_other_options=config.param('picard_sort_sam', 'java_other_options'),
                                    ram=config.param('picard_sort_sam', 'ram'),
                                    input=infile,
-                                   output=outfile,
+                                   output=outfile[0],
                                    sort_order='coordinate',
                                    max_records_in_ram=config.param('picard_sort_sam', 'max_records_in_ram', type='int')
                                ),

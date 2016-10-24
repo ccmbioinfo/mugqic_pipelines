@@ -309,8 +309,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME
                         max_records_in_ram=config.param('picard_merge_sam_files', 'max_records_in_ram', type='int')),
                     removable_files=[output_bam, re.sub("\.([sb])am$", ".\\1ai", output_bam)],
                     local=config.param('picard_merge_sam_files', 'use_localhd', required=False))
-                job = concat_jobs([mkdir_job,
-                                   picard_v2],
+                job = concat_jobs([mkdir_job, picard_v2],
                                   name="picard_merge_sam_files." + sample.name)  # Name must be set to match picard
 
             elif len(sample.readsets) == 1:
@@ -352,7 +351,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME
             run_type = sample.readsets[0].run_type
             job = Job(
                 merged_sample,
-                [os.path.join("methyl_calls", sample.name + "_aligned_pe.sam.bismark.cov.gz")],
+                [os.path.join("methyl_calls", sample.name, sample.name + "_aligned_pe.sam.bismark.cov.gz")],
                 [['bismark_methylation_caller', 'module_samtools']],
                 command="""\
         mkdir -p {directory}
@@ -385,8 +384,8 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME
         for contrast in self.contrasts:
             # Determine the control and case samples to include in the analysis from the contrast
             contrast_samples = [sample for sample in contrast.controls + contrast.treatments]
-            cov_files = [os.path.join("methyl_calls", sample.name + "_aligned_pe.sam.bismark.cov.gz") for sample in
-                         contrast_samples]
+            cov_files = [os.path.join("methyl_calls", sample.name, sample.name + "_aligned_pe.sam.bismark.cov.gz") for
+                         sample in contrast_samples]
             sample_group = ["control" if sample in contrast.controls else "case" for sample in contrast_samples]
             dmps_file = os.path.join("differential_methylated_positions",
                                      contrast.name + "_RRBS_differential_methylated_pos.csv")

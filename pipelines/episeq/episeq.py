@@ -357,13 +357,12 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME
                 command="""\
         mkdir -p {directory}
         module load bismark/0.15
-        bismark_methylation_extractor {library_type} {other} --output {directory} --multicore {core} --bedGraph {sample}
+        bismark_methylation_extractor {library_type} {other} --output {directory} --bedGraph {sample}
         """.format(
                     directory="methyl_calls",
                     library_type="--paired-end" if run_type == "PAIRED_END" else "--single-end",
                     other=config.param("bismark_methylation_caller", "other_options"),
-                    sample=" ".join(merged_sample),
-                    core=config.param('bismark_methylation_caller', 'core')),
+                    sample=" ".join(merged_sample)),
                 name="bismark_methylation_caller." + sample.name)
 
             jobs.append(job)

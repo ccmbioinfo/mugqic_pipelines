@@ -299,7 +299,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME
       {inputs} \\
       OUTPUT={output} \\
       USE_THREADING=true \\
-      SORT_ORDER=unsorted \\
+      SORT_ORDER=queryname \\
       MAX_RECORDS_IN_RAM={max_records_in_ram}""".format(
                         tmp_dir=config.param('picard_merge_sam_files', 'tmp_dir'),
                         java_other_options=config.param('picard_merge_sam_files', 'java_other_options'),
@@ -363,7 +363,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME
                     library_type="--paired-end" if run_type == "PAIRED_END" else "--single-end",
                     other=config.param("bismark_methylation_caller", "other_options"),
                     sample=" ".join(merged_sample),
-                    core=config.param('bismark_methylation_caller', 'cluster_cpu').split('=')[-1]),
+                    core=config.param('bismark_methylation_caller', 'core')),
                 name="bismark_methylation_caller." + sample.name)
 
             jobs.append(job)

@@ -158,8 +158,8 @@ class Episeq(common.Illumina):
                     input_files,
                     output_files,
                     command="""\
-    module load trim_galore/0.4.1
-    trim_galore {protocol} {library_type} {non_directional} {other_options} --output_dir {directory} {fastq1} {fastq2}
+module load trim_galore/0.4.1
+trim_galore {protocol} {library_type} {non_directional} {other_options} --output_dir {directory} {fastq1} {fastq2}
     """.format(
                         library_type="--paired" if run_type == "PAIRED_END" else "",
                         protocol='--rrbs' if protocol == 'RRBS' else '',
@@ -192,26 +192,20 @@ class Episeq(common.Illumina):
         local_ref_seq = os.path.join('bismark_prepare_genome', os.path.basename(ref_seq))
         output_idx = "Bisulfite_Genome"
 
-        if not os.path.isfile(local_ref_seq):
-            run_job = Job([ref_seq], [output_idx],
-                          module_entries=[["bismark_prepare_genome", "module_bowtie2"],
-                                          ["bismark_prepare_genome", "module_samtools"]],
-                          command="""\
-                            cp {src} .
-                            module load bismark/0.15
-                            bismark_genome_preparation --verbose --bowtie2 .""".format(src=ref_seq),
-                          removable_files=[local_ref_seq],
-                          name="bismark_prepare_genome")
-        else:  # In the off-chance that someone put the file in the output directory.
-            run_job = Job([ref_seq], [output_idx],
-                          module_entries=[["bismark_prepare_genome", "module_bowtie2"],
-                                          ["bismark_prepare_genome", "module_samtools"]],
-                          command="""\
-                            module load bismark/0.15
-                            bismark_genome_preparation --verbose --bowtie2 .""",
-                          name="bismark_prepare_genome")
+        main_job = Job([local_ref_seq], [output_idx],
+                       [['bismark_prepare_genome', 'module_bowtie2'],
+                        ['bismark_prepare_genome', 'module_samtools']],
+                       command="module load bismark/0.15; bismark_genome_preparation --verbose --bowtie2 .",
+                       name="bismark_prepare_genome")
 
-        return [run_job]
+        if not os.path.isfile(local_ref_seq):
+            link_job = Job([ref_seq], [local_ref_seq],
+                           command="ln -s -f " + ref_seq + " " + local_ref_seq)
+            job = concat_jobs([main_job, link_job], name="bismark_prepare_genome")
+        else:  # In the off-chance that someone put the file in the output directory.
+            job = main_job
+
+        return [job]
 
     def bismark_align(self):
         """
@@ -254,8 +248,8 @@ class Episeq(common.Illumina):
                     [["bismark_align", "module_bowtie2"],
                      ["bismark_align", "module_samtools"]],
                     command="""\
-    module load bismark/0.15
-    bismark -q --non_directional {other_options} --output_dir {directory} --basename {basename} . -1 {fastq1} -2 {fastq2}
+module load bismark/0.15
+bismark -q --non_directional {other_options} --output_dir {directory} --basename {basename} . -1 {fastq1} -2 {fastq2}
     """.format(
                         directory=align_directory,
                         other_options=config.param("bismark_align", "other_options"),
@@ -267,6 +261,47 @@ class Episeq(common.Illumina):
 
             jobs.append(job)
 
+        return jobs
+
+    def bismark_deduplicate(self):
+        """
+        Calls the de-duplication module from Bismark. The module operates on the output alignment files from
+        Bismark, creating a new output file (SAM default, BAM possible) with the suffix *.deduplicated.bam.
+        The output file appears in the same directory as the input file, but this method will move the output file
+        to its own directory.
+        
+        :return jobs: A list of jobs that needs to be executed in this step.
+        :rtype list(Job):
+        """
+
+        jobs = []
+        for sample in self.samples:
+            work_dir = os.path.join('dedup', sample.name)
+            in_file = os.path.join('aligned', sample.name, sample.name + '_aligned_pe.bam')
+            out_file = os.path.join(work_dir, sample.name + '_aligned_pe.deduplicated.bam')
+            run_type = sample.readsets[0].run_type
+            protocol = sample.readsets[0].library
+
+            if protocol == 'RRBS':  # Deduplication is not recommended for RRBS datatypes. Keep what we have
+                job = Job([in_file], [out_file],
+                          command="ln -s -f " + in_file + " " + out_file,
+                          name="bismark_deduplication." + sample.name)
+            else:
+                job = concat_jobs([Job([in_file],
+                                       [['bismark_deduplicate', 'module_samtools']],
+                                       command="""
+                                       module load bismark/0.15
+                                       deduplicate_bismark {type} --bam {other} {input}""".format(
+                                           type='--paired' if run_type == 'PAIRED' else '--single', input=in_file,
+                                           other=config.param('bismark_deduplicate', 'other_options'))),
+                                   Job(output_files=[out_file],
+                                       command='mv -fu ' +
+                                               os.path.join('aligned', sample.name, sample.name +
+                                                            '_aligned_pe.deduplicate.bam') +
+                                               ' ' +
+                                               out_file)],
+                                  name='bismark_deduplication.' + sample.name)
+            jobs.append(job)
         return jobs
 
     def bismark_methylation_caller(self):
@@ -491,6 +526,7 @@ class Episeq(common.Illumina):
             self.trim_galore,
             self.bismark_prepare_genome,
             self.bismark_align,
+            self.bismark_deduplicate,
             self.bismark_methylation_caller,
             self.differential_methylated_pos,
             self.differential_methylated_regions

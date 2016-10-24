@@ -27,14 +27,18 @@ from core.job import Job
 
 
 def annotate(vcf, out_file):
+    config_section = 'gemini_annotations'
     return Job(
         [vcf],
         [out_file],
         [
-            ['DEFAULT', 'module_perl']
+            [config_section, 'module_perl'],
+            [config_section, 'module_tabix']
         ],
         command="""\
-perl /hpf/tools/centos6/vep/82/scripts/variant_effect_predictor/variant_effect_predictor.pl --offline --dir_cache /hpf/tools/centos6/vep/source/cache/ --assembly GRCh37 --vcf --sift b --polyphen b --symbol --numbers --biotype --total_length --canonical --ccds --fields Consequence,Codons,Amino_acids,Gene,SYMBOL,Feature,EXON,PolyPhen,SIFT,Protein_position,BIOTYPE,CANONICAL,CCDS,RadialSVM_score,RadialSVM_pred,LR_score,LR_pred,CADD_raw,CADD_phred,Reliability_index,LoF,LoF_filter,LoF_flags --fork {processors} --force_overwrite --out_file STDOUT --stats_file {out_file}.summary.html| grep -v -- "- INFO: Disabling"
-""".format(processors=16, out_file=out_file)
+perl {vep_location} --assembly {assembly} --stats_file {out_file}.summary.html {options} | grep -v -- "- INFO: Disabling" | bgzip -c > {out_file}
+""".format(vep_location=config.param(config_section, 'vep_location'),
+           assembly=config.param(config_section, 'assembly'),
+           options=config.param(config_section, 'options'),
+           out_file=out_file)
     )
-    # TODO make configurable

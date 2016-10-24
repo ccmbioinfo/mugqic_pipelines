@@ -194,6 +194,7 @@ class Episeq(common.Illumina):
                 align_directory = os.path.join("aligned", sample.name)
                 readset_sam = os.path.join(align_directory, readset.name + "_aligned_pe.bam")
                 run_type = readset.run_type
+                protocol = readset.library
 
                 if run_type == "PAIRED_END":
                     input_files = [os.path.join(trim_prefix, readset.name + "_1_val_1.fq.gz"),
@@ -213,56 +214,16 @@ class Episeq(common.Illumina):
                         # Do not import. Bismark is expecting /usr/bin/perl. Will raise errors otherwise.
                         command="""\
         module load bismark/0.15
-        bismark -q --non_directional {other} --output_dir {directory} --basename {basename} --genome_folder . {input}
+        bismark -q {directional} {other} --output_dir {directory} --basename {basename} --genome_folder . {input}
         """.format(
                             directory=align_directory,
                             other=config.param("bismark_align", "other_options"),
                             input="-1 {fastq1} -2 {fastq2}".format(fastq1=input_files[0], fastq2=input_files[1]) if
                                 run_type == "PAIRED_END" else "--single_end {fastq1}".format(fastq1=input_files[0]),
+                            directional='--non_directional' if protocol == 'RRBS' else '',
                             basename=readset.name + '_aligned'
                         )
                     )], name="bismark_align." + readset.name)
-                jobs.append(job)
-        return jobs
-
-    def picard_sort_sam(self):
-        """
-
-        :return:
-        :rtype:
-        """
-
-        jobs = []
-        for sample in self.samples:
-            for readset in sample.readsets:
-                infile = os.path.join('aligned', sample.name, readset.name + '_aligned_pe.bam')
-                job_dir = os.path.join('sorted', sample.name)
-                outfile = [os.path.join(job_dir, readset.name + '_aligned_pe_sorted.bam'),
-                           os.path.join(job_dir, readset.name + '_aligned_pe_sorted.bai')]
-
-                mkdir_job = Job(command='mkdir -p ' + job_dir)
-                sort_job = Job([infile], outfile,
-                               [['picard_sort_sam_files', 'module_java'],
-                                ['picard_sort_sam_files', 'module_picard']],
-                               command="""\
-java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME/picard.jar SortSam \\
-  VALIDATION_STRINGENCY=SILENT CREATE_INDEX=true \\
-  TMP_DIR={tmp_dir} \\
-  INPUT={input} \\
-  OUTPUT={output} \\
-  SORT_ORDER={sort_order} \\
-  MAX_RECORDS_IN_RAM={max_records_in_ram}""".format(
-                                   tmp_dir=config.param('picard_sort_sam', 'tmp_dir'),
-                                   java_other_options=config.param('picard_sort_sam', 'java_other_options'),
-                                   ram=config.param('picard_sort_sam', 'ram'),
-                                   input=infile,
-                                   output=outfile[0],
-                                   sort_order='unsorted',
-                                   max_records_in_ram=config.param('picard_sort_sam', 'max_records_in_ram', type='int')
-                               ),
-                               removable_files=outfile,
-                               local=config.param('picard_sort_sam', 'use_localhd', required=False))
-                job = concat_jobs([mkdir_job, sort_job], name="picard_sort_sam." + readset.name)
                 jobs.append(job)
         return jobs
 
@@ -535,7 +496,6 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME
             self.bismark_prepare_genome,
             self.trim_galore,
             self.bismark_align,
-#            self.picard_sort_sam,
             self.picard_merge_sam_files,
             self.bismark_methylation_caller,
             self.differential_methylated_pos,

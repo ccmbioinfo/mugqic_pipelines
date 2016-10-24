@@ -26,15 +26,16 @@ from core.config import *
 from core.job import *
 
 def gemini_annotations(variants, gemini_output, tmp_dir):
-
     return Job(
         [variants],
         [gemini_output],
         [
             ['gemini_annotations', 'module_gemini'],
-            ['gemini_annotations', 'module_htslib']
+            ['gemini_annotations', 'module_htslib'],
+            ['gemini_annotations', 'module_tabix']
         ],
         command="""\
+tabix -p vcf {variants}
 gemini load -v {variants} \\
   {options} \\
   --tempdir {temp} \\

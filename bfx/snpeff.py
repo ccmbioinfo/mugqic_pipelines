@@ -140,3 +140,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $SNPEFF_HOME
         ),
         name=job_name
     )
+
+def is_snpeff_requested():
+    return 'snpeff' in config.param('gemini_annotations', 'annotations').lower()
+

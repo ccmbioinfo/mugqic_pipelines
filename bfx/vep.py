@@ -39,6 +39,10 @@ def annotate(vcf, out_file):
 perl {vep_location} --assembly {assembly} --stats_file {out_file}.summary.html {options} | grep -v -- "- INFO: Disabling" | bgzip -c > {out_file}
 """.format(vep_location=config.param(config_section, 'vep_location'),
            assembly=config.param(config_section, 'assembly'),
-           options=config.param(config_section, 'options'),
+           options=config.param(config_section, 'vep_options'),
            out_file=out_file)
     )
+
+
+def is_vep_requested():
+    return 'vep' in config.param('gemini_annotations', 'annotations').lower()

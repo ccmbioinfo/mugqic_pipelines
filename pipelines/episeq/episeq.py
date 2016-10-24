@@ -293,7 +293,7 @@ bismark -q --non_directional {other_options} --output_dir {directory} --basename
                                        module load bismark/0.15
                                        deduplicate_bismark {type} --bam {other} {input}""".format(
                                            type='--paired' if run_type == 'PAIRED' else '--single', input=in_file,
-                                           other=config.param('bismark_deduplicate', 'other_options'))),
+                                           other=config.param('bismark_deduplicate', 'other_options', required=False))),
                                    Job(output_files=[out_file],
                                        command='mv -fu ' +
                                                os.path.join('aligned', sample.name, sample.name +
@@ -347,6 +347,17 @@ bismark -q --non_directional {other_options} --output_dir {directory} --basename
             jobs.append(job)
 
         return jobs
+
+    def bismark2report(self):
+        """
+
+        :return:
+        :rtype:
+        """
+
+        jobs = []
+
+        for sample in self.samples
 
     def differential_methylated_pos(self):
 

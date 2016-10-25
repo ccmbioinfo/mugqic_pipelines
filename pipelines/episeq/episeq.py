@@ -312,7 +312,7 @@ class Episeq(common.Illumina):
             run_type = sample.readsets[0].run_type
             job = Job(
                 merged_sample,
-                [os.path.join("methyl_calls", sample.name, sample.name + "_aligned_pe.sam.bismark.cov.gz")],
+                [os.path.join("methyl_calls", sample.name, sample.name + ".merged.bismark.cov.gz")],
                 [['bismark_methylation_caller', 'module_samtools']],
                 command="""\
         mkdir -p {directory}
@@ -345,7 +345,7 @@ class Episeq(common.Illumina):
         for contrast in self.contrasts:
             # Determine the control and case samples to include in the analysis from the contrast
             contrast_samples = [sample for sample in contrast.controls + contrast.treatments]
-            cov_files = [os.path.join("methyl_calls", sample.name, sample.name + "_aligned_pe.sam.bismark.cov.gz") for
+            cov_files = [os.path.join("methyl_calls", sample.name, sample.name + ".merged.bismark.cov.gz") for
                          sample in contrast_samples]
             sample_group = ["control" if sample in contrast.controls else "case" for sample in contrast_samples]
             dmps_file = os.path.join("differential_methylated_positions",
@@ -422,7 +422,7 @@ class Episeq(common.Illumina):
         for contrast in self.contrasts:
             # Determine the control and case samples to include in the analysis from the contrast
             contrast_samples = [sample for sample in contrast.controls + contrast.treatments]
-            cov_files = [os.path.join("methyl_calls", sample.name + "_aligned_pe.sam.bismark.cov.gz") for sample in
+            cov_files = [os.path.join("methyl_calls", sample.name + ".merged.bismark.cov.gz") for sample in
                          contrast_samples]
             sample_group = ["control" if sample in contrast.controls else "case" for sample in contrast_samples]
             dmrs_file = os.path.join("differential_methylated_regions",

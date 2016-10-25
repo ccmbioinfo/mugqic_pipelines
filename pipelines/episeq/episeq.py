@@ -213,13 +213,13 @@ class Episeq(common.Illumina):
                         # ['bismark_align', 'module_perl']],
                         # Do not import. Bismark is expecting /usr/bin/perl. Will raise errors otherwise.
                         command="""\
-        module load bismark/0.15
-        bismark -q {directional} {other} --output_dir {directory} --basename {basename} --genome_folder . {input}
+module load bismark/0.15
+bismark -q {directional} {other} --output_dir {directory} --basename {basename} --genome_folder . {fastq1} {fastq2}
         """.format(
                             directory=align_directory,
                             other=config.param("bismark_align", "other_options"),
-                            input="-1 {fastq1} -2 {fastq2}".format(fastq1=input_files[0], fastq2=input_files[1]) if
-                                run_type == "PAIRED_END" else "--single_end {fastq1}".format(fastq1=input_files[0]),
+                            fastq1=input_files[0],
+                            fastq2=input_files[1] if run_type == "PAIRED_END" else "--single_end",
                             directional='--non_directional' if protocol == 'RRBS' else '',
                             basename=readset.name + '_aligned'
                         )

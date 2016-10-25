@@ -1,0 +1,6 @@
+[data]
+# directory where BAM files are
+bam_prefix = ./
+# directory where MISO output is
+miso_prefix = ./miso/
+

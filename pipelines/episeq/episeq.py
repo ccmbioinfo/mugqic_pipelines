@@ -143,17 +143,20 @@ class Episeq(common.Illumina):
                 protocol = readset.library
                 trim_directory = os.path.join("trimmed", sample.name, readset.name)
                 fq1_out = os.path.join(trim_directory, readset.name)
-                fq2_out = os.path.join(trim_directory, readset.name)
                 output_files = []
+                report_logs = []
 
                 # Trim Galoree has no built in option to change the filenames of the output
                 # Below are the default output names when running in paired or single mode
                 if run_type == "PAIRED_END":
                     input_files = [readset.fastq1, readset.fastq2]
-                    output_files = [fq1_out + "_1_val_1.fq.gz", fq2_out + "_1_val_2.fq.gz"]
+                    output_files = [fq1_out + "_1_val_1.fq.gz", fq1_out + "_2_val_2.fq.gz"]
+                    report_logs = [fq1_out + '_1_trimming_report.txt', fq1_out + "_1_val_1_fastqc.html",
+                                   fq1_out + '_2_trimming_report.txt', fq1_out + "_2_val_2_fastqc.html"]
                 elif run_type == "SINGLE_END":
                     input_files = [readset.fastq1]
                     output_files = [fq1_out + "_trimmed.fq.gz"]
+                    report_logs = [fq1_out + '_trimming_report.txt', fq1_out + "_fastqc.html"]
 
                 mkdir_job = Job(command="mkdir -p " + trim_directory)
                 job = concat_jobs([
@@ -176,7 +179,8 @@ class Episeq(common.Illumina):
                             directory=trim_directory,
                             fastq1=input_files[0],
                             fastq2='' if run_type == "SINGLE_END" else input_files[1]
-                        )
+                        ),
+                        report_files=report_logs
                     )], name="trim_galore." + readset.name)
                 jobs.append(job)
         return jobs
@@ -193,6 +197,7 @@ class Episeq(common.Illumina):
                 trim_prefix = os.path.join("trimmed", sample.name, readset.name)
                 align_directory = os.path.join("aligned", sample.name)
                 readset_sam = os.path.join(align_directory, readset.name + "_aligned_pe.bam")
+                report_log = [os.path.join(align_directory, readset.name + "aligned_PE_report.txt")]
                 run_type = readset.run_type
                 protocol = readset.library
 
@@ -222,7 +227,8 @@ bismark -q {directional} {other} --output_dir {directory} --basename {basename} 
                             fastq2=input_files[1] if run_type == "PAIRED_END" else "--single_end",
                             directional='--non_directional' if protocol == 'RRBS' else '',
                             basename=readset.name + '_aligned'
-                        )
+                        ),
+                        report_files=report_log
                     )], name="bismark_align." + readset.name)
                 jobs.append(job)
         return jobs

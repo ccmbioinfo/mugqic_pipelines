@@ -25,7 +25,9 @@
 from core.config import *
 from core.job import *
 
+
 def gemini_annotations(variants, gemini_output, tmp_dir):
+    # Change PYTHONPATH so we get the correct platform.py from gemini's python
     return Job(
         [variants],
         [gemini_output],
@@ -35,6 +37,7 @@ def gemini_annotations(variants, gemini_output, tmp_dir):
             ['gemini_annotations', 'module_tabix']
         ],
         command="""\
+PYTHONPATH=/hpf/tools/centos6/gemini/6292016/anaconda/lib/python2.7:$PYTHONPATH
 tabix -p vcf {variants}
 gemini load -v {variants} \\
   {options} \\

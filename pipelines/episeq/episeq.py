@@ -233,6 +233,114 @@ bismark -q {directional} {other} --output_dir {directory} --basename {basename} 
                 jobs.append(job)
         return jobs
 
+    def merge_bismark_alignment_report(self):
+        """
+
+        :return:
+        :rtype:
+        """
+        search_total_seqs = '^Sequence(?:s|pairs) analysed in total:\s+([0-9]+)'
+        search_uniq_hit = '^Number of (?:paired-end)? alignments with a unique best hit:\s+([0-9]+)'
+        search_no_align = 'with no alignments under any condition:\s+([0-9]+)'
+        search_not_uniq = 'did not map uniquely:\s+([0-9]+)'
+        search_discarded = 'were discarded because genomic sequence.*?:\s+([0-9]+)'
+        search_ct_ct = 'CT/GA/CT:\s+([0-9]+)\s+.*'
+        search_ga_ct = 'GA/CT/CT:\s+([0-9]+)\s+.*'
+        search_ga_ga = 'GA/CT/GA:\s+([0-9]+)\s+.*'
+        search_ct_ga = 'CT/GA/GA:\s+([0-9]+)\s+.*'
+        search_direct = 'complementary strands being rejected in total:\s+([0-9]+)'
+        search_totalC = 'Total number of C.*?\s+([0-9]+)'
+        search_mC_cpg = 'methylated (?:C\'s)? in CpG context:\s+([0-9]+)'
+        search_mC_chg = 'methylated (?:C\'s)? in CHG context:\s+([0-9]+)'
+        search_mC_chh = 'methylated (?:C\'s)? in CHH context:\s+([0-9]+)'
+        search_mC_unk = 'methylated (?:C\'s)? in Unknown context:\s+([0-9]+)'
+        search_C_cpg = '(?:unmethylated C\'s)|(?:C to T conversions) in CpG context:\s+([0-9]+)'
+        search_C_chg = '(?:unmethylated C\'s)|(?:C to T conversions) in CHG context:\s+([0-9]+)'
+        search_C_chh = '(?:unmethylated C\'s)|(?:C to T conversions) in CHH context:\s+([0-9]+)'
+        search_C_unk = '(?:unmethylated C\'s)|(?:C to T conversions) in Unknown context:\s+([0-9]+)'
+        search_all = [search_total_seqs, search_totalC, search_direct,
+                      search_uniq_hit, search_no_align, search_not_uniq, search_discarded,
+                      search_ct_ct, search_ga_ct, search_ga_ga, search_ct_ga,
+                      search_mC_cpg, search_mC_chg, search_mC_chh, search_mC_unk,
+                      search_C_cpg, search_C_chg, search_C_chh, search_C_unk]
+
+        for sample in self.samples:
+            log_reports = []
+            output_dir = os.path.join("reports", sample.name)
+            output_report = os.path.join(output_dir, sample.name + "_aligned_report.txt")
+            align_directory = os.path.join("aligned", sample.name)
+
+            # Get all log reports for this sample
+            for readset in sample.readsets:
+                log_basename = os.path.join(align_directory, readset.name)
+                if readset.run_type == "PAIRED_END":
+                    log_reports.append(log_basename + "_aligned_PE_report.txt")
+                else:
+                    log_reports.append(log_basename + "_aligned_SE_report.txt")
+
+            # Set variables
+            total_seqs, total_C, direction_rejected = (0, 0, 0)
+            uniq_hit, no_align, not_uniq, discarded = (0, 0, 0, 0)
+            ct_ct, ga_ct, ga_ga, ct_ga = (0, 0, 0, 0)
+            mC_cpg, mC_chg, mC_chh, mC_unk = (0, 0, 0, 0)
+            C_cpg, C_chg, C_chh, C_unk = (0, 0, 0, 0)
+            value_all = [total_seqs, total_C, direction_rejected,
+                         uniq_hit, no_align, not_uniq, discarded,
+                         ct_ct, ga_ct, ga_ga, ct_ga,
+                         mC_cpg, mC_chg, mC_chh, mC_unk,
+                         C_cpg, C_chg, C_chh, C_unk]
+
+            with [open(logs).readlines() for logs in log_reports] as file_data:
+                for each_file in file_data:
+                    for line in each_file:
+                        for (val, total) in zip(search_all, value_all):
+                            result = re.search(val, line)
+                            if result:
+                                total += result.group(1)
+                                continue
+            with open(output_report, 'w') as writer:
+                writer.write("""
+Merged Bismark report for: {readsets}
+
+Final Alignment report
+======================
+
+Sequences analysed in total:\t{seqs}
+Number of alignments with a unique hit:\t{uniq}
+Mapping efficiency:\t{efficient}
+Sequences with no alignments under any condition:\t{no_align}
+Sequences did not map uniquely:\t{no_uniq}
+Sequences which were discarded because genomic sequence could not be extracted:\t{discarded}
+
+Number of sequences with unique best (first) alignment came from the bowtie output:
+CT/GA/CT:\t{ct_ct}\t((converted) top strand)
+GA/CT/CT:\t{ga_ct}\t(complementary to (converted) top strand)
+GA/CT/GA:\t{ga_ga}\t(complementary to (converted) bottom strand)
+CT/GA/GA:\t{ct_ga}\t((converted) bottom strand)
+
+Number of alignments to (merely theoretical) complementary strands being rejected in total:\t{reject}
+
+Final Cytosine Methylation Report
+=================================
+Total number of C's analysed:\t{total_c}
+
+Total methylated C's in CpG context:\t{mc_cpg}
+Total methylated C's in CHG context:\t{mc_chg}
+Total methylated C's in CHH context:\t{mc_chh}
+Total methylated C's in Unknown context:\t{mc_unk}
+
+
+Total unmethylated C's in CpG context:\t{c_cpg}
+Total unmethylated C's in CHG context:\t{c_chg}
+Total unmethylated C's in CHH context:\t{c_chh}
+Total unmethylated C's in Unknown context:\t{c_unk}
+
+""".format(readsets=' '.join(sample.readsets), seqs=total_seqs,
+           uniq=uniq_hit, efficient='', no_align=no_align, no_uniq=not_uniq, discarded=discarded,
+           ct_ct=ct_ct, ga_ct=ga_ct, ga_ga=ga_ga, ct_ga=ct_ga, reject=direction_rejected,
+           total_c=total_C, mc_cpg=mC_cpg, mc_chg=mC_chg, mc_chh=mC_chh, mc_unk=mC_unk,
+           c_cpg=C_cpg, c_chg=C_chg, c_chh=C_chh, c_unk=C_unk))
+
     def picard_merge_sam_files(self):
         """
 

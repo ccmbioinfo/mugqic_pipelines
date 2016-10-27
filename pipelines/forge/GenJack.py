@@ -1250,12 +1250,12 @@ cp \\
                 job.name = "VEP_annotation." + sample.name
                 jobs.append(job)
 
-            # TODO use snpeff code
-            # if is_snpeff_requested:
-            #     snpeff_out_file = os.path.join("annotation", sample.name, sample.name + ".snpeff-annotated.vcf.gz")
-            #     job = snpeff.annotate(vcf_file, snpeff_out_file)
-            #     job.name = "SnpEff_annotation." + sample.name
-            #     jobs.append(job)
+            # TODO test snpeff code
+            if use_snpeff:
+                snpeff_out_file = os.path.join("annotation", sample.name, sample.name + ".snpeff-annotated.vcf.gz")
+                job = snpeff.compute_effects(vcf_file, snpeff_out_file)
+                job.name = "SnpEff_annotation." + sample.name
+                jobs.append(job)
 
         return jobs
 
@@ -1275,7 +1275,7 @@ cp \\
                 vcf_file = os.path.join("annotation", sample.name, sample.name + ".vep-annotated.vcf.gz")
                 db_name = os.path.join("annotation", sample.name, sample.name + ".vep-annotated.db")
 
-                job = gemini.gemini_annotations(vcf_file, db_name, os.path.join("annotation", sample.name))
+                job = gemini.gemini_annotations(vcf_file, db_name, os.path.join("annotation", sample.name), annotations='VEP')
                 job.name = "gemini_load_vep_to_db." + sample.name
                 jobs.append(job)
 
@@ -1283,7 +1283,7 @@ cp \\
                 vcf_file = os.path.join("annotation", sample.name, sample.name + ".snpeff-annotated.vcf.gz")
                 db_name = os.path.join("annotation", sample.name, sample.name + ".snpeff-annotated.db")
 
-                job = gemini.gemini_annotations(vcf_file, db_name, os.path.join("annotation", sample.name))
+                job = gemini.gemini_annotations(vcf_file, db_name, os.path.join("annotation", sample.name), annotations='snpEff')
                 job.name = "gemini_load_snpeff_to_db." + sample.name
                 jobs.append(job)
 

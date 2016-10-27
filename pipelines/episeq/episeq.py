@@ -150,7 +150,7 @@ class Episeq(common.Illumina):
                     if readset.bam:
                         continue
                     else:
-                        raise IOError('{readset} has no input files!'.format(readset=readset.name))
+                        raise IOError("""{readset} has no input files!""".format(readset=readset.name))
 
                 mkdir_job = Job(command="mkdir -p " + align_directory)
                 job = concat_jobs([

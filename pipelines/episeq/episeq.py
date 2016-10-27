@@ -79,8 +79,10 @@ class Episeq(common.Illumina):
         jobs = []
         for sample in self.samples:
             for readset in sample.readsets:
-                if readset.bam:
-                    continue  # Skip this iteration
+                if readset.bam and not readset.fastq1:
+                    continue  # There's still a bam file to process later
+                elif not (readset.bam or readset.fastq1 or readset.fastq2):
+                    raise ValueError("There is no data files in this readset: " + readset.name + "!\n")
                 # Get metadata and names
                 run_type = readset.run_type
                 protocol = readset.library
@@ -127,7 +129,7 @@ class Episeq(common.Illumina):
         """
         This step aligns trimmed reads to a bisulfite converted reference genome using Bismark [link]
         """
-
+        # TODO: Add case for bam file input.
         # Multicore funtionality for Bismark is currently not supported when using the option --basename
         jobs = []
         for sample in self.samples:
@@ -179,19 +181,21 @@ class Episeq(common.Illumina):
         jobs = []
         for sample in self.samples:
             # Bam files from pipeline (FASTQ)
-            readsets = [os.path.join('aligned', sample.name,
-                                     readset.name + "_aligned_pe.bam") for readset in sample.readsets]
+            processed_fastq = [os.path.join('aligned', sample.name, readset.name + "_aligned_pe.bam") for
+                    readset in sample.readsets]
             # Bam files from user
-            readsets += [readset.bam for readset in sample.readsets]
+            listed_bam_files = [readset.bam for readset in sample.readsets if readset.bam != '']
+            
+            input_files = processed_fastq + listed_bam_files
             merge_prefix = 'merged'
             output_bam = os.path.join(merge_prefix, sample.name + '.merged.bam')
 
             mkdir_job = Job(command='mkdir -p ' + merge_prefix)
 
             # I want to use Picard Tools v2.0.1, which has a different syntax than v1.x
-            if len(readsets) > 1:
+            if len(input_files) > 1:
                 picard_v2 = Job(
-                    readsets,
+                    input_files,
                     [output_bam, re.sub("\.([sb])am$", ".\\1ai", output_bam)],
                     [
                         ['picard_merge_sam_files', 'module_java'],
@@ -210,16 +214,16 @@ class Episeq(common.Illumina):
                         tmp_dir=config.param('picard_merge_sam_files', 'tmp_dir'),
                         java_other_options=config.param('picard_merge_sam_files', 'java_other_options'),
                         ram=config.param('picard_merge_sam_files', 'ram'),
-                        inputs=" \\\n  ".join(["INPUT=" + in_put for in_put in readsets]),
+                        inputs=" \\\n  ".join(["INPUT=" + in_put for in_put in input_files]),
                         output=output_bam,
                         max_records_in_ram=config.param('picard_merge_sam_files', 'max_records_in_ram', type='int')),
                     removable_files=[output_bam, re.sub("\.([sb])am$", ".\\1ai", output_bam)],
                     local=config.param('picard_merge_sam_files', 'use_localhd', required=False))
-                job = concat_jobs([mkdir_job, picard_v2],
-                                  name="picard_merge_sam_files." + sample.name)  # Name must be set to match picard
 
-            elif len(sample.readsets) == 1:
-                readset_bam = readsets[0]
+                job = concat_jobs([mkdir_job, picard_v2], name="picard_merge_sam_files." + sample.name)
+
+            elif len(input_files) == 1:
+                readset_bam = input_files[0]
                 if os.path.isabs(readset_bam):
                     target_readset_bam = readset_bam
                 else:

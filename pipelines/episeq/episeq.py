@@ -110,8 +110,7 @@ class Episeq(common.Illumina):
                         command="""\
     module load trim_galore/0.4.1
     module load cutadapt/1.10
-    trim_galore {protocol} {library_type} {non_directional} {other} \\
-    --output_dir {directory} --fastqc_args "-t 4" {fastq}
+    trim_galore {protocol} {library_type} {non_directional} {other} --output_dir {directory} {fastq}
             """.format(
                             library_type="--paired" if run_type == "PAIRED_END" else "",
                             protocol='--rrbs' if protocol == 'RRBS' else '',

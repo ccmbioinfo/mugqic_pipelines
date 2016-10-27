@@ -26,8 +26,17 @@ from core.config import *
 from core.job import *
 
 
-def gemini_annotations(variants, gemini_output, tmp_dir):
-    # Change PYTHONPATH so we get the correct platform.py from gemini's python
+def gemini_annotations(variants, gemini_output, tmp_dir, annotations=''):
+    """
+    Store variants in a gemini database
+
+    :param variants: vcf file to load
+    :param gemini_output: db file to load to
+    :param tmp_dir: dir to put temporary database chunks
+    :param annotations: which annotations were use, either 'VEP', or 'snpEff'
+    :return: Job
+    """
+    # Temporarily remove PYTHONPATH so that we import platform from gemini
     return Job(
         [variants],
         [gemini_output],
@@ -37,13 +46,13 @@ def gemini_annotations(variants, gemini_output, tmp_dir):
             ['gemini_annotations', 'module_tabix']
         ],
         command="""\
-PYTHONPATH=/hpf/tools/centos6/gemini/6292016/anaconda/lib/python2.7:$PYTHONPATH
 tabix -p vcf {variants}
-gemini load -v {variants} \\
-  {options} \\
-  --tempdir {temp} \\
-  {output}""".format(
+PYTHONPATH='' gemini load -v {variants} \\
+{options} {annotations} \\
+--tempdir {temp} \\
+{output}""".format(
         options=config.param('gemini_annotations', 'options'),
+        annotations='-t ' + annotations if annotations else '',
         variants=variants,
         output=gemini_output,
         temp=tmp_dir

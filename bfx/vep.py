@@ -27,6 +27,10 @@ from core.job import Job
 
 
 def annotate(vcf, out_file):
+    """
+    Annotate vcf using options specified in config
+    :return: Job
+    """
     config_section = 'gemini_annotations'
     return Job(
         [vcf],
@@ -46,4 +50,7 @@ perl {vep_location} -i {input} --assembly {assembly} --stats_file {out_file}.sum
 
 
 def is_vep_requested():
+    """
+    Determine whether the user wants to annote the VCF with VEP
+    """
     return 'vep' in config.param('gemini_annotations', 'annotations').lower()

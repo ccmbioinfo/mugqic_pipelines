@@ -146,6 +146,13 @@ class Episeq(common.Illumina):
                 elif run_type == "SINGLE_END":
                     input_files = [os.path.join(trim_prefix, readset.name + "_trimmed.fq.gz")]
 
+                # Case when only a bam file is given for a readset
+                if not os.path.exists(input_files[0]):
+                    if readset.bam:
+                        continue
+                    else:
+                        raise IOError('{readset} has no input files!'.format(readset=readset.name))
+
                 mkdir_job = Job(command="mkdir -p " + align_directory)
                 job = concat_jobs([
                     mkdir_job,
@@ -180,13 +187,13 @@ class Episeq(common.Illumina):
 
         jobs = []
         for sample in self.samples:
-            # Bam files from pipeline (FASTQ)
+            # Bam files from pipeline (FASTQ), occurs when fastq1 is not empty
             processed_fastq = [os.path.join('aligned', sample.name, readset.name + "_aligned_pe.bam") for
                     readset in sample.readsets if readset.fastq1 != '']
-            # Bam files from user
+            # Bam files from user, if specified by readset file. Not exclusive with having fastq
             listed_bam_files = [readset.bam for readset in sample.readsets if readset.bam != '']
 
-            input_files = processed_fastq + listed_bam_files
+            input_files = processed_fastq + listed_bam_files  # All bam files that belong to the sample
             merge_prefix = 'merged'
             output_bam = os.path.join(merge_prefix, sample.name + '.merged.bam')
 

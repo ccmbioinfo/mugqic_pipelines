@@ -178,15 +178,18 @@ class Episeq(common.Illumina):
 
         jobs = []
         for sample in self.samples:
+            # Bam files from pipeline (FASTQ)
             readsets = [os.path.join('aligned', sample.name,
                                      readset.name + "_aligned_pe.bam") for readset in sample.readsets]
+            # Bam files from user
+            readsets += [readset.bam for readset in sample.readsets]
             merge_prefix = 'merged'
             output_bam = os.path.join(merge_prefix, sample.name + '.merged.bam')
 
             mkdir_job = Job(command='mkdir -p ' + merge_prefix)
 
             # I want to use Picard Tools v2.0.1, which has a different syntax than v1.x
-            if len(sample.readsets) > 1:
+            if len(readsets) > 1:
                 picard_v2 = Job(
                     readsets,
                     [output_bam, re.sub("\.([sb])am$", ".\\1ai", output_bam)],
@@ -221,16 +224,10 @@ class Episeq(common.Illumina):
                     target_readset_bam = readset_bam
                 else:
                     target_readset_bam = os.path.relpath(readset_bam, merge_prefix)
-                readset_index = re.sub("\.bam$", ".bai", readset_bam)
-                target_readset_index = re.sub("\.bam$", ".bai", target_readset_bam)
-                output_idx = re.sub("\.bam$", ".bai", output_bam)
-
                 job = concat_jobs([
                     mkdir_job,
                     Job([readset_bam], [output_bam], command="ln -s -f " + target_readset_bam + " " + output_bam,
-                        removable_files=[output_bam]),
-                    Job([readset_index], [output_idx],
-                        command="ln -s -f " + target_readset_index + " " + output_idx, removable_files=[output_idx])],
+                        removable_files=[output_bam])],
                     name="symlink_readset_sample_bam." + sample.name)
             else:
                 raise ValueError('Sample ' + sample.name + ' has no readsets!')

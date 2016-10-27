@@ -1238,21 +1238,17 @@ cp \\
 
         jobs = []
 
-        use_vep = vep.is_vep_requested()
-        use_snpeff = snpeff.is_snpeff_requested()
-
         for sample in self.samples:
             vcf_file = os.path.join("annotation", sample.name, sample.name + ".annovar_out.normalized.vcf.gz")
 
-            if use_vep:
-                vep_out_file = os.path.join("annotation", sample.name, sample.name + ".vep-annotated.vcf.gz")
+            if vep.is_vep_requested():
+                vep_out_file = os.path.join("annotation", sample.name, sample.name + ".vep-annotated.vcf")
                 job = vep.annotate(vcf_file, vep_out_file)
                 job.name = "VEP_annotation." + sample.name
                 jobs.append(job)
 
-            # TODO test snpeff code
-            if use_snpeff:
-                snpeff_out_file = os.path.join("annotation", sample.name, sample.name + ".snpeff-annotated.vcf.gz")
+            if snpeff.is_snpeff_requested():
+                snpeff_out_file = os.path.join("annotation", sample.name, sample.name + ".snpeff-annotated.vcf")
                 job = snpeff.compute_effects(vcf_file, snpeff_out_file)
                 job.name = "SnpEff_annotation." + sample.name
                 jobs.append(job)
@@ -1267,20 +1263,17 @@ cp \\
 
         jobs = []
 
-        use_vep = vep.is_vep_requested()
-        use_snpeff = snpeff.is_snpeff_requested()
-
         for sample in self.samples:
-            if use_vep:
-                vcf_file = os.path.join("annotation", sample.name, sample.name + ".vep-annotated.vcf.gz")
+            if vep.is_vep_requested():
+                vcf_file = os.path.join("annotation", sample.name, sample.name + ".vep-annotated.vcf")
                 db_name = os.path.join("annotation", sample.name, sample.name + ".vep-annotated.db")
 
                 job = gemini.gemini_annotations(vcf_file, db_name, os.path.join("annotation", sample.name), annotations='VEP')
                 job.name = "gemini_load_vep_to_db." + sample.name
                 jobs.append(job)
 
-            if use_snpeff:
-                vcf_file = os.path.join("annotation", sample.name, sample.name + ".snpeff-annotated.vcf.gz")
+            if snpeff.is_snpeff_requested():
+                vcf_file = os.path.join("annotation", sample.name, sample.name + ".snpeff-annotated.vcf")
                 db_name = os.path.join("annotation", sample.name, sample.name + ".snpeff-annotated.db")
 
                 job = gemini.gemini_annotations(vcf_file, db_name, os.path.join("annotation", sample.name), annotations='snpEff')

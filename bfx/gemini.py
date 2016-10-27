@@ -46,7 +46,6 @@ def gemini_annotations(variants, gemini_output, tmp_dir, annotations=''):
             ['gemini_annotations', 'module_tabix']
         ],
         command="""\
-tabix -p vcf {variants}
 PYTHONPATH='' gemini load -v {variants} \\
 {options} {annotations} \\
 --tempdir {temp} \\

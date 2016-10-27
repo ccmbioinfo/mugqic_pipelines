@@ -182,10 +182,10 @@ class Episeq(common.Illumina):
         for sample in self.samples:
             # Bam files from pipeline (FASTQ)
             processed_fastq = [os.path.join('aligned', sample.name, readset.name + "_aligned_pe.bam") for
-                    readset in sample.readsets]
+                    readset in sample.readsets if readset.fastq1 != '']
             # Bam files from user
             listed_bam_files = [readset.bam for readset in sample.readsets if readset.bam != '']
-            
+
             input_files = processed_fastq + listed_bam_files
             merge_prefix = 'merged'
             output_bam = os.path.join(merge_prefix, sample.name + '.merged.bam')

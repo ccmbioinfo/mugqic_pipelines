@@ -1,6 +1,31 @@
 #!/usr/bin/env python
+"""
+Epigenetics pipeline for RRBS/WGBS data
+=======================================
 
-# Epigenetics pipeline for RRBS/WGSB data
+Background
+----------
+EpiSeq is a differential analysis pipeline for BS-seq sequencing. Currently only RRBS and WGBS datasets are
+tested to work with this pipeline. Similar to the other MUGQIC pipeline series, EpiSeq uses two metadata files to
+set up the pipeline. The design file is used to group samples into case vs control. The readsets files refer to
+which input files correspond to each same and, if applicable, which pairs of input files correspond to paired reads.
+A readset is considered to be one instance/lane/segment of sequencing data. This is often used when multiple libraries
+are used for a given sample, or if multiplexing was done. These techniques tend to generate multiple sets of data
+for a given sample. The readset file allows users to specify these relationships.
+
+This simple pipeline uses Bismark, Trim Galore!, and Picard to process data. See the README file for more information
+about the steps in the pipeline.
+
+Implementation
+--------------
+The pipeline is arranged to gradually decrease the number of input files when it make sense to do so. The trimming
+and QC step would be too slow if we merge readsets together, so we decided to trim each file individually. Then,
+the alignment phase allows us to convert out fastQ files to BAM files. This allows us to merge paired datasets into
+one BAM file per readset without explicitly doing so. After this, readsets are combined to run the differential
+analysis steps.
+
+Steps (1 and 2) and (6 and 7) run concurrently while all other steps run sequentially.
+"""
 
 # Python Standard Modules
 import argparse
@@ -29,7 +54,8 @@ log = logging.getLogger(__name__)
 
 class Episeq(common.Illumina):
     """
-    The Episeq pipeline takes FASTQ or BAM files (unsorted) as input
+    The Episeq pipeline takes FASTQ or BAM files (unsorted) as input as well as two metadata files and a configuration
+    file. Refer to the user guide for more information on running the pipeline.
     """
 
     def __init__(self):
@@ -96,44 +122,14 @@ class Episeq(common.Illumina):
 
         return jobs
 
-    def bismark_prepare_genome(self):
-        """
-        Bismark requires a processed reference genome to compare with the epigenome.
-        """
-        ref_seq = config.param('bismark_prepare_genome', 'genome_file', type='filepath')
-        local_ref_seq = os.path.join('bismark_prepare_genome', os.path.basename(ref_seq))
-        output_idx = "Bisulfite_Genome"
-
-        if not os.path.isfile(local_ref_seq):
-            run_job = Job([ref_seq], [output_idx],
-                          module_entries=[["bismark_prepare_genome", "module_bowtie2"],
-                                          ["bismark_prepare_genome", "module_samtools"]],
-                          command="""\
-    cp {src} .
-    module load bismark/0.15
-    bismark_genome_preparation {verbose} --bowtie2 .""".format(
-                              src=ref_seq,
-                              verbose='--verbose' if config.param('bismark_genome_preparation', 'verbose_logging',
-                                                                  required=False, type='boolean') else ''),
-                          name="bismark_prepare_genome")
-        else:
-            run_job = Job([ref_seq], [output_idx],
-                          module_entries=[["bismark_prepare_genome", "module_bowtie2"],
-                                          ["bismark_prepare_genome", "module_samtools"]],
-                          command="""\
-    module load bismark/0.15
-    bismark_genome_preparation {verbose} --bowtie2 .""".format(
-                              verbose='--verbose' if config.param('bismark_genome_preparation', 'verbose_logging',
-                                                                  required=False, type='boolean') else ''),
-                          name="bismark_prepare_genome")
-
-        return [run_job]
 
     def trim_galore(self):
-
         """
-        This step trims raw FASTQ files for quality control using Trim Galore! and runs fastqc at the end,
-        courtesy of trim galore.
+        This step trims raw FASTQ files for quality control using Trim Galore!
+        This is a pre-proccessing step to ensure quality control.
+
+        :return jobs: A list of jobs that needs to be executed in this step.
+        :rtype list(Job):
         """
 
         jobs = []
@@ -185,9 +181,54 @@ class Episeq(common.Illumina):
                 jobs.append(job)
         return jobs
 
+    def bismark_prepare_genome(self):
+        """
+        Bismark requires a processed reference genome to compare with the epigenome. This step can take several hours,
+        depending on the size of the genome. It creates an index of bisulfite conversions and takes make space than
+        the genome itself.
+
+        The genome should be in fasta format and note that this step always copies the genome to the output directory.
+
+        Input: A reference sequence file as specified by user. Configuration is set in the episeq.ini file.
+        Output: A directory called Bisulfite_Genome.
+
+        :return jobs: A list of jobs that needs to be executed in this step.
+        :rtype list(Job):
+        """
+        ref_seq = config.param('bismark_prepare_genome', 'genome_file', type='filepath')
+        local_ref_seq = os.path.join('bismark_prepare_genome', os.path.basename(ref_seq))
+        output_idx = "Bisulfite_Genome"
+
+        main_job = Job([local_ref_seq], [output_idx],
+                       [['bismark_prepare_genome', 'module_bowtie2'],
+                        ['bismark_prepare_genome', 'module_samtools']],
+                       command="module load bismark/0.15; bismark_genome_preparation --verbose --bowtie2 .",
+                       name="bismark_prepare_genome")
+
+        if not os.path.isfile(local_ref_seq):
+            link_job = Job([ref_seq], [local_ref_seq],
+                           command="ln -s -f " + ref_seq + " " + local_ref_seq)
+            job = concat_jobs([main_job, link_job], name="bismark_prepare_genome")
+        else:  # In the off-chance that someone put the file in the output directory.
+            job = main_job
+
+        return [job]
+
     def bismark_align(self):
         """
-        This step aligns trimmed reads to a bisulfite converted reference genome using Bismark [link]
+        This step aligns trimmed reads to a bisulfite converted reference genome using Bismark. This create
+        BAM files and will only be compressed if the input is also compressed (which usually will be the case).
+
+        This step requires bismark_prepare_genome and the relevant trim_galore step.
+
+        Input: Trimmed version of input files. (trimmed/*)
+        Output: A BAM/SAM file in aligned/<sample_name>/*
+
+        - [Set uneccessary files as removeable!]
+        - [Get bismark into mugqic_pipelines modules]
+
+        :return jobs: A list of jobs that needs to be executed in this step.
+        :rtype list(Job):
         """
 
         # Multicore funtionality for Bismark is currently not supported when using the option --basename
@@ -337,12 +378,62 @@ bismark -q {directional} {other} --output_dir {directory} --basename {basename} 
             jobs.append(job)
         return jobs
 
+    def bismark_deduplicate(self):
+        """
+        Calls the de-duplication module from Bismark. The module operates on the output alignment files from
+        Bismark, creating a new output file (SAM default, BAM possible) with the suffix *.deduplicated.bam.
+        The output file appears in the same directory as the input file, but this method will move the output file
+        to its own directory.
+
+        :return jobs: A list of jobs that needs to be executed in this step.
+        :rtype list(Job):
+        """
+
+        jobs = []
+        for sample in self.samples:
+            work_dir = os.path.join('dedup', sample.name)
+            in_file = os.path.join('aligned', sample.name, sample.name + '_aligned_pe.bam')
+            out_file = os.path.join(work_dir, sample.name + '_aligned_pe.deduplicated.bam')
+            run_type = sample.readsets[0].run_type
+            protocol = sample.readsets[0].library
+
+            if protocol == 'RRBS':  # Deduplication is not recommended for RRBS datatypes. Keep what we have
+                job = Job([in_file], [out_file],
+                          command="ln -s -f " + in_file + " " + out_file,
+                          name="bismark_deduplication." + sample.name)
+            else:
+                job = concat_jobs([
+                    Job([in_file],
+                        [['bismark_deduplicate', 'module_samtools']],
+                        command="""
+module load bismark/0.15
+deduplicate_bismark {type} --bam {other} {input}""".format(
+                            type='--paired' if run_type == 'PAIRED' else '--single', input=in_file,
+                            other=config.param('bismark_deduplicate', 'other_options', required=False)),
+                        report_files=[os.path.join(work_dir, sample.name +
+                                                   '_aligned_pe.deduplication_report.txt')]),
+                    Job(output_files=[out_file],
+                        command='mv -fu ' +
+                                os.path.join('aligned', sample.name, sample.name +
+                                             '_aligned_pe.deduplicate.bam') +
+                                ' ' +
+                                out_file)],
+                    name='bismark_deduplication.' + sample.name)
+            jobs.append(job)
+        return jobs
+
     def bismark_methylation_caller(self):
         """
         This step extracts the methylation call for every single cytosine analyzed from the Bismark result files.
         The following input files are accepted:
             1.	Bismark result files from previous alignment step
             2.	BAM files (unsorted) from readset file
+
+        Input: Merged sample files (merged/)
+        Output: Methylation calls in BedGraph format. (methyl_calls/)
+
+        :return jobs: A list of jobs that needs to be executed in this step.
+        :rtype list(Job):
         """
 
         jobs = []
@@ -380,6 +471,14 @@ bismark -q {directional} {other} --output_dir {directory} --basename {basename} 
         compute a F-test statistic on the beta values for the assayed CpGs in each sample. A p-value is then returned
         for each site with the option of correcting them for multiple testing. Differential analysis is done for each
         contrast specified in the design file
+
+        The values from the design files dictates how the samples are treated and compared.
+
+        Input: Methylation data (methyl_calls/)
+        Output: A CSV file in differential_methylated_positions/
+
+        :return jobs: A list of jobs that needs to be executed in this step.
+        :rtype list(Job):
         """
 
         jobs = []
@@ -455,9 +554,15 @@ bismark -q {directional} {other} --output_dir {directory} --basename {basename} 
     def differential_methylated_regions(self):
 
         """
+        Similar to differential_methylated_positions, this step looks at methylation patterns on a larger, regional
+        level. This step compares large-scale differences in methylation as opposed to comparing local methylation
+        sites.
 
-        :return:
-        :rtype:
+        Input: Methylation data (methyl_calls/)
+        Output: A CSV file in differential_methylated_regions/
+
+        :return jobs: A list of jobs that needs to be executed in this step.
+        :rtype list(Job):
         """
         jobs = []
 
@@ -539,6 +644,7 @@ bismark -q {directional} {other} --output_dir {directory} --basename {basename} 
             self.trim_galore,
             self.bismark_align,
             self.picard_merge_sam_files,
+            self.bismark_deduplicate,
             self.bismark_methylation_caller,
             self.differential_methylated_pos,
             self.differential_methylated_regions

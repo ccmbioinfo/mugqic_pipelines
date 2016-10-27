@@ -287,20 +287,23 @@ bismark -q --non_directional {other_options} --output_dir {directory} --basename
                           command="ln -s -f " + in_file + " " + out_file,
                           name="bismark_deduplication." + sample.name)
             else:
-                job = concat_jobs([Job([in_file],
-                                       [['bismark_deduplicate', 'module_samtools']],
-                                       command="""
-                                       module load bismark/0.15
-                                       deduplicate_bismark {type} --bam {other} {input}""".format(
-                                           type='--paired' if run_type == 'PAIRED' else '--single', input=in_file,
-                                           other=config.param('bismark_deduplicate', 'other_options', required=False))),
-                                   Job(output_files=[out_file],
-                                       command='mv -fu ' +
-                                               os.path.join('aligned', sample.name, sample.name +
-                                                            '_aligned_pe.deduplicate.bam') +
-                                               ' ' +
-                                               out_file)],
-                                  name='bismark_deduplication.' + sample.name)
+                job = concat_jobs([
+                    Job([in_file],
+                        [['bismark_deduplicate', 'module_samtools']],
+                        command="""
+module load bismark/0.15
+deduplicate_bismark {type} --bam {other} {input}""".format(
+                            type='--paired' if run_type == 'PAIRED' else '--single', input=in_file,
+                            other=config.param('bismark_deduplicate', 'other_options', required=False)),
+                        report_files=[os.path.join(work_dir, sample.name +
+                                                   '_aligned_pe.deduplication_report.txt')]),
+                    Job(output_files=[out_file],
+                        command='mv -fu ' +
+                                os.path.join('aligned', sample.name, sample.name +
+                                             '_aligned_pe.deduplicate.bam') +
+                                ' ' +
+                                out_file)],
+                    name='bismark_deduplication.' + sample.name)
             jobs.append(job)
         return jobs
 
@@ -347,17 +350,6 @@ bismark -q --non_directional {other_options} --output_dir {directory} --basename
             jobs.append(job)
 
         return jobs
-
-    def bismark2report(self):
-        """
-
-        :return:
-        :rtype:
-        """
-
-        jobs = []
-
-        for sample in self.samples
 
     def differential_methylated_pos(self):
 

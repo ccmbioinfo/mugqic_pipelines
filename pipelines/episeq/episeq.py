@@ -146,7 +146,7 @@ class Episeq(common.Illumina):
                     input_files = [os.path.join(trim_prefix, readset.name + "_trimmed.fq.gz")]
 
                 # Case when only a bam file is given for a readset
-                if not (readset.fastq1 and readset.fastq2):
+                if not readset.fastq1:
                     if readset.bam:
                         continue
                     else:

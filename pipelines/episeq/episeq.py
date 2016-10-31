@@ -190,11 +190,14 @@ class Episeq(common.Illumina):
 
         jobs = []
         for sample in self.samples:
-            # Bam files from pipeline (FASTQ), occurs when fastq1 is not empty
-            processed_fastq = [os.path.join('aligned', sample.name, readset.name + "_aligned_pe.bam") for
-                    readset in sample.readsets if readset.fastq1 != '']
+            # Bam files from pipeline (FASTQ)
+            processed_fastq_pe = [os.path.join('aligned', sample.name, readset.name + "_aligned_pe.bam") for
+                                  readset in sample.readsets if readset.run_type == 'PAIRED_END' and not readset.bam]
+            processed_fastq_se = [os.path.join('aligned', sample.name, readset.name + "_aligned.bam") for
+                                  readset in sample.readsets if readset.run_type == 'SINGLE_END' and not readset.bam]
+            processed_fastq = processed_fastq_pe + processed_fastq_se
             # Bam files from user, if specified by readset file. Not exclusive with having fastq
-            listed_bam_files = [readset.bam for readset in sample.readsets if readset.bam != '']
+            listed_bam_files = [readset.bam for readset in sample.readsets if readset.bam != '' and not readset.fastq1]
 
             input_files = processed_fastq + listed_bam_files  # All bam files that belong to the sample
             merge_prefix = 'merged'

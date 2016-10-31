@@ -114,6 +114,11 @@ class Episeq(common.Illumina):
         jobs = []
         for sample in self.samples:
             for readset in sample.readsets:
+                if readset.bam and not readset.fastq1:
+                    continue  # There's still a bam file to process later
+                elif not (readset.bam or readset.fastq1 or readset.fastq2):
+                    raise ValueError("There is no data files in this readset: " + readset.name + "!\n")
+                # Get metadata and names
                 run_type = readset.run_type
                 protocol = readset.library
                 trim_directory = os.path.join("trimmed", sample.name, readset.name)  # output directory
@@ -135,33 +140,31 @@ class Episeq(common.Illumina):
                                    file_basename + "_1_val_1_fastqc.zip",
                                    file_basename + '_2_trimming_report.txt', file_basename + "_2_val_2_fastqc.html",
                                    file_basename + "_2_val_2_fastqc.zip"]
-                else: # Implicit single end
+                else:  # Implicit single end
                     input_files = [readset.fastq1]
                     output_files = [file_basename + "_trimmed.fq.gz"]
                     report_logs = [file_basename + os.path.basename(readset.fastq1) + '_trimming_report.txt',
                                    file_basename + "_fastqc.html", file_basename + '_fastqc.zip']
 
                 mkdir_job = Job(command="mkdir -p " + trim_directory)
-                job = concat_jobs([
-                    mkdir_job,
-                    Job(
-                        input_files,
-                        output_files + report_logs,
-                        [['trim_galore', 'module_fastqc']],
-                        command="""\
+                job = concat_jobs([mkdir_job,
+                                   Job(input_files,
+                                       output_files + report_logs,
+                                       [['trim_galore', 'module_fastqc']],
+                                       command="""\
     module load trim_galore/0.4.1
     module load cutadapt/1.10
-    trim_galore {protocol} {library_type} {other} --output_dir {directory} --fastqc_args "-t 4" {fastq}
-        """.format(
-                            library_type="--paired" if run_type == "PAIRED_END" else "",
-                            protocol='--rrbs' if protocol == 'RRBS' else '',
-                            other=config.param("trim_galore", "other_options"),
-                            directory=trim_directory,
-                            fastq=' '.join(input_files)
-                        ),
-                        report_files=report_logs,
-                        removable_files=output_files)],
-                    name="trim_galore." + readset.name)
+    trim_galore {protocol} {library_type} {other} --output_dir {directory} {fastq}
+            """.format(
+                                           library_type="--paired" if run_type == "PAIRED_END" else "",
+                                           protocol='--rrbs' if protocol == 'RRBS' else '',
+                                           other=config.param("trim_galore", "other_options"),
+                                           directory=trim_directory,
+                                           fastq=' '.join(input_files)),
+                                       report_files=report_logs,
+                                       removable_files=output_files)],
+                                  name="trim_galore." + readset.name)
+
                 jobs.append(job)
         return jobs
 
@@ -178,18 +181,18 @@ class Episeq(common.Illumina):
         :return jobs: A list of jobs that needs to be executed in this step.
         :rtype list(Job):
         """
-
+        # TODO: Add case for bam file input.
         # Multicore funtionality for Bismark is currently not supported when using the option --basename
         # Need latest version to have this feature.
         jobs = []
         for sample in self.samples:
             for readset in sample.readsets:
-                trim_prefix = os.path.join("trimmed", sample.name, readset.name)
-                align_directory = os.path.join("aligned", sample.name)
-                readset_sam = os.path.join(align_directory, readset.name + "_aligned_pe.bam")
-                report_log = [os.path.join(align_directory, readset.name + "aligned_PE_report.txt")]
                 run_type = readset.run_type
                 protocol = readset.library
+                trim_prefix = os.path.join("trimmed", sample.name, readset.name)
+                align_directory = os.path.join("aligned", sample.name)
+                readset_base = os.path.join(align_directory, readset.name)
+                report_log = [os.path.join(align_directory, readset.name + "aligned_PE_report.txt")]
 
                 # If a bam file is given, it should be an aligned, unsorted bam file.
                 if readset.bam:
@@ -198,8 +201,19 @@ class Episeq(common.Illumina):
                 if run_type == "PAIRED_END" and readset.fastq2:
                     input_files = [os.path.join(trim_prefix, readset.name + "_1_val_1.fq.gz"),
                                    os.path.join(trim_prefix, readset.name + "_2_val_2.fq.gz")]
+                    readset_sam = readset_base + "_aligned_pe.bam"
                 elif run_type == "SINGLE_END":
                     input_files = [os.path.join(trim_prefix, readset.name + "_trimmed.fq.gz")]
+                    readset_sam = readset_base + "_aligned.bam"
+
+                # Case when only a bam file is given for a readset
+                if not readset.fastq1:
+                    if readset.bam:
+                        continue
+                    else:
+                        raise IOError("""{readset} has no input files!""".format(readset=readset.name))
+                if not readset_sam:
+                    raise AttributeError("Unknown run_type: " + run_type + ". Unknown file output name.")
 
                 mkdir_job = Job(command="mkdir -p " + align_directory)
                 job = concat_jobs([
@@ -215,8 +229,8 @@ bismark -q {directional} {other} --output_dir {directory} --basename {basename} 
         """.format(
                             directory=align_directory,
                             other=config.param("bismark_align", "other_options"),
-                            fastq1='',
-                            fastq2='',
+                            input="-1 {fastq1} -2 {fastq2}".format(fastq1=input_files[0], fastq2=input_files[1]) if
+                            run_type == "PAIRED_END" else "--single_end {fastq1}".format(fastq1=input_files[0]),
                             directional='--non_directional' if protocol == 'RRBS' else '',
                             basename=readset.name + '_aligned'
                         ),
@@ -274,21 +288,25 @@ bismark -q {directional} {other} --output_dir {directory} --basename {basename} 
 
         jobs = []
         for sample in self.samples:
-            # Determine if the readset had a bam file from the readset file or by process.
-            from_prev = [os.path.join('aligned', sample.name, readset.name + "_aligned_pe.bam") for readset in
-                         sample.readsets]
-            given_bam = [readset.bam for readset in sample.readsets]
+            # Bam files from pipeline (FASTQ)
+            processed_fastq_pe = [os.path.join('aligned', sample.name, readset.name + "_aligned_pe.bam") for
+                                  readset in sample.readsets if readset.run_type == 'PAIRED_END' and not readset.bam]
+            processed_fastq_se = [os.path.join('aligned', sample.name, readset.name + "_aligned.bam") for
+                                  readset in sample.readsets if readset.run_type == 'SINGLE_END' and not readset.bam]
+            processed_fastq = processed_fastq_pe + processed_fastq_se
+            # Bam files from user, if specified by readset file. Not exclusive with having fastq
+            listed_bam_files = [readset.bam for readset in sample.readsets if readset.bam != '' and not readset.fastq1]
 
-            readsets = self.select_input_files([given_bam, from_prev])
+            input_files = processed_fastq + listed_bam_files  # All bam files that belong to the sample
             merge_prefix = 'merged'
             output_bam = os.path.join(merge_prefix, sample.name + '.merged.bam')
 
             mkdir_job = Job(command='mkdir -p ' + merge_prefix)
 
             # I want to use Picard Tools v2.0.1, which has a different syntax than v1.x
-            if len(sample.readsets) > 1:
+            if len(input_files) > 1:
                 picard_v2 = Job(
-                    readsets,
+                    input_files,
                     [output_bam, re.sub("\.([sb])am$", ".\\1ai", output_bam)],
                     [
                         ['picard_merge_sam_files', 'module_java'],
@@ -307,30 +325,24 @@ bismark -q {directional} {other} --output_dir {directory} --basename {basename} 
                         tmp_dir=config.param('picard_merge_sam_files', 'tmp_dir'),
                         java_other_options=config.param('picard_merge_sam_files', 'java_other_options'),
                         ram=config.param('picard_merge_sam_files', 'ram'),
-                        inputs=" \\\n  ".join(["INPUT=" + in_put for in_put in readsets]),
+                        inputs=" \\\n  ".join(["INPUT=" + in_put for in_put in input_files]),
                         output=output_bam,
                         max_records_in_ram=config.param('picard_merge_sam_files', 'max_records_in_ram', type='int')),
                     removable_files=[output_bam, re.sub("\.([sb])am$", ".\\1ai", output_bam)],
                     local=config.param('picard_merge_sam_files', 'use_localhd', required=False))
-                job = concat_jobs([mkdir_job, picard_v2],
-                                  name="picard_merge_sam_files." + sample.name)  # Name must be set to match picard
 
-            elif len(sample.readsets) == 1:
-                readset_bam = readsets[0]
+                job = concat_jobs([mkdir_job, picard_v2], name="picard_merge_sam_files." + sample.name)
+
+            elif len(input_files) == 1:
+                readset_bam = input_files[0]
                 if os.path.isabs(readset_bam):
                     target_readset_bam = readset_bam
                 else:
                     target_readset_bam = os.path.relpath(readset_bam, merge_prefix)
-                readset_index = re.sub("\.bam$", ".bai", readset_bam)
-                target_readset_index = re.sub("\.bam$", ".bai", target_readset_bam)
-                output_idx = re.sub("\.bam$", ".bai", output_bam)
-
                 job = concat_jobs([
                     mkdir_job,
                     Job([readset_bam], [output_bam], command="ln -s -f " + target_readset_bam + " " + output_bam,
-                        removable_files=[output_bam]),
-                    Job([readset_index], [output_idx],
-                        command="ln -s -f " + target_readset_index + " " + output_idx, removable_files=[output_idx])],
+                        removable_files=[output_bam])],
                     name="symlink_readset_sample_bam." + sample.name)
             else:
                 raise ValueError('Sample ' + sample.name + ' has no readsets!')
@@ -404,7 +416,7 @@ deduplicate_bismark {type} --bam {other} {input}""".format(
             run_type = sample.readsets[0].run_type
             job = Job(
                 merged_sample,
-                [os.path.join("methyl_calls", sample.name, sample.name + "_aligned_pe.sam.bismark.cov.gz")],
+                [os.path.join("methyl_calls", sample.name, sample.name + ".merged.bismark.cov.gz")],
                 [['bismark_methylation_caller', 'module_samtools']],
                 command="""\
         mkdir -p {directory}
@@ -454,7 +466,7 @@ deduplicate_bismark {type} --bam {other} {input}""".format(
         for contrast in self.contrasts:
             # Determine the control and case samples to include in the analysis from the contrast
             contrast_samples = [sample for sample in contrast.controls + contrast.treatments]
-            cov_files = [os.path.join("methyl_calls", sample.name, sample.name + "_aligned_pe.sam.bismark.cov.gz") for
+            cov_files = [os.path.join("methyl_calls", sample.name, sample.name + ".merged.bismark.cov.gz") for
                          sample in contrast_samples]
             sample_group = ["control" if sample in contrast.controls else "case" for sample in contrast_samples]
             dmps_file = os.path.join("differential_methylated_positions",
@@ -468,38 +480,39 @@ deduplicate_bismark {type} --bam {other} {input}""".format(
                     ["differential_methylated_pos", "module_mugqic_R_packages"]
                 ],
                 command="""\
-        mkdir -p {directory}
-        R --no-save --no-restore <<-EOF
-        suppressPackageStartupMessages(library(BiSeq))
-        suppressPackageStartupMessages(library(minfi))
-        rrbs <- readBismark(c{samples}, colData=DataFrame(group=factor(c{group}), row.names=c{sample_names}))
-        rrbs.filtered <- rrbs[apply(totalReads(rrbs), 1, function(x) any(x > {coverage})),]
-        beta <- methLevel(rawToRel(rrbs.filtered))
+mkdir -p {directory}
+R --no-save --no-restore <<-EOF
+suppressPackageStartupMessages(library(BiSeq))
+suppressPackageStartupMessages(library(minfi))
+rrbs <- readBismark(c{samples}, colData=DataFrame(group=factor(c{group}), row.names=c{sample_names}))
+rrbs.filtered <- rrbs[apply(totalReads(rrbs), 1, function(x) any(x > {coverage})),]
+beta <- methLevel(rawToRel(rrbs.filtered))
 
-        #Use M values to do statistical tests because they are more reliable
-        #dmpFinder does not work with M values that are 0 or INF so the beta values must be shifted slightly
-        #Although there is no such thing as a beta value > 1, it will not matter in this step because only
-        #the average beta values are shown to the user
-        beta[beta == 0] = 0.0001
-        beta[beta == 1] = 1.0001
-        M <- log2(beta/(1-beta))
+#Use M values to do statistical tests because they are more reliable
+#dmpFinder does not work with M values that are 0 or INF so the beta values must be shifted slightly
+#Although there is no such thing as a beta value > 1, it will not matter in this step because only
+#the average beta values are shown to the user
+beta[beta == 0] = 0.0001
+beta[beta == 1] = 1.0001
+M <- log2(beta/(1-beta))
 
-        dmp <- dmpFinder(M, pheno=colData(rrbs.filtered)[,"group"], type="categorical")
-        dmp["pval"] <- p.adjust(dmp[,"pval"], method = "{padjust_method}")
-        dmp <- dmp[dmp["pval"] < {pvalue},]["pval"]
+dmp <- dmpFinder(M, pheno=colData(rrbs.filtered)[,"group"], type="categorical")
+dmp["pval"] <- p.adjust(dmp[,"pval"], method = "{padjust_method}")
+dmp <- dmp[dmp["pval"] < {pvalue},]["pval"]
 
-        controls <- c{controls}
-        cases <- c{cases}
-        result = as.data.frame(rowRanges(rrbs.filtered))[1:4]
-        result["Avg Control Beta"] = rowMeans(beta[,controls])
-        result["Avg Case Beta"] = rowMeans(beta[,cases])
-        result["Avg Delta Beta"] = result[,"Avg Case Beta"] - result[,"Avg Control Beta"]
-        result <- merge(result, dmp, by=0)
-        result <- result[abs(result["Avg Delta Beta"]) > {delta_beta_threshold}]
+controls <- c{controls}
+cases <- c{cases}
+result = as.data.frame(rowRanges(rrbs.filtered))[1:4]
+result["Avg Control Beta"] = rowMeans(beta[,controls])
+result["Avg Case Beta"] = rowMeans(beta[,cases])
+result["Avg Delta Beta"] = result[,"Avg Case Beta"] - result[,"Avg Control Beta"]
+result <- merge(result, dmp, by=0)
+result <- result[abs(result["Avg Delta Beta"]) > {delta_beta_threshold}]
 
-        write.csv(result, file="{dmps_file}", quote=FALSE, row.names=FALSE)
+write.csv(result, file="{dmps_file}", quote=FALSE, row.names=FALSE)
 
-        EOF""".format(
+EOF
+                """.format(
                     directory=os.path.dirname(dmps_file),
                     samples=tuple(cov_files),
                     group=tuple(sample_group),
@@ -537,7 +550,7 @@ deduplicate_bismark {type} --bam {other} {input}""".format(
         for contrast in self.contrasts:
             # Determine the control and case samples to include in the analysis from the contrast
             contrast_samples = [sample for sample in contrast.controls + contrast.treatments]
-            cov_files = [os.path.join("methyl_calls", sample.name + "_aligned_pe.sam.bismark.cov.gz") for sample in
+            cov_files = [os.path.join("methyl_calls", sample.name, sample.name + ".merged.bismark.cov.gz") for sample in
                          contrast_samples]
             sample_group = ["control" if sample in contrast.controls else "case" for sample in contrast_samples]
             dmrs_file = os.path.join("differential_methylated_regions",
@@ -551,39 +564,40 @@ deduplicate_bismark {type} --bam {other} {input}""".format(
                     ["differential_methylated_regions", "module_mugqic_R_packages"]
                 ],
                 command="""\
-        mkdir -p {directory}
-        R --no-save --no-restore <<-EOF
-        suppressPackageStartupMessages(library(bumphunter))
-        suppressPackageStartupMessages(library(BiSeq))
-        library(doParallel)
-        registerDoParallel(cores={cores})
+mkdir -p {directory}
+R --no-save --no-restore <<-EOF
+suppressPackageStartupMessages(library(bumphunter))
+suppressPackageStartupMessages(library(BiSeq))
+library(doParallel)
+registerDoParallel(cores={cores})
 
-        rrbs <- readBismark(c{samples}, colData=DataFrame(group=c{group}, row.names=c{sample_names}))
-        rrbs.filtered <- rrbs[apply(totalReads(rrbs), 1, function(x) any(x > {coverage})),]
-        beta <- methLevel(rawToRel(rrbs.filtered))
-        chr <- as.character(seqnames(rowRanges(rrbs.filtered)))
-        pos <- start(ranges(rowRanges(rrbs.filtered)))
-        pheno <- colData(rrbs.filtered)[,"group"]
-        designM <- model.matrix(~pheno)
+rrbs <- readBismark(c{samples}, colData=DataFrame(group=c{group}, row.names=c{sample_names}))
+rrbs.filtered <- rrbs[apply(totalReads(rrbs), 1, function(x) any(x > {coverage})),]
+beta <- methLevel(rawToRel(rrbs.filtered))
+chr <- as.character(seqnames(rowRanges(rrbs.filtered)))
+pos <- start(ranges(rowRanges(rrbs.filtered)))
+pheno <- colData(rrbs.filtered)[,"group"]
+designM <- model.matrix(~pheno)
 
-        dmrs <- bumphunterEngine(beta,
-                                 chr=chr,
-                                 pos=pos,
-                                 design=designM,
-                                 cutoff={delta_beta_threshold},
-                                 pickCutoffQ=0.99,
-                                 null_method=c("permutation","bootstrap"),
-                                 smooth=FALSE,
-                                 smoothFunction=locfitByCluster,
-                                 B={permutations},
-                                 verbose=TRUE,
-                                 maxGap=500)
+dmrs <- bumphunterEngine(beta,
+                         chr=chr,
+                         pos=pos,
+                         design=designM,
+                         cutoff={delta_beta_threshold},
+                         pickCutoffQ=0.99,
+                         null_method=c("permutation","bootstrap"),
+                         smooth=FALSE,
+                         smoothFunction=locfitByCluster,
+                         B={permutations},
+                         verbose=TRUE,
+                         maxGap=500)
 
-        dmrs <- na.omit(dmrs)
+dmrs <- na.omit(dmrs)
 
-        write.csv(dmrs\$table, "{dmrs_file}", quote=FALSE, row.names=FALSE)
+write.csv(dmrs\$table, "{dmrs_file}", quote=FALSE, row.names=FALSE)
 
-        EOF""".format(
+EOF
+                """.format(
                     directory=os.path.dirname(dmrs_file),
                     samples=tuple(cov_files),
                     group=tuple(sample_group),

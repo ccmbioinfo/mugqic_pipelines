@@ -123,8 +123,6 @@ class Episeq(common.Illumina):
                 protocol = readset.library
                 trim_directory = os.path.join("trimmed", sample.name, readset.name)  # output directory
                 file_basename = os.path.join(trim_directory, readset.name)  # output basename
-                output_files = []
-                report_logs = []
 
                 if readset.bam or not readset.fastq1:  # aligned bam files don't need this step
                     continue
@@ -188,7 +186,6 @@ class Episeq(common.Illumina):
         for sample in self.samples:
             for readset in sample.readsets:
                 run_type = readset.run_type
-                protocol = readset.library
                 trim_prefix = os.path.join("trimmed", sample.name, readset.name)
                 align_directory = os.path.join("aligned", sample.name)
                 readset_base = os.path.join(align_directory, readset.name)
@@ -197,13 +194,18 @@ class Episeq(common.Illumina):
                 # If a bam file is given, it should be an aligned, unsorted bam file.
                 if readset.bam:
                     continue
-                input_files = []
                 if run_type == "PAIRED_END" and readset.fastq2:
                     input_files = [os.path.join(trim_prefix, readset.name + "_1_val_1.fq.gz"),
                                    os.path.join(trim_prefix, readset.name + "_2_val_2.fq.gz")]
+                    cmd_in = '"-1 {fastq1} -2 {fastq2}'.format(fastq1=input_files[0], fastq2=input_files[1])
                     readset_sam = readset_base + "_aligned_pe.bam"
                 elif run_type == "SINGLE_END":
                     input_files = [os.path.join(trim_prefix, readset.name + "_trimmed.fq.gz")]
+                    cmd_in = '--single_end {fastq1}'.format(fastq1=input_files[0])
+                    readset_sam = readset_base + "_aligned.bam"
+                else:
+                    input_files = [os.path.join(trim_prefix, readset.name + "_trimmed.fq.gz")]
+                    cmd_in = ' '.join(input_files)
                     readset_sam = readset_base + "_aligned.bam"
 
                 # Case when only a bam file is given for a readset
@@ -225,17 +227,21 @@ class Episeq(common.Illumina):
                          ["bismark_align", "module_samtools"]],
                         command="""\
 module load bismark/0.15
-bismark -q {directional} {other} --output_dir {directory} --basename {basename} --genome_folder . {fastq1} {fastq2}
+bismark -q {other} --temp_dir {tmpdir} {buffer_size} --output_dir {directory} \
+    --basename {basename} --genome_folder . {input}
         """.format(
                             directory=align_directory,
                             other=config.param("bismark_align", "other_options"),
-                            input="-1 {fastq1} -2 {fastq2}".format(fastq1=input_files[0], fastq2=input_files[1]) if
-                            run_type == "PAIRED_END" else "--single_end {fastq1}".format(fastq1=input_files[0]),
-                            directional='--non_directional' if protocol == 'RRBS' else '',
+                            tmpdir=config.param('bismark_align', 'tmp_dir', required=False) or
+                                   config.param('DEFAULT', 'tmp_dir', required='True'),
+                            buffer_size=config.param('bismark_align', 'sorting_ram'),
+                            input=cmd_in,
                             basename=readset.name + '_aligned'
                         ),
                         report_files=report_log,
-                        removable_files=[]
+                        removable_files=[],
+                        local=config.param('bismark_align', 'use_localhd', required=False) or
+                              config.param('DEFAULT', 'use_localhd')
                     )], name="bismark_align." + readset.name)
                 jobs.append(job)
         return jobs
@@ -419,13 +425,15 @@ deduplicate_bismark {type} --bam {other} {input}""".format(
                 [os.path.join("methyl_calls", sample.name, sample.name + ".merged.bismark.cov.gz")],
                 [['bismark_methylation_caller', 'module_samtools']],
                 command="""\
-        mkdir -p {directory}
-        module load bismark/0.15
-        bismark_methylation_extractor {library_type} {other} --output {directory} --bedGraph {sample}
+mkdir -p {directory}
+module load bismark/0.15
+bismark_methylation_extractor {library_type} {other} --multicore {core} --output {directory} --bedGraph \
+    --cytosine_report --gzip {sample}
         """.format(
                     directory="methyl_calls",
                     library_type="--paired-end" if run_type == "PAIRED_END" else "--single-end",
                     other=config.param("bismark_methylation_caller", "other_options"),
+                    core=config.param('bismark_methylation_caller', 'cores'),
                     sample=" ".join(merged_sample)),
                 name="bismark_methylation_caller." + sample.name)
 
@@ -443,7 +451,6 @@ deduplicate_bismark {type} --bam {other} {input}""".format(
         job = Job(input_files=[])
 
     def differential_methylated_pos(self):
-
         """
         This step finds a list of differentially methylated CpG sites with respect to a categorical
         phenotype (controls vs. cases). The BedGraph files from the previous methylation calling step are first combined

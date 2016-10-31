@@ -62,66 +62,42 @@ class Episeq(common.Illumina):
         self.argparser.add_argument("-d", "--design", help="design file", type=file)
         super(Episeq, self).__init__()
 
-    def merge_fastq(self):
-
+    @staticmethod
+    def bismark_prepare_genome():
         """
-        This step merges FASTQ files for samples with multiple readsets or creates symbolic links of FASTQ
-        files for samples with only a single readset
+        Bismark requires a processed reference genome to compare with the epigenome. This step can take several hours,
+        depending on the size of the genome. It creates an index of bisulfite conversions and takes make space than
+        the genome itself. This module will only create the output in the same directory as the genome file, so
+        a symlink is needed to create a "copy" in the desired output directory.
+
+        Note: The genome should be in fasta format.
+
+        Input: A reference sequence file as specified by user. Configuration is set in the episeq.ini file.
+        Output: A directory called Bisulfite_Genome.
+
+        :return jobs: A list of jobs that needs to be executed in this step.
+        :rtype list(Job):
         """
+        ref_seq = config.param('bismark_prepare_genome', 'genome_file', type='filepath')
+        local_ref_seq = os.path.join('bismark_prepare_genome', os.path.basename(ref_seq))
+        output_idx = "Bisulfite_Genome"  # output directory, but Bismark used a fixed name for the output...
 
-        jobs = []
-        for sample in self.samples:
-            merge_directory = os.path.join("merged", sample.name)
-            merge_prefix = os.path.join(merge_directory, sample.name)
-            mkdir_job = Job(command="mkdir -p " + merge_directory)
-            # If one readset in a sample is of a particular type,
-            # then all readsets are assumed to be of that type as well
-            run_type = sample.readsets[0].run_type
+        main_job = Job([local_ref_seq], [output_idx],
+                       [['bismark_prepare_genome', 'module_bowtie2'],
+                        ['bismark_prepare_genome', 'module_samtools']],
+                       command="module load bismark/0.15; bismark_genome_preparation --verbose --bowtie2 .",
+                       name="bismark_prepare_genome", removable_files=[output_idx])
 
-            job = []
-            # Samples with only one readset do not require to be merged.
-            # A symbolic link to the FASTQ files are made instead
-            if len(sample.readsets) == 1:
-                target_fastq1 = sample.readsets[0].fastq1
-                if run_type == "PAIRED_END":
-                    target_fastq2 = sample.readsets[0].fastq2
-                elif run_type == "SINGLE_END":
-                    target_fastq2 = ""
+        if not os.path.isfile(local_ref_seq):
+            # Make symlink and cleanup when done
+            link_job = Job([ref_seq], [local_ref_seq],
+                           command="ln -s -f " + ref_seq + " " + local_ref_seq)
+            rm_sym = Job([local_ref_seq], command="unlink " + local_ref_seq)
+            job = concat_jobs([link_job, main_job, rm_sym], name="bismark_prepare_genome")
+        else:  # In the off-chance that someone put the file in the output directory.
+            job = main_job
 
-                job = concat_jobs([
-                    mkdir_job,
-                    Job([target_fastq1], [merge_prefix + "_R1.fastq.gz"],
-                        command="ln -s -f " + target_fastq1 + " " + merge_prefix + "_R1.fastq.gz"),
-                    Job([target_fastq2], [merge_prefix + "_R2.fastq.gz" if run_type == "PAIRED_END" else ""],
-                        command="ln -s -f " + target_fastq2 + " " + merge_prefix + "_R2.fastq.gz")
-                ], name="symlink_fastq." + sample.name)
-
-            # Samples with more than one readsets will be merged by their forward and/or reverse FASTQ files
-            elif len(sample.readsets) > 1:
-                fastq1 = [readset.fastq1 for readset in sample.readsets]
-                if run_type == "PAIRED_END":
-                    fastq2 = [readset.fastq2 for readset in sample.readsets]
-                elif run_type == "SINGLE_END":
-                    fastq2 = ""
-
-                job = concat_jobs([
-                    mkdir_job,
-                    Job([fastq for fastq in fastq1],
-                        [merge_prefix + "_R1.fastq.gz"],
-                        command="cat {fastq1} > {merged_fastq1}".format(
-                            fastq1=" ".join(fastq1),
-                            merged_fastq1=merge_prefix + "_R1.fastq.gz")),
-                    Job([fastq for fastq in fastq2],
-                        [merge_prefix + "_R2.fastq.gz" if run_type == "PAIRED_END" else ""],
-                        command="cat {fastq2} > {merged_fastq2}".format(
-                            fastq2=" ".join(fastq2),
-                            merged_fastq2=merge_prefix + "_R2.fastq.gz"))
-                ], name="merge_fastq." + sample.name)
-
-            jobs.append(job)
-
-        return jobs
-
+        return [job]
 
     def trim_galore(self):
         """
@@ -137,22 +113,31 @@ class Episeq(common.Illumina):
             for readset in sample.readsets:
                 run_type = readset.run_type
                 protocol = readset.library
-                trim_directory = os.path.join("trimmed", sample.name, readset.name)
-                fq1_out = os.path.join(trim_directory, readset.name)
+                trim_directory = os.path.join("trimmed", sample.name, readset.name)  # output directory
+                file_basename = os.path.join(trim_directory, readset.name)  # output basename
                 output_files = []
                 report_logs = []
+
+                if readset.bam:  # aligned bam files don't need this step
+                    continue
 
                 # Trim Galoree has no built in option to change the filenames of the output
                 # Below are the default output names when running in paired or single mode
                 if run_type == "PAIRED_END":
                     input_files = [readset.fastq1, readset.fastq2]
-                    output_files = [fq1_out + "_1_val_1.fq.gz", fq1_out + "_2_val_2.fq.gz"]
-                    report_logs = [fq1_out + '_1_trimming_report.txt', fq1_out + "_1_val_1_fastqc.html",
-                                   fq1_out + '_2_trimming_report.txt', fq1_out + "_2_val_2_fastqc.html"]
+                    output_files = [file_basename + "_1_val_1.fq.gz", file_basename + "_2_val_2.fq.gz"]
+                    report_logs = [file_basename + '_1_trimming_report.txt', file_basename + "_1_val_1_fastqc.html",
+                                   file_basename + "_1_val_1_fastqc.zip",
+                                   file_basename + '_2_trimming_report.txt', file_basename + "_2_val_2_fastqc.html",
+                                   file_basename + "_2_val_2_fastqc.zip"]
                 elif run_type == "SINGLE_END":
                     input_files = [readset.fastq1]
-                    output_files = [fq1_out + "_trimmed.fq.gz"]
-                    report_logs = [fq1_out + '_trimming_report.txt', fq1_out + "_fastqc.html"]
+                    output_files = [file_basename + "_trimmed.fq.gz"]
+                    report_logs = [file_basename + os.path.basename(readset.fastq1) + '_trimming_report.txt',
+                                   file_basename + "_fastqc.html", file_basename + '_fastqc.zip']
+
+                # We want to use this for bismark2report module.
+                output_files = output_files + report_logs
 
                 mkdir_job = Job(command="mkdir -p " + trim_directory)
                 job = concat_jobs([
@@ -176,43 +161,11 @@ class Episeq(common.Illumina):
                             fastq1=input_files[0],
                             fastq2='' if run_type == "SINGLE_END" else input_files[1]
                         ),
-                        report_files=report_logs
-                    )], name="trim_galore." + readset.name)
+                        report_files=report_logs,
+                        removable_files=output_files)],
+                    name="trim_galore." + readset.name)
                 jobs.append(job)
         return jobs
-
-    def bismark_prepare_genome(self):
-        """
-        Bismark requires a processed reference genome to compare with the epigenome. This step can take several hours,
-        depending on the size of the genome. It creates an index of bisulfite conversions and takes make space than
-        the genome itself.
-
-        The genome should be in fasta format and note that this step always copies the genome to the output directory.
-
-        Input: A reference sequence file as specified by user. Configuration is set in the episeq.ini file.
-        Output: A directory called Bisulfite_Genome.
-
-        :return jobs: A list of jobs that needs to be executed in this step.
-        :rtype list(Job):
-        """
-        ref_seq = config.param('bismark_prepare_genome', 'genome_file', type='filepath')
-        local_ref_seq = os.path.join('bismark_prepare_genome', os.path.basename(ref_seq))
-        output_idx = "Bisulfite_Genome"
-
-        main_job = Job([local_ref_seq], [output_idx],
-                       [['bismark_prepare_genome', 'module_bowtie2'],
-                        ['bismark_prepare_genome', 'module_samtools']],
-                       command="module load bismark/0.15; bismark_genome_preparation --verbose --bowtie2 .",
-                       name="bismark_prepare_genome")
-
-        if not os.path.isfile(local_ref_seq):
-            link_job = Job([ref_seq], [local_ref_seq],
-                           command="ln -s -f " + ref_seq + " " + local_ref_seq)
-            job = concat_jobs([main_job, link_job], name="bismark_prepare_genome")
-        else:  # In the off-chance that someone put the file in the output directory.
-            job = main_job
-
-        return [job]
 
     def bismark_align(self):
         """
@@ -232,6 +185,7 @@ class Episeq(common.Illumina):
         """
 
         # Multicore funtionality for Bismark is currently not supported when using the option --basename
+        # Need latest version to have this feature.
         jobs = []
         for sample in self.samples:
             for readset in sample.readsets:
@@ -241,6 +195,10 @@ class Episeq(common.Illumina):
                 report_log = [os.path.join(align_directory, readset.name + "aligned_PE_report.txt")]
                 run_type = readset.run_type
                 protocol = readset.library
+
+                # If a bam file is given, it should be an aligned, unsorted bam file.
+                if readset.bam:
+                    continue
 
                 if run_type == "PAIRED_END":
                     input_files = [os.path.join(trim_prefix, readset.name + "_1_val_1.fq.gz"),
@@ -256,8 +214,6 @@ class Episeq(common.Illumina):
                         [readset_sam],
                         [["bismark_align", "module_bowtie2"],
                          ["bismark_align", "module_samtools"]],
-                        # ['bismark_align', 'module_perl']],
-                        # Do not import. Bismark is expecting /usr/bin/perl. Will raise errors otherwise.
                         command="""\
 module load bismark/0.15
 bismark -q {directional} {other} --output_dir {directory} --basename {basename} --genome_folder . {fastq1} {fastq2}
@@ -269,7 +225,8 @@ bismark -q {directional} {other} --output_dir {directory} --basename {basename} 
                             directional='--non_directional' if protocol == 'RRBS' else '',
                             basename=readset.name + '_aligned'
                         ),
-                        report_files=report_log
+                        report_files=report_log,
+                        removable_files=[]
                     )], name="bismark_align." + readset.name)
                 jobs.append(job)
         return jobs
@@ -292,6 +249,8 @@ bismark -q {directional} {other} --output_dir {directory} --basename {basename} 
 
             # Get all log reports for this sample
             for readset in sample.readsets:
+                if readset.bam:  # Bam values take higher precedence in a readset
+                    continue
                 log_basename = os.path.join(align_directory, readset.name)
                 if readset.run_type == "PAIRED_END":
                     log_reports.append(log_basename + "_aligned_PE_report.txt")
@@ -299,13 +258,14 @@ bismark -q {directional} {other} --output_dir {directory} --basename {basename} 
                     log_reports.append(log_basename + "_aligned_SE_report.txt")
 
             mkdir_job = Job(command="mkdir -p " + output_dir)
+
             merge_job = Job(log_reports, [output_report],
                             [['merge_bismark_alignment_report', 'module_python']],
-                            command="""
-                            python {script_loc} -o {output} -n {name} {logs}""".format(
+                            command="""python {script_loc} -o {output} -n {name} {logs}""".format(
                                 script_loc=config.param('DEFAULT', 'extern_script'),
                                 output=output_report, name=sample.name, logs=' '.join(log_reports)),
                             report_files=[output_report])
+
             job = concat_jobs([mkdir_job, merge_job], name="merge_align_report." + sample.name)
             jobs.append(job)
         return jobs
@@ -319,8 +279,12 @@ bismark -q {directional} {other} --output_dir {directory} --basename {basename} 
 
         jobs = []
         for sample in self.samples:
-            readsets = [os.path.join('aligned', sample.name,
-                                     readset.name + "_aligned_pe.bam") for readset in sample.readsets]
+            # Determine if the readset had a bam file from the readset file or by process.
+            from_prev = [os.path.join('aligned', sample.name, readset.name + "_aligned_pe.bam") for readset in
+                         sample.readsets]
+            given_bam = [readset.bam for readset in sample.readsets]
+
+            readsets = self.select_input_files([given_bam, from_prev])
             merge_prefix = 'merged'
             output_bam = os.path.join(merge_prefix, sample.name + '.merged.bam')
 
@@ -461,6 +425,15 @@ deduplicate_bismark {type} --bam {other} {input}""".format(
             jobs.append(job)
 
         return jobs
+
+    def bismark_html_report_generator(self):
+        """
+
+        :return:
+        :rtype:
+        """
+
+        job = Job(input_files=[])
 
     def differential_methylated_pos(self):
 

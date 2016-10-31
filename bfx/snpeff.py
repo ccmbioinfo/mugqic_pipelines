@@ -145,5 +145,5 @@ def is_snpeff_requested():
     """
     Determine whether the user wants to annote the VCF with SnpEff
     """
-    return 'snpeff' in config.param('gemini_annotations', 'annotations').lower()
+    return 'snpeff' in config.param('gemini_annotations', 'annotations', required=False).lower()
 

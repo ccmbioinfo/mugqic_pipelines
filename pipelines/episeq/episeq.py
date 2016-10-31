@@ -104,6 +104,9 @@ class Episeq(common.Illumina):
         This step trims raw FASTQ files for quality control using Trim Galore!
         This is a pre-proccessing step to ensure quality control.
 
+        To run Trim Galore in paired mode, two fastq files must be specified in the readset file with the following
+        pairewise naming convention: file1_1.fq file1_2.fq SRR2_1.fq.gz SRR2_2.fq.gz
+
         :return jobs: A list of jobs that needs to be executed in this step.
         :rtype list(Job):
         """
@@ -118,48 +121,43 @@ class Episeq(common.Illumina):
                 output_files = []
                 report_logs = []
 
-                if readset.bam:  # aligned bam files don't need this step
+                if readset.bam or not readset.fastq1:  # aligned bam files don't need this step
                     continue
 
                 # Trim Galoree has no built in option to change the filenames of the output
                 # Below are the default output names when running in paired or single mode
                 if run_type == "PAIRED_END":
+                    if not readset.fastq2:
+                        raise ValueError("Expecting paired reads be named as follows file1_1.fq file1_2.fq.")
                     input_files = [readset.fastq1, readset.fastq2]
                     output_files = [file_basename + "_1_val_1.fq.gz", file_basename + "_2_val_2.fq.gz"]
                     report_logs = [file_basename + '_1_trimming_report.txt', file_basename + "_1_val_1_fastqc.html",
                                    file_basename + "_1_val_1_fastqc.zip",
                                    file_basename + '_2_trimming_report.txt', file_basename + "_2_val_2_fastqc.html",
                                    file_basename + "_2_val_2_fastqc.zip"]
-                elif run_type == "SINGLE_END":
+                else: # Implicit single end
                     input_files = [readset.fastq1]
                     output_files = [file_basename + "_trimmed.fq.gz"]
                     report_logs = [file_basename + os.path.basename(readset.fastq1) + '_trimming_report.txt',
                                    file_basename + "_fastqc.html", file_basename + '_fastqc.zip']
-
-                # We want to use this for bismark2report module.
-                output_files = output_files + report_logs
 
                 mkdir_job = Job(command="mkdir -p " + trim_directory)
                 job = concat_jobs([
                     mkdir_job,
                     Job(
                         input_files,
-                        output_files,
+                        output_files + report_logs,
                         [['trim_galore', 'module_fastqc']],
                         command="""\
     module load trim_galore/0.4.1
     module load cutadapt/1.10
-    trim_galore {protocol} {library_type} {non_directional} {other} --output_dir {directory} \
-    --fastqc_args "-t 4" {fastq1} {fastq2}
+    trim_galore {protocol} {library_type} {other} --output_dir {directory} --fastqc_args "-t 4" {fastq}
         """.format(
                             library_type="--paired" if run_type == "PAIRED_END" else "",
                             protocol='--rrbs' if protocol == 'RRBS' else '',
-                            non_directional='--non_directional' if run_type == 'PAIRED_END' and protocol == 'RRBS'
-                            else '',
                             other=config.param("trim_galore", "other_options"),
                             directory=trim_directory,
-                            fastq1=input_files[0],
-                            fastq2='' if run_type == "SINGLE_END" else input_files[1]
+                            fastq=' '.join(input_files)
                         ),
                         report_files=report_logs,
                         removable_files=output_files)],
@@ -176,9 +174,6 @@ class Episeq(common.Illumina):
 
         Input: Trimmed version of input files. (trimmed/*)
         Output: A BAM/SAM file in aligned/<sample_name>/*
-
-        - [Set uneccessary files as removeable!]
-        - [Get bismark into mugqic_pipelines modules]
 
         :return jobs: A list of jobs that needs to be executed in this step.
         :rtype list(Job):
@@ -199,8 +194,8 @@ class Episeq(common.Illumina):
                 # If a bam file is given, it should be an aligned, unsorted bam file.
                 if readset.bam:
                     continue
-
-                if run_type == "PAIRED_END":
+                input_files = []
+                if run_type == "PAIRED_END" and readset.fastq2:
                     input_files = [os.path.join(trim_prefix, readset.name + "_1_val_1.fq.gz"),
                                    os.path.join(trim_prefix, readset.name + "_2_val_2.fq.gz")]
                 elif run_type == "SINGLE_END":
@@ -220,8 +215,8 @@ bismark -q {directional} {other} --output_dir {directory} --basename {basename} 
         """.format(
                             directory=align_directory,
                             other=config.param("bismark_align", "other_options"),
-                            fastq1=input_files[0],
-                            fastq2=input_files[1] if run_type == "PAIRED_END" else "--single_end",
+                            fastq1='',
+                            fastq2='',
                             directional='--non_directional' if protocol == 'RRBS' else '',
                             basename=readset.name + '_aligned'
                         ),

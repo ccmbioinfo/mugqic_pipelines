@@ -133,17 +133,19 @@ class Episeq(common.Illumina):
         jobs = []
         for sample in self.samples:
             for readset in sample.readsets:
-                trim_prefix = os.path.join("trimmed", sample.name, readset.name)
-                align_directory = os.path.join("aligned", sample.name)
-                readset_sam = os.path.join(align_directory, readset.name + "_aligned_pe.bam")
                 run_type = readset.run_type
                 protocol = readset.library
+                trim_prefix = os.path.join("trimmed", sample.name, readset.name)
+                align_directory = os.path.join("aligned", sample.name)
+                readset_base = os.path.join(align_directory, readset.name)
 
                 if run_type == "PAIRED_END":
                     input_files = [os.path.join(trim_prefix, readset.name + "_1_val_1.fq.gz"),
                                    os.path.join(trim_prefix, readset.name + "_2_val_2.fq.gz")]
+                    readset_sam = readset_base + "_aligned_pe.bam"
                 elif run_type == "SINGLE_END":
                     input_files = [os.path.join(trim_prefix, readset.name + "_trimmed.fq.gz")]
+                    readset_sam = readset_base + "_aligned.bam"
 
                 # Case when only a bam file is given for a readset
                 if not readset.fastq1:
@@ -151,6 +153,8 @@ class Episeq(common.Illumina):
                         continue
                     else:
                         raise IOError("""{readset} has no input files!""".format(readset=readset.name))
+                if not readset_sam:
+                    raise AttributeError("Unknown run_type: " + run_type + ". Unknown file output name.")
 
                 mkdir_job = Job(command="mkdir -p " + align_directory)
                 job = concat_jobs([

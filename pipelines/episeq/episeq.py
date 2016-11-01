@@ -50,7 +50,7 @@ class Episeq(common.Illumina):
                                           ["bismark_prepare_genome", "module_samtools"]],
                           command="""\
     cp {src} .
-    module load bismark/0.15
+    module load bismark/0.16.3
     bismark_genome_preparation {verbose} --bowtie2 .""".format(
                               src=ref_seq,
                               verbose='--verbose' if config.param('bismark_genome_preparation', 'verbose_logging',
@@ -61,7 +61,7 @@ class Episeq(common.Illumina):
                           module_entries=[["bismark_prepare_genome", "module_bowtie2"],
                                           ["bismark_prepare_genome", "module_samtools"]],
                           command="""\
-    module load bismark/0.15
+    module load bismark/0.16.3
     bismark_genome_preparation {verbose} --bowtie2 .""".format(
                               verbose='--verbose' if config.param('bismark_genome_preparation', 'verbose_logging',
                                                                   required=False, type='boolean') else ''),
@@ -167,7 +167,7 @@ class Episeq(common.Illumina):
                         # ['bismark_align', 'module_perl']],
                         # Do not import. Bismark is expecting /usr/bin/perl. Will raise errors otherwise.
                         command="""\
-        module load bismark/0.15
+        module load bismark/0.16.3
         bismark -q {directional} {other} --output_dir {directory} --basename {basename} --genome_folder . {input}
         """.format(
                             directory=align_directory,
@@ -272,10 +272,10 @@ class Episeq(common.Illumina):
                 [['bismark_methylation_caller', 'module_samtools']],
                 command="""\
         mkdir -p {directory}
-        module load bismark/0.15
-        bismark_methylation_extractor {library_type} {other} --output {directory} --bedGraph {sample}
+        module load bismark/0.16.3
+        bismark_methylation_extractor {library_type} {other} --output {directory} --bedGraph --genome_folder . {sample}
         """.format(
-                    directory="methyl_calls",
+                    directory=os.path.join("methyl_calls",  sample.name),
                     library_type="--paired-end" if run_type == "PAIRED_END" else "--single-end",
                     other=config.param("bismark_methylation_caller", "other_options"),
                     sample=" ".join(merged_sample)),

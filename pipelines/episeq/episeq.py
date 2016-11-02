@@ -80,24 +80,20 @@ class Episeq(common.Illumina):
         """
         ref_seq = config.param('bismark_prepare_genome', 'genome_file', type='filepath')
         local_ref_seq = os.path.join('bismark_prepare_genome', os.path.basename(ref_seq))
-        output_idx = "Bisulfite_Genome"  # output directory, but Bismark used a fixed name for the output...
+        output_idx = "bismark_prepare_genome/Bisulfite_Genome"
 
+        mkdir_job = Job(command='mkdir -p bismark_prepare_genome')
+        link_job = Job([ref_seq], [local_ref_seq], command="ln -s -f " + ref_seq + " " + local_ref_seq,
+                       removable_files=[local_ref_seq])
         main_job = Job([local_ref_seq], [output_idx],
                        [['bismark_prepare_genome', 'module_bowtie2'],
-                        ['bismark_prepare_genome', 'module_samtools']],
-                       command="module load bismark/0.15; bismark_genome_preparation --verbose --bowtie2 .",
-                       name="bismark_prepare_genome", removable_files=[output_idx])
-
-        if not os.path.isfile(local_ref_seq):
-            # Make symlink and cleanup when done
-            link_job = Job([ref_seq], [local_ref_seq],
-                           command="ln -s -f " + ref_seq + " " + local_ref_seq)
-            rm_sym = Job([local_ref_seq], command="unlink " + local_ref_seq)
-            job = concat_jobs([link_job, main_job, rm_sym], name="bismark_prepare_genome")
-        else:  # In the off-chance that someone put the file in the output directory.
-            job = main_job
-
-        return [job]
+                        ['bismark_prepare_genome', 'module_samtools'],
+                        ['bismark_prepare_genome', 'module_perl'],
+                        ['bismark_prepare_genome', 'module_bismark']],
+                       command="bismark_genome_preparation --verbose --genomic_composition bismark_prepare_genome",
+                       removable_files=[output_idx])
+        return [concat_jobs([mkdir_job, link_job, main_job],
+                            name='bismark_prepare_genome.' + os.path.basename(ref_seq))]
 
     def trim_galore(self):
         """
@@ -148,12 +144,12 @@ class Episeq(common.Illumina):
                 job = concat_jobs([mkdir_job,
                                    Job(input_files,
                                        output_files + report_logs,
-                                       [['trim_galore', 'module_fastqc']],
-                                       command="""\
-    module load trim_galore/0.4.1
-    module load cutadapt/1.10
-    trim_galore {protocol} {library_type} {other} --output_dir {directory} {fastq}
-            """.format(
+                                       [['trim_galore', 'module_fastqc'],
+                                        ['trim_galore', 'module_trim_galore'],
+                                        ['trim_galore', 'module_cutadapt']],
+                                       command="""
+                                       trim_galore {protocol} {library_type} {other} --output_dir {directory} {fastq}
+                                       """.format(
                                            library_type="--paired" if run_type == "PAIRED_END" else "",
                                            protocol='--rrbs' if protocol == 'RRBS' else '',
                                            other=config.param("trim_galore", "other_options"),
@@ -224,11 +220,12 @@ class Episeq(common.Illumina):
                         input_files + ["Bisulfite_Genome"],
                         [readset_sam],
                         [["bismark_align", "module_bowtie2"],
-                         ["bismark_align", "module_samtools"]],
+                         ["bismark_align", "module_samtools"],
+                         ['bismark_align', 'module_perl'],
+                         ['bismark_align', 'module_bismark']],
                         command="""\
-module load bismark/0.15
 bismark -q {other} --temp_dir {tmpdir} {buffer_size} --output_dir {directory} \
-    --basename {basename} --genome_folder . {input}
+    --nucleotide_coverage --basename {basename} --genome_folder bismark_prepare_genome {input}
         """.format(
                             directory=align_directory,
                             other=config.param("bismark_align", "other_options"),
@@ -278,7 +275,9 @@ bismark -q {other} --temp_dir {tmpdir} {buffer_size} --output_dir {directory} \
                             [['merge_bismark_alignment_report', 'module_python']],
                             command="""python {script_loc} -o {output} -n {name} {logs}""".format(
                                 script_loc=config.param('DEFAULT', 'extern_script'),
-                                output=output_report, name=sample.name, logs=' '.join(log_reports)),
+                                output=output_report,
+                                name=sample.name,
+                                logs=' '.join(log_reports)),
                             report_files=[output_report])
 
             job = concat_jobs([mkdir_job, merge_job], name="merge_align_report." + sample.name)
@@ -369,8 +368,8 @@ bismark -q {other} --temp_dir {tmpdir} {buffer_size} --output_dir {directory} \
         jobs = []
         for sample in self.samples:
             work_dir = os.path.join('dedup', sample.name)
-            in_file = os.path.join('aligned', sample.name, sample.name + '_aligned_pe.bam')
-            out_file = os.path.join(work_dir, sample.name + '_aligned_pe.deduplicated.bam')
+            in_file = os.path.join('merged', sample.name, sample.name + '.merged.bam')
+            out_file = os.path.join(work_dir, sample.name + '.merged.deduplicated.bam')
             run_type = sample.readsets[0].run_type
             protocol = sample.readsets[0].library
 
@@ -381,10 +380,10 @@ bismark -q {other} --temp_dir {tmpdir} {buffer_size} --output_dir {directory} \
             else:
                 job = concat_jobs([
                     Job([in_file],
-                        [['bismark_deduplicate', 'module_samtools']],
-                        command="""
-module load bismark/0.15
-deduplicate_bismark {type} --bam {other} {input}""".format(
+                        [['bismark_deduplicate', 'module_samtools'],
+                         ['bismark_deduplicate', 'module_perl'],
+                         ['bismark_deduplicate', 'module_bismark']],
+                        command="""deduplicate_bismark {type} --bam {other} {input}""".format(
                             type='--paired' if run_type == 'PAIRED' else '--single', input=in_file,
                             other=config.param('bismark_deduplicate', 'other_options', required=False)),
                         report_files=[os.path.join(work_dir, sample.name +
@@ -418,24 +417,28 @@ deduplicate_bismark {type} --bam {other} {input}""".format(
         for sample in self.samples:
             # Either select aligned sample from previous alignment step or aligned BAM/SAM files in readset file
             merged_sample = self.select_input_files([[readset.bam for readset in sample.readsets], [
-                os.path.join("merged", sample.name + ".merged.bam")]])
+                os.path.join("dedup", sample.name + ".merged.deduplicated.bam")]])
             run_type = sample.readsets[0].run_type
             job = Job(
                 merged_sample,
-                [os.path.join("methyl_calls", sample.name, sample.name + ".merged.bismark.cov.gz")],
-                [['bismark_methylation_caller', 'module_samtools']],
+                [os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.bismark.cov.gz"),
+                 os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.M-bias.txt"),
+                 os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated_splitting_report.txt")],
+                [['bismark_methylation_caller', 'module_samtools'],
+                 ['bismark_methylation_caller', 'module_perl'],
+                 ['bismark_methylation_caller', 'module_bismark']],
                 command="""\
 mkdir -p {directory}
-module load bismark/0.15
-bismark_methylation_extractor {library_type} {other} --multicore {core} --output {directory} --bedGraph \
-    --cytosine_report --gzip {sample}
+bismark_methylation_extractor {library_type} {other} --multicore {core} --output {directory} \
+--bedGraph --cytosine_report --gzip {sample}
         """.format(
-                    directory="methyl_calls",
+                    directory="methyl_calls" + sample.name,
                     library_type="--paired-end" if run_type == "PAIRED_END" else "--single-end",
                     other=config.param("bismark_methylation_caller", "other_options"),
                     core=config.param('bismark_methylation_caller', 'cores'),
                     sample=" ".join(merged_sample)),
-                name="bismark_methylation_caller." + sample.name)
+                name="bismark_methylation_caller." + sample.name,
+            report_files=[])
 
             jobs.append(job)
 
@@ -447,8 +450,12 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
         :return:
         :rtype:
         """
-
-        job = Job(input_files=[])
+        module_list = [['bismark_html_report_generator', 'module_samtools'],
+                       ['bismark_html_report_generator', 'module_perl'],
+                       ['bismark_html_report_generator', 'module_bismark']]
+        for sample in self.samples:
+            report_list = []
+            job = Job(input_files=[])
 
     def differential_methylated_pos(self):
         """
@@ -525,8 +532,8 @@ EOF
                     group=tuple(sample_group),
                     sample_names=tuple([sample.name for sample in contrast_samples]),
                     coverage=config.param("differential_methylated_pos", "read_coverage"),
-                    controls=tuple([sample.name for sample in contrast.controls]),
-                    cases=tuple([sample.name for sample in contrast.treatments]),
+                    controls=', '.join(["'" + sample.name + "'" for sample in contrast.controls]),
+                    cases=', '.join(["'" + sample.name + "'" for sample in contrast.treatments]),
                     padjust_method=config.param("differential_methylated_pos", "padjust_method"),
                     pvalue=config.param("differential_methylated_pos", "pvalue", type="float"),
                     delta_beta_threshold=config.param("differential_methylated_pos", "delta_beta_threshold",

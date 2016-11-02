@@ -16,7 +16,7 @@ import sys
 
 # Constant strings containing needed regular expressions to capture data
 SEARCH_TOTAL_SEQS = '^Sequence(?:s|pairs) analysed in total:\s+([0-9]+)'
-SEARCH_UNIQ_HIT = '^Number of (?:paired-end)? alignments with a unique best hit:\s+([0-9]+)'
+SEARCH_UNIQ_HIT = '^Number of (?:paired-end)? alignments with a unique best hit.*?\s+([0-9]+)'
 SEARCH_NO_ALIGN = 'with no alignments under any condition:\s+([0-9]+)'
 SEARCH_NOT_UNIQ = 'did not map uniquely:\s+([0-9]+)'
 SEARCH_DISCARDED = 'were discarded because genomic sequence.*?:\s+([0-9]+)'
@@ -93,46 +93,52 @@ def merge_logs(output_report, name, log_reports):
     # Write out results
     with open(output_report, 'w') as writer:
         writer.write("""
-    Merged Bismark report for {sample}: {readsets}
+Merged Bismark report for {sample}: {readsets}
 
-    Final Alignment report
-    ======================
+Final Alignment report
+======================
+Sequences analysed in total:\t{seqs}
+Number of alignments with a unique best hit from the different alignments:\t{uniq}
+Mapping efficiency:\t{efficient:.1%}
+Sequences with no alignments under any condition:\t{no_align}
+Sequences did not map uniquely:\t{no_uniq}
+Sequences which were discarded because genomic sequence could not be extracted:\t{discarded}
 
-    Sequences analysed in total:\t{seqs}
-    Number of alignments with a unique hit:\t{uniq}
-    Mapping efficiency:\t{efficient}
-    Sequences with no alignments under any condition:\t{no_align}
-    Sequences did not map uniquely:\t{no_uniq}
-    Sequences which were discarded because genomic sequence could not be extracted:\t{discarded}
+Number of sequences with unique best (first) alignment came from the bowtie output:
+CT/GA/CT:\t{ct_ct}\t((converted) top strand)
+GA/CT/CT:\t{ga_ct}\t(complementary to (converted) top strand)
+GA/CT/GA:\t{ga_ga}\t(complementary to (converted) bottom strand)
+CT/GA/GA:\t{ct_ga}\t((converted) bottom strand)
 
-    Number of sequences with unique best (first) alignment came from the bowtie output:
-    CT/GA/CT:\t{ct_ct}\t((converted) top strand)
-    GA/CT/CT:\t{ga_ct}\t(complementary to (converted) top strand)
-    GA/CT/GA:\t{ga_ga}\t(complementary to (converted) bottom strand)
-    CT/GA/GA:\t{ct_ga}\t((converted) bottom strand)
+Number of alignments to (merely theoretical) complementary strands being rejected in total:\t{reject}
 
-    Number of alignments to (merely theoretical) complementary strands being rejected in total:\t{reject}
+Final Cytosine Methylation Report
+=================================
+Total number of C's analysed:\t{total_c}
 
-    Final Cytosine Methylation Report
-    =================================
-    Total number of C's analysed:\t{total_c}
-
-    Total methylated C's in CpG context:\t{mc_cpg}
-    Total methylated C's in CHG context:\t{mc_chg}
-    Total methylated C's in CHH context:\t{mc_chh}
-    Total methylated C's in Unknown context:\t{mc_unk}
+Total methylated C's in CpG context:\t{mc_cpg}
+Total methylated C's in CHG context:\t{mc_chg}
+Total methylated C's in CHH context:\t{mc_chh}
+Total methylated C's in Unknown context:\t{mc_unk}
 
 
-    Total unmethylated C's in CpG context:\t{c_cpg}
-    Total unmethylated C's in CHG context:\t{c_chg}
-    Total unmethylated C's in CHH context:\t{c_chh}
-    Total unmethylated C's in Unknown context:\t{c_unk}
+Total unmethylated C's in CpG context:\t{c_cpg}
+Total unmethylated C's in CHG context:\t{c_chg}
+Total unmethylated C's in CHH context:\t{c_chh}
+Total unmethylated C's in Unknown context:\t{c_unk}
+
+C methylated in CpG context:\t{rate_cpg:.1%}
+C methylated in CHG context:\t{rate_chg:.1%}
+C methylated in CHH context:\t{rate_chh:.1%}
+C methylated in Unknown context (CN or CHN):\t{rate_unk:.1%}
 
     """.format(sample=name, readsets=' '.join(log_reports), seqs=total_seqs,
-               uniq=uniq_hit, efficient='', no_align=no_align, no_uniq=not_uniq, discarded=discarded,
+               uniq=uniq_hit, efficient=uniq_hit/total_seqs, no_align=no_align, no_uniq=not_uniq, discarded=discarded,
                ct_ct=ct_ct, ga_ct=ga_ct, ga_ga=ga_ga, ct_ga=ct_ga, reject=direction_rejected,
                total_c=total_c, mc_cpg=mc_cpg, mc_chg=mc_chg, mc_chh=mc_chh, mc_unk=mc_unk,
-               c_cpg=c_cpg, c_chg=c_chg, c_chh=c_chh, c_unk=c_unk))
+               c_cpg=c_cpg, c_chg=c_chg, c_chh=c_chh, c_unk=c_unk,
+               rate_cpg=mc_cpg/(mc_cpg+c_cpg), rate_chg=mc_chg/(mc_chg+c_chg), rate_chh=mc_chh/(mc_chh+c_chh),
+               rate_unk=mc_unk/(mc_unk+c_unk)))
 
 
 if __name__ == '__main__':

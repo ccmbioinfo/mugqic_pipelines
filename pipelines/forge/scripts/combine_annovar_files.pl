@@ -224,7 +224,7 @@ sub handleVariantFunctionLine($$$$)
 		$variantLines{$varKey} = join("\t", @line[7..$#line]);
 		my @info = split(/:/, $line[1]);
 		(my $geneName) = split(/[;:(,]/, $info[0]);
-		$variantInfoToAdd{$varKey} = ";VT=${variantType};GENE=${geneName};DTLS=$line[1]";
+		$variantInfoToAdd{$varKey} = ";VT=${variantType};GENE=${geneName};DTLS=".replaceDelimiters($line[1]);
 
 		my $dp4 = "";
 		my ($altCount, $readCount);
@@ -528,7 +528,7 @@ if ($segdupFile)
 
 my $varTypeHeader		= "##INFO=<ID=VT,Number=1,Type=String,Description=\"Type of variant (intronic, synonymous, nonsynonymous, etc)\">\n";
 my $geneHeader			= "##INFO=<ID=GENE,Number=1,Type=String,Description=\"Gene symbol\">\n";
-my $detailsHeader		= "##INFO=<ID=DTLS,Number=1,Type=String,Description=\"Variant details from Annovar\">\n";
+my $detailsHeader		= "##INFO=<ID=DTLS,Number=.,Type=String,Description=\"Variant details from Annovar\">\n";
 my $altCountHeader		= "##INFO=<ID=ALTC,Number=1,Type=String,Description=\"Alt read count\">\n";
 my $readCountHeader		= "##INFO=<ID=RDC,Number=1,Type=String,Description=\"Total read count\">\n";
 my $proteinChangeHeader	= "##INFO=<ID=PC,Number=1,Type=String,Description=\"Protein change\">\n";
@@ -693,5 +693,7 @@ sub replaceDelimiters($)
     my $text = shift;
 	# Replace any occurrences of ";" or "\t", which are delimiters in VCF
 	$text =~ s/[;\t]/-/;
+    # Replace spaces with underscores (spaces not allowed until v4.3 VCF)
+	$text =~ s/ /_/;
     return $text;
 }

@@ -22,38 +22,35 @@
 # Python Standard Modules
 
 # MUGQIC Modules
-from core.config import *
-from core.job import *
+from core.config import config
+from core.job import Job
 
 
-def gemini_annotations(variants, gemini_output, tmp_dir, annotations=''):
+def annotate(vcf, out_file):
     """
-    Store variants in a gemini database
-
-    :param variants: vcf file to load
-    :param gemini_output: db file to load to
-    :param tmp_dir: dir to put temporary database chunks
-    :param annotations: which annotations were use, either 'VEP', or 'snpEff'
+    Annotate vcf using options specified in config
     :return: Job
     """
-    # Temporarily remove PYTHONPATH so that we import platform from gemini
+    config_section = 'gemini_annotations'
     return Job(
-        [variants],
-        [gemini_output],
+        [vcf],
+        [out_file],
         [
-            ['gemini_annotations', 'module_gemini'],
-            ['gemini_annotations', 'module_htslib'],
-            ['gemini_annotations', 'module_tabix']
+            [config_section, 'module_perl'],
+            [config_section, 'module_tabix']
         ],
         command="""\
-PYTHONPATH='' gemini load -v {variants} \\
-{options} {annotations} \\
---tempdir {temp} \\
-{output}""".format(
-        options=config.param('gemini_annotations', 'options'),
-        annotations='-t ' + annotations if annotations else '',
-        variants=variants,
-        output=gemini_output,
-        temp=tmp_dir
-        )
+perl {vep_location} -i {input} --assembly {assembly} --stats_file {out_file}.summary.html {options} | grep -v -- "- INFO: Disabling" > {out_file}
+""".format(input=vcf,
+           vep_location=config.param(config_section, 'vep_location'),
+           assembly=config.param(config_section, 'assembly'),
+           options=config.param(config_section, 'vep_options', required=False),
+           out_file=out_file)
     )
+
+
+def is_vep_requested():
+    """
+    Determine whether the user wants to annote the VCF with VEP
+    """
+    return 'vep' in config.param('gemini_annotations', 'annotations', required=False).lower()

@@ -45,7 +45,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $SNPEFF_HOME
   {reference_snpeff_genome} \\
   {input} > {output}""".format(
         tmp_dir=config.param('compute_effects', 'tmp_dir'),
-        java_other_options=config.param('compute_effects', 'java_other_options'),
+        java_other_options=config.param('compute_effects', 'java_other_options', required=False),
         ram=config.param('compute_effects', 'ram'),
         options=config.param('compute_effects', 'options', required=False),
         output_stats=output_stats,
@@ -140,3 +140,10 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $SNPEFF_HOME
         ),
         name=job_name
     )
+
+def is_snpeff_requested():
+    """
+    Determine whether the user wants to annote the VCF with SnpEff
+    """
+    return 'snpeff' in config.param('gemini_annotations', 'annotations', required=False).lower()
+

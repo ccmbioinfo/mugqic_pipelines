@@ -45,7 +45,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $SNPEFF_HOME
   {reference_snpeff_genome} \\
   {input} > {output}""".format(
         tmp_dir=config.param('compute_effects', 'tmp_dir'),
-        java_other_options=config.param('compute_effects', 'java_other_options'),
+        java_other_options=config.param('compute_effects', 'java_other_options', required=False),
         ram=config.param('compute_effects', 'ram'),
         options=config.param('compute_effects', 'options', required=False),
         output_stats=output_stats,

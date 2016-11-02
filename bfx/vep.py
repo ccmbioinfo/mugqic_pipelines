@@ -44,7 +44,7 @@ perl {vep_location} -i {input} --assembly {assembly} --stats_file {out_file}.sum
 """.format(input=vcf,
            vep_location=config.param(config_section, 'vep_location'),
            assembly=config.param(config_section, 'assembly'),
-           options=config.param(config_section, 'vep_options'),
+           options=config.param(config_section, 'vep_options', required=False),
            out_file=out_file)
     )
 

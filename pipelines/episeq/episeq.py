@@ -153,7 +153,7 @@ class Episeq(common.Illumina):
                                        trim_galore {protocol} {library_type} {other} --output_dir {directory} {fastq}
                                        """.format(
                                            library_type="--paired" if run_type == "PAIRED_END" else "",
-                                           protocol='--rrbs' if protocol == 'RRBS' else '',
+                                           protocol='--rrbs --non_directional' if protocol == 'RRBS' else '',
                                            other=config.param("trim_galore", "other_options"),
                                            directory=trim_directory,
                                            fastq=' '.join(input_files)),

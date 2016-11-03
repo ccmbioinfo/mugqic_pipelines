@@ -494,8 +494,8 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
         for contrast in self.contrasts:
             # Determine the control and case samples to include in the analysis from the contrast
             contrast_samples = [sample for sample in contrast.controls + contrast.treatments]
-            cov_files = [os.path.join("methyl_calls", sample.name ,sample.name + ".merged.bismark.cov.gz") for
-                         sample in contrast_samples]
+            cov_files = [os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.bismark.cov.gz")
+                         for sample in contrast_samples]
             sample_group = ["control" if sample in contrast.controls else "case" for sample in contrast_samples]
             dmps_file = os.path.join("differential_methylated_positions",
                                      contrast.name + "_RRBS_differential_methylated_pos.csv")
@@ -578,8 +578,8 @@ EOF
         for contrast in self.contrasts:
             # Determine the control and case samples to include in the analysis from the contrast
             contrast_samples = [sample for sample in contrast.controls + contrast.treatments]
-            cov_files = [os.path.join("methyl_calls", sample.name, sample.name + ".merged.bismark.cov.gz") for sample in
-                         contrast_samples]
+            cov_files = [os.path.join("methyl_calls", sample.name, sample.name +
+                                      ".merged.deduplication.bismark.cov.gz") for sample in contrast_samples]
             sample_group = ["control" if sample in contrast.controls else "case" for sample in contrast_samples]
             dmrs_file = os.path.join("differential_methylated_regions",
                                      contrast.name + "_RRBS_differential_methylated_regions.csv")

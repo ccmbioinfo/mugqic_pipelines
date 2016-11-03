@@ -122,19 +122,19 @@ if __name__ == '__main__':
     :arg 4: (Optional) The path to the root data directory, where the seq files are stored. Default: '.'
     """
     parser = argparse.ArgumentParser(description='')
-    parser.add_argument('-r', '--readset_out', action='store', nargs=1,
+    parser.add_argument('-r', '--readset_out', action='store',
                         default='./episeq.readset', type=str,
                         required=False, metavar='output_file', dest='readset_out',
                         help='The output path for the readset file.')
-    parser.add_argument('-d', '--design_out', action='store', nargs=1,
+    parser.add_argument('-d', '--design_out', action='store',
                         default='./episeq.design', type=str,
                         required=False, metavar='output_file', dest='design_out',
                         help='The output path for the design file.')
-    parser.add_argument('--data', action='store', nargs=1, default='./', type=str,
+    parser.add_argument('--data', action='store', default='./', type=str,
                         required=False, metavar='directory', dest='data_dir',
                         help="""The path to the root data directory, where the seq files are
                         stored.""")
-    parser.add_argument('in_file', action='store', nargs=1, type=str,
+    parser.add_argument('in_file', action='store', type=str,
                         metavar='sample_table',
                         help="""A filepath to the SraRunTable.txt or some other similar
                              format.""")

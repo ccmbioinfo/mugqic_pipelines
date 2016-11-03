@@ -449,22 +449,25 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                        ['bismark_html_report_generator', 'module_perl'],
                        ['bismark_html_report_generator', 'module_bismark']]
         for sample in self.samples:
-            report_list = [os.path.join("merged", sample.name, sample.name + "_aligned_report.txt"),
-                           os.path.join('dedup', sample.name, sample.name + '.merged.deduplication_report.txt'),
-                           os.path.join("methyl_calls", sample.name, sample.name +
-                                        ".merged.deduplicated_splitting_report.txt"),
-                           os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.M-bias.txt"),
-                           os.path.join('merged', sample.name, sample.name + '.merged.bam.nucleotide_stats.txt')]
+            report_list = ['', '', '', '']
+            report_list[0] = os.path.join("merged", sample.name, sample.name + "_aligned_report.txt")
+            if sample.readset[0].library != 'RRBS':
+                report_list[1] = os.path.join('dedup', sample.name, sample.name + '.merged.deduplication_report.txt')
+            report_list[2] = os.path.join("methyl_calls", sample.name, sample.name +
+                                          ".merged.deduplicated_splitting_report.txt")
+            report_list[3] = os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.M-bias.txt")
+            report_list[4] = os.path.join('merged', sample.name, sample.name + '.merged.bam.nucleotide_stats.txt')
             html_report = [sample.name + '_final_bismark_report.html']
-            job = Job(input_files=report_list, output_files=html_report, module_entries=module_list,
+
+            job = Job(input_files=report_list, output_files=filter('', html_report), module_entries=module_list,
                       name=sample.name + ".combined_report_generation", report_files=[html_report],
-                      command='bismark2report' +
-                              ' -o ' + html_report[0] +
-                              ' --alignment_report ' + report_list[0] +
-                              ' --dedup_report ' + report_list[1] +
-                              ' --splitting_report ' + report_list[2] +
-                              ' --mbias_report ' + report_list[3] +
-                              ' --nucleotide_report ' + report_list[4])
+                      command='bismark2report -o {out} --alignment_report {align} {dedup} {split} {mbias} {nt}'.format(
+                              out=html_report[0],
+                              align=report_list[0],
+                              dedup=' --dedup_report ' + report_list[1] if report_list[1] else '',
+                              split=' --splitting_report ' + report_list[1],
+                              mbias=' --mbias_report ' + report_list[2],
+                              nt=' --nucleotide_report ' + report_list[3]))
             jobs.append(job)
         return jobs
 

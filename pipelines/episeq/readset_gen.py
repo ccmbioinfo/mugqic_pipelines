@@ -47,7 +47,7 @@ def generate_readset(entries, readset_file, data_root):
     """
     with open(readset_file, 'w') as readsets:
         fieldnames = ['Sample', 'Readset', 'Library', 'RunType', 'FASTQ1', 'FASTQ2', 'BAM']
-        writer = csv.DictWriter(readsets, fieldnames=fieldnames, delimiter='\t', quoting=csv.QUOTE_NONE)
+        writer = csv.DictWriter(readsets, fieldnames=fieldnames, delimiter='\t', quoting=csv.QUOTE_NONE, lineterminator='\n')
         # writer.writeheader()
         readsets.write('\t'.join(fieldnames) + '\n')
         bam_loc = ''
@@ -103,8 +103,8 @@ def generate_design(study_group, design_file):
     """
     with open(design_file, 'w') as design:
         fieldnames = ['Sample', 'Contrast']
-        writer = csv.DictWriter(design, fieldnames=fieldnames, restval=0,
-                                delimiter='\t', quoting=csv.QUOTE_NONE)
+        writer = csv.DictWriter(design, fieldnames=fieldnames, restval=0, delimiter='\t',
+                                quoting=csv.QUOTE_NONE, lineterminator='\n')
         # writer.writeheader()
         design.write('\t'.join(fieldnames) + '\n')
 

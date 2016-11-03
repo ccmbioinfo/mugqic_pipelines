@@ -414,7 +414,7 @@ bismark -q {other} --temp_dir {tmpdir} {buffer_size} --output_dir {directory} \
         for sample in self.samples:
             # Either select aligned sample from previous alignment step or aligned BAM/SAM files in readset file
             merged_sample = self.select_input_files([[readset.bam for readset in sample.readsets], [
-                os.path.join("dedup", sample.name + ".merged.deduplicated.bam")]])
+                os.path.join("dedup",sample.name , sample.name + ".merged.deduplicated.bam")]])
             output_files = [
                 os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.bismark.cov.gz"),
                 os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.M-bias.txt"),
@@ -495,7 +495,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
         for contrast in self.contrasts:
             # Determine the control and case samples to include in the analysis from the contrast
             contrast_samples = [sample for sample in contrast.controls + contrast.treatments]
-            cov_files = [os.path.join("methyl_calls", sample.name, sample.name + ".merged.bismark.cov.gz") for
+            cov_files = [os.path.join("methyl_calls",sample.name , sample.name + ".merged.bismark.cov.gz") for
                          sample in contrast_samples]
             sample_group = ["control" if sample in contrast.controls else "case" for sample in contrast_samples]
             dmps_file = os.path.join("differential_methylated_positions",

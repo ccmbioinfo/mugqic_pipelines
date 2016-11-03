@@ -161,8 +161,8 @@ if __name__ == '__main__':
                         group to identify the new merged log report. If name is not provided, the file name is
                         determined  by the ID of each log file given. (ex.
                         SRRXXXX_SRRXXXX_...SRRXXXX_aligned_report.txt """)
-    parser.add_argument('log_report', action='append', nargs='+', type=str,
-                        metavar='Log', dest='log_reports', help="""A space separated list of Bismark's
+    parser.add_argument('log_reports', action='append', nargs='+', type=str,
+                        metavar='Log', help="""A space separated list of Bismark's
                         alignment report files that you want to merge.""")
     args = parser.parse_args(sys.argv)
     merge_logs(args.out_dir, args.sample_name, args.log_reports)

@@ -449,7 +449,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                        ['bismark_html_report_generator', 'module_perl'],
                        ['bismark_html_report_generator', 'module_bismark']]
         for sample in self.samples:
-            report_list = ['', '', '', '']
+            report_list = ['', '', '', '', '']
             report_list[0] = os.path.join("merged", sample.name, sample.name + "_aligned_report.txt")
             if sample.readsets[0].library != 'RRBS':
                 report_list[1] = os.path.join('dedup', sample.name, sample.name + '.merged.deduplication_report.txt')

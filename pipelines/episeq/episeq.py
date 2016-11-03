@@ -198,12 +198,12 @@ class Episeq(common.Illumina):
                                    os.path.join(trim_prefix, readset.name + "_2_val_2.fq.gz")]
                     cmd_in = '"-1 {fastq1} -2 {fastq2}'.format(fastq1=input_files[0], fastq2=input_files[1])
                     readset_sam = readset_base + "_aligned_pe.bam"
-                    report_log = [readset_base + "aligned_PE_report.txt"]
+                    report_log = [readset_base + "_aligned_PE_report.txt"]
                 elif run_type == "SINGLE_END":
                     input_files = [os.path.join(trim_prefix, readset.name + "_trimmed.fq.gz")]
                     cmd_in = '--single_end {fastq1}'.format(fastq1=input_files[0])
                     readset_sam = readset_base + "_aligned.bam"
-                    report_log = [readset_base + "aligned_SE_report.txt"]
+                    report_log = [readset_base + "_aligned_SE_report.txt"]
                 else:
                     raise AttributeError("Unknown run_type: " + run_type + ". Unknown file output name.")
 

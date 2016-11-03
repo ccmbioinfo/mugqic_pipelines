@@ -377,18 +377,17 @@ bismark -q {other} --temp_dir {tmpdir} {buffer_size} --output_dir {directory} \
                           command="ln -s -f " + in_file + " " + out_file,
                           name="bismark_deduplication." + sample.name)
             else:
-                merge_job = Job([in_file],
-                                [['bismark_deduplicate', 'module_samtools'],
-                                 ['bismark_deduplicate', 'module_perl'],
-                                 ['bismark_deduplicate', 'module_bismark']],
+                merge_job = Job([in_file], output_files=[report_file, out_file], report_files=[report_file],
+                                module_entries=[['bismark_deduplicate', 'module_samtools'],
+                                                ['bismark_deduplicate', 'module_perl'],
+                                                ['bismark_deduplicate', 'module_bismark']],
                                 command="""deduplicate_bismark {type} --bam {other} {input}""".format(
-                                    type='--paired' if run_type == 'PAIRED' else '--single', input=in_file,
+                                    type='--paired' if run_type == 'PAIRED' else '--single',
+                                    input=in_file,
                                     other=config.param('bismark_deduplicate', 'other_options', required=False)))
-                move_bam = Job(output_files=[out_file],
-                               command='mv -fu ' + os.path.join(os.path.dirname(in_file), os.path.basename(out_file))
+                move_bam = Job(command='mv -fu ' + os.path.join(os.path.dirname(in_file), os.path.basename(out_file))
                                        + ' ' + out_file)
-                move_log = Job(output_files=[report_file], report_files=[report_file],
-                               command='mv -fu ' + os.path.join(os.path.dirname(in_file),
+                move_log = Job(command='mv -fu ' + os.path.join(os.path.dirname(in_file),
                                                                 os.path.basename(report_file)) + ' ' + report_file)
 
                 job = concat_jobs([merge_job, move_bam, move_log], name='bismark_deduplication.' + sample.name)

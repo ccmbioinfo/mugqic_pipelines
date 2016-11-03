@@ -459,7 +459,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
             report_list[4] = os.path.join('merged', sample.name, sample.name + '.merged.bam.nucleotide_stats.txt')
             html_report = [sample.name + '_final_bismark_report.html']
 
-            job = Job(input_files=report_list, output_files=filter('', html_report), module_entries=module_list,
+            job = Job(input_files=report_list, output_files=filter(None, html_report), module_entries=module_list,
                       name=sample.name + ".combined_report_generation", report_files=[html_report],
                       command='bismark2report -o {out} --alignment_report {align} {dedup} {split} {mbias} {nt}'.format(
                               out=html_report[0],

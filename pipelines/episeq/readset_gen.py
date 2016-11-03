@@ -2,7 +2,7 @@
 """
 Info goes here
 """
-
+import argparse
 import csv
 import glob
 import os
@@ -29,7 +29,7 @@ def parse_manifest(manifest_file):
     return entries
 
 
-def generate_readset(entries, readset_file='./episeq.readset', data_root='.'):
+def generate_readset(entries, readset_file, data_root):
     # type: (list, str) -> list
     """
     Writes the readset file, while attempting to find the required fastq/bam files for every run.
@@ -77,8 +77,9 @@ def generate_readset(entries, readset_file='./episeq.readset', data_root='.'):
                 print ('%s will not be included in this run because its files are missing.' % entry[1])
                 continue  # Don't write anything about missing samples
 
-            writer.writerow({'Sample': entry[0], 'Readset': entry[1], 'Library': protocol, 'RunType': entry[2] + "_END",
-                             'FASTQ1': fastq1, 'FASTQ2': fastq2, 'BAM': bam_loc})
+            writer.writerow({'Sample': entry[0], 'Readset': entry[1], 'Library': protocol,
+                             'RunType': '{0}_END'.format(entry[2]), 'FASTQ1': fastq1,
+                             'FASTQ2': fastq2, 'BAM': bam_loc})
 
             if entry[0] not in [run[0] for run in uniq_study]:
                 uniq_study.append([entry[0], entry[3]])
@@ -86,7 +87,7 @@ def generate_readset(entries, readset_file='./episeq.readset', data_root='.'):
     return uniq_study
 
 
-def generate_design(study_group, design_file='./episet.design'):
+def generate_design(study_group, design_file):
     """
     This function creates/overwrite a design file as an input for the pipeline. It uses information
     from generate_readset() to determine what samples are remaining in the list. Since every
@@ -120,6 +121,25 @@ if __name__ == '__main__':
     :arg 3: (Optional) The output path for the design file. Default : ./episeq.design
     :arg 4: (Optional) The path to the root data directory, where the seq files are stored. Default: '.'
     """
-    data = parse_manifest(sys.argv[1])
-    study = generate_readset(data, sys.argv[2], sys.argv[4])
-    generate_design(study, sys.argv[3])
+    parser = argparse.ArgumentParser(description='')
+    parser.add_argument('manifest_table', action='store', nargs=1, type='str', required=True,
+                        metavar='sample_table', dest='in_file',
+                        help='A filepath to the SraRunTable.txt or some other similar '
+                             'format.')
+    parser.add_argument('-r', '--readset_out', action='store', nargs=1,
+                        default='./episeq.readset', type='str',
+                        required=False, metavar='output_file', dest='readset_out',
+                        help='The output path for the readset file.')
+    parser.add_argument('-d', '--design_out', action='store', nargs=1,
+                        default='./episeq.design', type='str',
+                        required=False, metavar='output_file', dest='design_out',
+                        help='The output path for the design file.')
+    parser.add_argument('--data', action='store', nargs=1, default='./', type='str',
+                        required=False, metavar='directory', dest='data_dir',
+                        help="""The path to the root data directory, where the seq files are
+                        stored.""")
+    args = parser.parse_args(sys.argv)
+    generate_design(generate_readset(parse_manifest(args.in_file),
+                                     args.readset_out,
+                                     args.data_dir),
+                    args.design_out)

@@ -247,7 +247,7 @@ bismark -q {other} --temp_dir {tmpdir} {buffer_size} --output_dir {directory} \
         jobs = []
         for sample in self.samples:
             log_reports = []
-            output_report = os.path.join("aligned", sample.name + "_aligned_report.txt")
+            output_report = os.path.join("merged", sample.name, sample.name + "_aligned_report.txt")
             align_directory = os.path.join("aligned", sample.name)
 
             # Get all log reports for this sample
@@ -260,7 +260,7 @@ bismark -q {other} --temp_dir {tmpdir} {buffer_size} --output_dir {directory} \
                 else:
                     log_reports.append(log_basename + "_aligned_SE_report.txt")
 
-            mkdir_job = Job(command="mkdir -p " + align_directory)
+            mkdir_job = Job(command="mkdir -p merged/" + sample.name)
 
             merge_job = Job(log_reports, [output_report],
                             [['merge_bismark_alignment_report', 'module_python']],
@@ -294,7 +294,7 @@ bismark -q {other} --temp_dir {tmpdir} {buffer_size} --output_dir {directory} \
             listed_bam_files = [readset.bam for readset in sample.readsets if readset.bam != '' and not readset.fastq1]
 
             input_files = processed_fastq + listed_bam_files  # All bam files that belong to the sample
-            merge_prefix = 'merged'
+            merge_prefix = os.path.join('merged', sample.name)
             output_bam = os.path.join(merge_prefix, sample.name + '.merged.bam')
 
             mkdir_job = Job(command='mkdir -p ' + merge_prefix)
@@ -453,12 +453,12 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                        ['bismark_html_report_generator', 'module_perl'],
                        ['bismark_html_report_generator', 'module_bismark']]
         for sample in self.samples:
-            report_list = [os.path.join("aligned", sample.name + "_aligned_report.txt"),
-                           os.path.join('dedup', sample.name + 'merged.deduplication_report.txt'),
+            report_list = [os.path.join("merged", sample.name, sample.name + "_aligned_report.txt"),
+                           os.path.join('dedup', sample.name, sample.name + 'merged.deduplication_report.txt'),
                            os.path.join("methyl_calls", sample.name, sample.name +
                                         ".merged.deduplicated_splitting_report.txt"),
                            os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.M-bias.txt"),
-                           os.path.join('merged', sample.name + '.merged.bam.nucleotide_stats.txt')]
+                           os.path.join('merged', sample.name, sample.name + '.merged.bam.nucleotide_stats.txt')]
             html_report = [sample.name + '_final_bismark_report.html']
             job = Job(input_files=report_list, output_files=html_report, module_entries=module_list,
                       name=sample.name + ".combined_report_generation", report_files=[html_report],
@@ -654,9 +654,11 @@ EOF
             self.bismark_prepare_genome,
             self.trim_galore,
             self.bismark_align,
+            self.merge_bismark_alignment_report,
             self.picard_merge_sam_files,
             self.bismark_deduplicate,
             self.bismark_methylation_caller,
+            self.bismark_html_report_generator,
             self.differential_methylated_pos,
             self.differential_methylated_regions
         ]

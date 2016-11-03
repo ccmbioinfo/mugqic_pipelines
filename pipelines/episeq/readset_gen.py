@@ -124,11 +124,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('-r', '--readset_out', action='store',
                         default='./episeq.readset', type=str,
-                        required=False, metavar='output_file', dest='readset_out',
+                        required=False, metavar='file', dest='readset_out',
                         help='The output path for the readset file.')
     parser.add_argument('-d', '--design_out', action='store',
                         default='./episeq.design', type=str,
-                        required=False, metavar='output_file', dest='design_out',
+                        required=False, metavar='file', dest='design_out',
                         help='The output path for the design file.')
     parser.add_argument('--data', action='store', default='./', type=str,
                         required=False, metavar='directory', dest='data_dir',
@@ -138,7 +138,7 @@ if __name__ == '__main__':
                         metavar='sample_table',
                         help="""A filepath to the SraRunTable.txt or some other similar
                              format.""")
-    args = parser.parse_args(sys.argv)
+    args = parser.parse_args()
     generate_design(generate_readset(parse_manifest(args.in_file),
                                      args.readset_out,
                                      args.data_dir),

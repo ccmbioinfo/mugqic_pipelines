@@ -151,18 +151,18 @@ if __name__ == '__main__':
     This method allows maximum parallelization and respects the need to keep read groups seperated.""",
                                      epilog='By Michael Li, Oct. 2016')
     parser.add_argument('-o', '--output', action='store', default='', type=str,
-                        required=False, metavar='out_file', dest='out_file', help="""The output file
+                        required=False, metavar='file', dest='out_file', help="""The output file
                         path where the merged report should be written to. If not provided, the
                         program will use the current working directory and use the name option
                         to determine the filename. If name is also not provided, the file name
                         is determined by the ID of each log file given.""")
     parser.add_argument('-n', '--name', action='store', default='', type=str,
-                        required=False, metavar='sample_name', dest='sample_name', help="""The name of the sample or
+                        required=False, metavar='sample_id', dest='sample_name', help="""The name of the sample or
                         group to identify the new merged log report. If name is not provided, the file name is
                         determined  by the ID of each log file given. (ex.
                         SRRXXXX_SRRXXXX_...SRRXXXX_aligned_report.txt """)
     parser.add_argument('log_reports', action='append', nargs='+', type=str,
                         metavar='Log', help="""A space separated list of Bismark's
                         alignment report files that you want to merge.""")
-    args = parser.parse_args(sys.argv)
+    args = parser.parse_args()
     merge_logs(args.out_dir, args.sample_name, args.log_reports)

@@ -229,7 +229,6 @@ bismark -q {other} --temp_dir {tmpdir} {buffer_size} --output_dir {directory} \
                             input=cmd_in,
                             basename=readset.name + '_aligned'
                         ),
-                        report_files=report_log,
                         removable_files=[readset_sam]
                     )], name="bismark_align." + readset.name)
                 jobs.append(job)
@@ -268,8 +267,7 @@ bismark -q {other} --temp_dir {tmpdir} {buffer_size} --output_dir {directory} \
                                 script_loc=config.param('DEFAULT', 'extern_script'),
                                 output=output_report,
                                 name=sample.name,
-                                logs=' '.join(log_reports)),
-                            report_files=[output_report])
+                                logs=' '.join(log_reports)))
 
             job = concat_jobs([mkdir_job, merge_job], name="merge_align_reports." + sample.name)
             jobs.append(job)
@@ -377,7 +375,7 @@ bismark -q {other} --temp_dir {tmpdir} {buffer_size} --output_dir {directory} \
                           command="ln -s -f " + in_file + " " + out_file,
                           name="bismark_deduplication." + sample.name)
             else:
-                merge_job = Job([in_file], output_files=[report_file, out_file], report_files=[report_file],
+                merge_job = Job([in_file], output_files=[report_file, out_file],
                                 module_entries=[['bismark_deduplicate', 'module_samtools'],
                                                 ['bismark_deduplicate', 'module_perl'],
                                                 ['bismark_deduplicate', 'module_bismark']],
@@ -434,8 +432,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                     other=config.param("bismark_methylation_caller", "other_options"),
                     core=config.param('bismark_methylation_caller', 'cores'),
                     sample=" ".join(merged_sample)),
-                name="bismark_methylation_caller." + sample.name,
-                report_files=[output_files])
+                name="bismark_methylation_caller." + sample.name)
 
             jobs.append(job)
 

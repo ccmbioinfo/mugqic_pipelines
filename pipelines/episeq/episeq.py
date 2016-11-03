@@ -368,7 +368,7 @@ bismark -q {other} --temp_dir {tmpdir} {buffer_size} --output_dir {directory} \
             work_dir = os.path.join('dedup', sample.name)
             in_file = os.path.join('merged', sample.name, sample.name + '.merged.bam')
             out_file = os.path.join(work_dir, sample.name + '.merged.deduplicated.bam')
-            report_file = os.path.join(work_dir, sample.name + 'merged.deduplication_report.txt')
+            report_file = os.path.join(work_dir, sample.name + '.merged.deduplication_report.txt')
             run_type = sample.readsets[0].run_type
             protocol = sample.readsets[0].library
 
@@ -454,7 +454,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                        ['bismark_html_report_generator', 'module_bismark']]
         for sample in self.samples:
             report_list = [os.path.join("merged", sample.name, sample.name + "_aligned_report.txt"),
-                           os.path.join('dedup', sample.name, sample.name + 'merged.deduplication_report.txt'),
+                           os.path.join('dedup', sample.name, sample.name + '.merged.deduplication_report.txt'),
                            os.path.join("methyl_calls", sample.name, sample.name +
                                         ".merged.deduplicated_splitting_report.txt"),
                            os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.M-bias.txt"),

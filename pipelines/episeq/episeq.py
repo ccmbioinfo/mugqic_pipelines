@@ -196,7 +196,7 @@ class Episeq(common.Illumina):
                 if run_type == "PAIRED_END" and readset.fastq2:
                     input_files = [os.path.join(trim_prefix, readset.name + "_1_val_1.fq.gz"),
                                    os.path.join(trim_prefix, readset.name + "_2_val_2.fq.gz")]
-                    cmd_in = '"-1 {fastq1} -2 {fastq2}'.format(fastq1=input_files[0], fastq2=input_files[1])
+                    cmd_in = '-1 {fastq1} -2 {fastq2}'.format(fastq1=input_files[0], fastq2=input_files[1])
                     readset_sam = readset_base + "_aligned_pe.bam"
                     report_log = [readset_base + "_aligned_PE_report.txt"]
                 elif run_type == "SINGLE_END":

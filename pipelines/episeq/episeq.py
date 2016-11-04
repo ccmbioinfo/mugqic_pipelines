@@ -84,15 +84,14 @@ class Episeq(common.Illumina):
 
         mkdir_job = Job(command='mkdir -p bismark_prepare_genome')
         link_job = Job(input_files=[ref_seq], output_files=[local_ref_seq],
-                       command='cp -fu ' + ref_seq + ' ' + local_ref_seq,
-                       # command="ln -sf " + ref_seq + " " + local_ref_seq,
+                       command='cp -sfu ' + ref_seq + ' ' + local_ref_seq,
                        removable_files=[local_ref_seq])
         main_job = Job(output_files=[output_idx],
                        module_entries=[['bismark_prepare_genome', 'module_bowtie2'],
                                        ['bismark_prepare_genome', 'module_samtools'],
                                        ['bismark_prepare_genome', 'module_perl'],
                                        ['bismark_prepare_genome', 'module_bismark']],
-                       command="bismark_genome_preparation --verbose --genomic_composition bismark_prepare_genome/",
+                       command="bismark_genome_preparation --verbose bismark_prepare_genome/",
                        report_files=['genomic_nucleotide_frequencies.txt'],
                        removable_files=[output_idx])
         return [concat_jobs([mkdir_job, link_job, main_job],

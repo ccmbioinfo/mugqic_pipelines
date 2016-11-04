@@ -140,7 +140,7 @@ class Episeq(common.Illumina):
                 else:  # Implicit single end
                     input_files = [readset.fastq1]
                     output_files = [file_basename + "_trimmed.fq.gz"]
-                    report_logs = [trim_directory + + '/' + os.path.basename(readset.fastq1) + '_trimming_report.txt',
+                    report_logs = [trim_directory + '/' + os.path.basename(readset.fastq1) + '_trimming_report.txt',
                                    file_basename + "_fastqc.html", file_basename + '_fastqc.zip']
 
                 mkdir_job = Job(command="mkdir -p " + trim_directory)

@@ -11,7 +11,7 @@ def raw_counts(input_bam, output_dir):
 
     library_type = config.param('DEFAULT', 'library_type', type='string', required=True)  
     if library_type == 'single':
-        strand = ''
+        strand = '--singleEnded'
     else:
         strand = '--stranded'
     

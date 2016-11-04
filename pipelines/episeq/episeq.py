@@ -218,14 +218,13 @@ class Episeq(common.Illumina):
                          ['bismark_align', 'module_perl'],
                          ['bismark_align', 'module_bismark']],
                         command="""\
-bismark -q {other} --temp_dir {tmpdir} {buffer_size} --output_dir {directory} \
+bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
     --basename {basename} --genome_folder bismark_prepare_genome {input}
         """.format(
                             directory=align_directory,
                             other=config.param("bismark_align", "other_options"),
                             tmpdir=config.param('bismark_align', 'tmp_dir', required=False) or
                                    config.param('DEFAULT', 'tmp_dir', required='True'),
-                            buffer_size=config.param('bismark_align', 'sorting_ram'),
                             input=cmd_in,
                             basename=readset.name + '_aligned'
                         ),

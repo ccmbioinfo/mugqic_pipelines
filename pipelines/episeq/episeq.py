@@ -133,15 +133,15 @@ class Episeq(common.Illumina):
                         raise ValueError("Expecting paired reads be named as follows file1_1.fq file1_2.fq.")
                     input_files = [readset.fastq1, readset.fastq2]
                     output_files = [file_basename + "_1_val_1.fq.gz", file_basename + "_2_val_2.fq.gz"]
-                    report_logs = [file_basename + '_1_trimming_report.txt', file_basename + "_1_val_1_fastqc.html",
-                                   file_basename + "_1_val_1_fastqc.zip",
-                                   file_basename + '_2_trimming_report.txt', file_basename + "_2_val_2_fastqc.html",
-                                   file_basename + "_2_val_2_fastqc.zip"]
+                    report_logs = [trim_directory + '/' + os.path.basename(readset.fastq1) + '_trimming_report.txt',
+                                   file_basename + "_1_val_1_fastqc.html", file_basename + "_1_val_1_fastqc.zip",
+                                   trim_directory + '/' + os.path.basename(readset.fastq2) + '_trimming_report.txt',
+                                   file_basename + "_2_val_2_fastqc.html", file_basename + "_2_val_2_fastqc.zip"]
                 else:  # Implicit single end
                     input_files = [readset.fastq1]
                     output_files = [file_basename + "_trimmed.fq.gz"]
                     report_logs = [trim_directory + '/' + os.path.basename(readset.fastq1) + '_trimming_report.txt',
-                                   file_basename + "_fastqc.html", file_basename + '_fastqc.zip']
+                                   file_basename + "_trimmed_fastqc.html", file_basename + '_trimmed_fastqc.zip']
 
                 mkdir_job = Job(command="mkdir -p " + trim_directory)
                 job = concat_jobs([mkdir_job,

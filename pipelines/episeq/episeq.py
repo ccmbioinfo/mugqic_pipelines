@@ -369,10 +369,13 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
             run_type = sample.readsets[0].run_type
             protocol = sample.readsets[0].library
 
+            mkdir_job = Job(command='mkdir -p ' + work_dir)
+
             if protocol == 'RRBS':  # Deduplication is not recommended for RRBS datatypes. Keep what we have
-                job = Job([in_file], [out_file],
-                          command="ln -s -f " + in_file + " " + out_file,
-                          name="bismark_deduplication." + sample.name)
+                job = concat_jobs([mkdir_job,
+                                   Job([in_file], [out_file],
+                                       command="ln -s -f " + in_file + " " + out_file)],
+                                  name="bismark_deduplication." + sample.name)
             else:
                 merge_job = Job([in_file], output_files=[report_file, out_file],
                                 module_entries=[['bismark_deduplicate', 'module_samtools'],
@@ -387,7 +390,8 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                 move_log = Job(command='mv -fu ' + os.path.join(os.path.dirname(in_file),
                                                                 os.path.basename(report_file)) + ' ' + report_file)
 
-                job = concat_jobs([merge_job, move_bam, move_log], name='bismark_deduplication.' + sample.name)
+                job = concat_jobs([mkdir_job, merge_job, move_bam, move_log],
+                                  name='bismark_deduplication.' + sample.name)
             jobs.append(job)
         return jobs
 

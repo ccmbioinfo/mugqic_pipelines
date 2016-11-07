@@ -165,4 +165,4 @@ if __name__ == '__main__':
                         metavar='Log', help="""A space separated list of Bismark's
                         alignment report files that you want to merge.""")
     args = parser.parse_args()
-    merge_logs(args.out_dir, args.sample_name, args.log_reports)
+    merge_logs(args.out_file, args.sample_name, args.log_reports)

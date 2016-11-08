@@ -340,7 +340,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                     target_readset_bam = os.path.relpath(readset_bam, merge_prefix)
                 job = concat_jobs([
                     mkdir_job,
-                    Job([readset_bam], [output_bam], command="ln -s -f " + target_readset_bam + " " + output_bam,
+                    Job([readset_bam], [output_bam], command="cp -s -L -f " + target_readset_bam + " " + output_bam,
                         removable_files=[output_bam]),
                     coverage_calc],
                     name="symlink_readset_sample_bam." + sample.name)
@@ -430,7 +430,7 @@ mkdir -p {directory}
 bismark_methylation_extractor {library_type} {other} --multicore {core} --output {directory} \
 --bedGraph --cytosine_report --gzip {sample}
         """.format(
-                    directory="methyl_calls" + sample.name,
+                    directory=os.path.join("methyl_calls", sample.name),
                     library_type="--paired-end" if run_type == "PAIRED_END" else "--single-end",
                     other=config.param("bismark_methylation_caller", "other_options"),
                     core=config.param('bismark_methylation_caller', 'cores'),

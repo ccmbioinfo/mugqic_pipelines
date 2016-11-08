@@ -40,7 +40,9 @@ def annotate(vcf, out_file):
             [config_section, 'module_tabix']
         ],
         command="""\
-perl {vep_location} -i {input} --assembly {assembly} --stats_file {out_file}.summary.html {options} | grep -v -- "- INFO: Disabling" > {out_file}
+perl {vep_location} -i {input} --vcf --assembly {assembly} \\
+--stats_file {out_file}.summary.html --force_overwrite --output_file STDOUT {options} | \\
+grep -v -- "- INFO: Disabling" > {out_file}
 """.format(input=vcf,
            vep_location=config.param(config_section, 'vep_location'),
            assembly=config.param(config_section, 'assembly'),

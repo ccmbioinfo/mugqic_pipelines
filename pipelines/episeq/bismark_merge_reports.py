@@ -12,7 +12,6 @@ This method allows maximum parallelization and respects the need to keep read gr
 import argparse
 import os.path as path
 import re
-import sys
 
 # Constant strings containing needed regular expressions to capture data
 SEARCH_TOTAL_SEQS = '^Sequence(?:s|pairs) analysed in total:\s+([0-9]+)'
@@ -81,18 +80,19 @@ def merge_logs(output_report, name, log_reports):
                   SEARCH_C_CPG, SEARCH_C_CHG, SEARCH_C_CHH, SEARCH_C_UNK]
 
     # Read all files and store in memory
-    with [open(logs).readlines() for logs in log_reports] as file_data:
-        for each_file in file_data:
-            for line in each_file:
-                # For each file, parse strings to get desired values.
+    for log in log_reports:
+        with open(log) as log_handle:
+            file_data = log_handle.readlines()
+            for each_line in file_data:
+                # For each metric, parse strings to get desired values.
                 for (val, total) in zip(search_all, value_all):
-                    result = re.search(val, line)
+                    result = re.search(val, each_line)
                     if result:
                         total += result.group(1)
                         continue
-    # Write out results
-    with open(output_report, 'w') as writer:
-        writer.write("""
+        # Write out results
+        with open(output_report, 'w') as writer:
+            writer.write("""
 Merged Bismark report for {sample}: {readsets}
 
 Final Alignment report
@@ -132,13 +132,15 @@ C methylated in CHG context:\t{rate_chg:.1%}
 C methylated in CHH context:\t{rate_chh:.1%}
 C methylated in Unknown context (CN or CHN):\t{rate_unk:.1%}
 
-    """.format(sample=name, readsets=' '.join(log_reports), seqs=total_seqs,
-               uniq=uniq_hit, efficient=uniq_hit/total_seqs, no_align=no_align, no_uniq=not_uniq, discarded=discarded,
-               ct_ct=ct_ct, ga_ct=ga_ct, ga_ga=ga_ga, ct_ga=ct_ga, reject=direction_rejected,
-               total_c=total_c, mc_cpg=mc_cpg, mc_chg=mc_chg, mc_chh=mc_chh, mc_unk=mc_unk,
-               c_cpg=c_cpg, c_chg=c_chg, c_chh=c_chh, c_unk=c_unk,
-               rate_cpg=mc_cpg/(mc_cpg+c_cpg), rate_chg=mc_chg/(mc_chg+c_chg), rate_chh=mc_chh/(mc_chh+c_chh),
-               rate_unk=mc_unk/(mc_unk+c_unk)))
+        """.format(sample=name, readsets=' '.join(log_reports), seqs=total_seqs,
+                   uniq=uniq_hit, efficient=uniq_hit / total_seqs, no_align=no_align, no_uniq=not_uniq,
+                   discarded=discarded,
+                   ct_ct=ct_ct, ga_ct=ga_ct, ga_ga=ga_ga, ct_ga=ct_ga, reject=direction_rejected,
+                   total_c=total_c, mc_cpg=mc_cpg, mc_chg=mc_chg, mc_chh=mc_chh, mc_unk=mc_unk,
+                   c_cpg=c_cpg, c_chg=c_chg, c_chh=c_chh, c_unk=c_unk,
+                   rate_cpg=mc_cpg / (mc_cpg + c_cpg), rate_chg=mc_chg / (mc_chg + c_chg),
+                   rate_chh=mc_chh / (mc_chh + c_chh),
+                   rate_unk=mc_unk / (mc_unk + c_unk)))
 
 
 if __name__ == '__main__':

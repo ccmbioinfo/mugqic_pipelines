@@ -12,6 +12,7 @@ This method allows maximum parallelization and respects the need to keep read gr
 import argparse
 import os.path as path
 import re
+from shutil import copyfile
 
 # Constant strings containing needed regular expressions to capture data
 SEARCH_TOTAL_SEQS = '^Sequence.+? analysed in total.*?\s+([0-9]+)'
@@ -66,6 +67,10 @@ def merge_logs(output_report, name, log_reports):
     elif not (output_report and name):
         name = ' '.join([path.splitext(path.basename(log))[0] for log in log_reports])
         output_report = path.join('.', name + '_aligned_report.txt')
+
+    if len(log_reports) == 1:
+        copyfile(log_reports[0], output_report)
+        return 0
 
     # Enumerate desired counters
     value_all = [total_seqs, total_c, direction_rejected,

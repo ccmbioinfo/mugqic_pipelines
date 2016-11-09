@@ -14,25 +14,25 @@ import os.path as path
 import re
 
 # Constant strings containing needed regular expressions to capture data
-SEARCH_TOTAL_SEQS = '^Sequence(?:s|pairs) analysed in total:\s+([0-9]+)'
-SEARCH_UNIQ_HIT = '^Number of (?:paired-end)? alignments with a unique best hit.*?\s+([0-9]+)'
-SEARCH_NO_ALIGN = 'with no alignments under any condition:\s+([0-9]+)'
-SEARCH_NOT_UNIQ = 'did not map uniquely:\s+([0-9]+)'
-SEARCH_DISCARDED = 'were discarded because genomic sequence.*?:\s+([0-9]+)'
-SEARCH_CT_CT = 'CT/GA/CT:\s+([0-9]+)\s+.*'
-SEARCH_GA_CT = 'GA/CT/CT:\s+([0-9]+)\s+.*'
-SEARCH_GA_GA = 'GA/CT/GA:\s+([0-9]+)\s+.*'
-SEARCH_CT_GA = 'CT/GA/GA:\s+([0-9]+)\s+.*'
-SEARCH_DIRECT = 'complementary strands being rejected in total:\s+([0-9]+)'
-SEARCH_TOTALC = 'Total number of C.*?\s+([0-9]+)'
-SEARCH_MC_CPG = 'methylated (?:C\'s)? in CpG context:\s+([0-9]+)'
-SEARCH_MC_CHG = 'methylated (?:C\'s)? in CHG context:\s+([0-9]+)'
-SEARCH_MC_CHH = 'methylated (?:C\'s)? in CHH context:\s+([0-9]+)'
-SEARCH_MC_UNK = 'methylated (?:C\'s)? in Unknown context:\s+([0-9]+)'
-SEARCH_C_CPG = '(?:unmethylated C\'s)|(?:C to T conversions) in CpG context:\s+([0-9]+)'
-SEARCH_C_CHG = '(?:unmethylated C\'s)|(?:C to T conversions) in CHG context:\s+([0-9]+)'
-SEARCH_C_CHH = '(?:unmethylated C\'s)|(?:C to T conversions) in CHH context:\s+([0-9]+)'
-SEARCH_C_UNK = '(?:unmethylated C\'s)|(?:C to T conversions) in Unknown context:\s+([0-9]+)'
+SEARCH_TOTAL_SEQS = '^Sequence.+? analysed in total.*?\s+([0-9]+)'
+SEARCH_UNIQ_HIT = '^Number of .+? alignments with a unique best hit.*?\s+([0-9]+)'
+SEARCH_NO_ALIGN = '^Sequence.+? with no alignments under any condition.*?\s+([0-9]+)'
+SEARCH_NOT_UNIQ = '^Sequence.+? did not map uniquely.*?\s+([0-9]+)'
+SEARCH_DISCARDED = 'Sequence.+? which were discarded because genomic sequence.*?\s+([0-9]+)'
+SEARCH_CT_CT = 'CT/GA/CT.*?\s+?([0-9]+)\s+?.*'
+SEARCH_GA_CT = 'GA/CT/CT.*?\s+?([0-9]+)\s+?.*'
+SEARCH_GA_GA = 'GA/CT/GA.*?\s+?([0-9]+)\s+?.*'
+SEARCH_CT_GA = 'CT/GA/GA.*?\s+?([0-9]+)\s+?.*'
+SEARCH_DIRECT = 'complementary strands being rejected in total.*?\s+([0-9]+)'
+SEARCH_TOTALC = 'Total number of .+? analysed.*?\s+([0-9]+)'
+SEARCH_MC_CPG = 'methylated .+? in CpG context.*?\s+([0-9]+)'
+SEARCH_MC_CHG = 'methylated .+? in CHG context.*?\s+([0-9]+)'
+SEARCH_MC_CHH = 'methylated .+? in CHH context.*?\s+([0-9]+)'
+SEARCH_MC_UNK = 'methylated .+? in Unknown context.*?\s+([0-9]+)'
+SEARCH_C_CPG = 'unmethylated C\'s in CpG context.*?\s+([0-9]+)'
+SEARCH_C_CHG = 'unmethylated C\'s in CHG context.*?\s+([0-9]+)'
+SEARCH_C_CHH = 'unmethylated C\'s in CHH context.*?\s+([0-9]+)'
+SEARCH_C_UNK = 'unmethylated C\'s in Unknown context.*?\s+([0-9]+)'
 
 # Global counters for our desired criteria
 total_seqs, total_c, direction_rejected = (0, 0, 0)
@@ -82,17 +82,18 @@ def merge_logs(output_report, name, log_reports):
     # Read all files and store in memory
     for log in log_reports:
         with open(log) as log_handle:
-            file_data = log_handle.readlines()
-            for each_line in file_data:
-                # For each metric, parse strings to get desired values.
-                for (val, total) in zip(search_all, value_all):
+            file_data = log_handle.readlines()  # For each metric, parse strings to get desired values.
+            item = 0
+            for val in search_all:
+                for each_line in file_data:
                     result = re.search(val, each_line)
                     if result:
-                        total += result.group(1)
-                        continue
-        # Write out results
-        with open(output_report, 'w') as writer:
-            writer.write("""
+                        value_all[item] += int(result.group(1))
+                        item += 1
+                        break
+    # Write out results
+    with open(output_report, 'w') as writer:
+        writer.write("""\
 Merged Bismark report for {sample}: {readsets}
 
 Final Alignment report
@@ -131,16 +132,17 @@ C methylated in CpG context:\t{rate_cpg:.1%}
 C methylated in CHG context:\t{rate_chg:.1%}
 C methylated in CHH context:\t{rate_chh:.1%}
 C methylated in Unknown context (CN or CHN):\t{rate_unk:.1%}
-
-        """.format(sample=name, readsets=' '.join(log_reports), seqs=total_seqs,
-                   uniq=uniq_hit, efficient=uniq_hit / total_seqs, no_align=no_align, no_uniq=not_uniq,
-                   discarded=discarded,
-                   ct_ct=ct_ct, ga_ct=ga_ct, ga_ga=ga_ga, ct_ga=ct_ga, reject=direction_rejected,
-                   total_c=total_c, mc_cpg=mc_cpg, mc_chg=mc_chg, mc_chh=mc_chh, mc_unk=mc_unk,
-                   c_cpg=c_cpg, c_chg=c_chg, c_chh=c_chh, c_unk=c_unk,
-                   rate_cpg=mc_cpg / (mc_cpg + c_cpg), rate_chg=mc_chg / (mc_chg + c_chg),
-                   rate_chh=mc_chh / (mc_chh + c_chh),
-                   rate_unk=mc_unk / (mc_unk + c_unk)))
+        """.format(sample=name, readsets=' '.join(log_reports), seqs=value_all[0],
+                   uniq=value_all[3], efficient=float(value_all[3]) / float(value_all[0]),
+                   no_align=value_all[4], no_uniq=value_all[5], discarded=value_all[6],
+                   ct_ct=value_all[7], ga_ct=value_all[8], ga_ga=value_all[9], ct_ga=value_all[10],
+                   reject=value_all[2], total_c=value_all[1], mc_cpg=value_all[11],
+                   mc_chg=value_all[12], mc_chh=value_all[13],  mc_unk=value_all[14],
+                   c_cpg=value_all[15], c_chg=value_all[16], c_chh=value_all[17], c_unk=value_all[18],
+                   rate_cpg=float(value_all[11]) / float(value_all[11] + value_all[15]),
+                   rate_chg=float(value_all[12]) / float(value_all[12] + value_all[16]),
+                   rate_chh=float(value_all[13]) / float(value_all[13] + value_all[17]),
+                   rate_unk=float(value_all[14]) / float(value_all[14] + value_all[18])))
 
 
 if __name__ == '__main__':

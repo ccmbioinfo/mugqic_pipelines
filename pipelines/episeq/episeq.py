@@ -84,7 +84,7 @@ class Episeq(common.Illumina):
 
         mkdir_job = Job(command='mkdir -p bismark_prepare_genome')
         link_job = Job(input_files=[ref_seq], output_files=[local_ref_seq],
-                       command='cp -sfu ' + ref_seq + ' ' + local_ref_seq,
+                       command='cp -sfu ' + os.path.abspath(ref_seq) + ' ' + os.path.abspath(local_ref_seq),
                        removable_files=[local_ref_seq])
         main_job = Job(output_files=[output_idx],
                        module_entries=[['bismark_prepare_genome', 'module_bowtie2'],
@@ -340,7 +340,8 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                     target_readset_bam = os.path.relpath(readset_bam, merge_prefix)
                 job = concat_jobs([
                     mkdir_job,
-                    Job([readset_bam], [output_bam], command="cp -s -L -f " + target_readset_bam + " " + output_bam,
+                    Job([readset_bam], [output_bam], command="cp -s -L -f " + os.path.abspath(target_readset_bam) +
+                                                             " " + os.path.abspath(output_bam),
                         removable_files=[output_bam]),
                     coverage_calc],
                     name="symlink_readset_sample_bam." + sample.name)
@@ -372,9 +373,12 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
             mkdir_job = Job(command='mkdir -p ' + work_dir)
 
             if protocol == 'RRBS':  # Deduplication is not recommended for RRBS datatypes. Keep what we have
+                # You can only make a relative link in the current directory, so use absolute paths.
+                abs_in_file = os.path.abspath(in_file)
+                abs_out_file = os.path.abspath(out_file)
                 job = concat_jobs([mkdir_job,
                                    Job([in_file], [out_file],
-                                       command="ln -s -f " + in_file + " " + out_file)],
+                                       command="cp -L -s -f " + abs_in_file + " " + abs_out_file)],
                                   name="bismark_deduplication." + sample.name)
             else:
                 merge_job = Job([in_file], output_files=[report_file, out_file],
@@ -414,7 +418,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
         for sample in self.samples:
             # Either select aligned sample from previous alignment step or aligned BAM/SAM files in readset file
             merged_sample = self.select_input_files([[readset.bam for readset in sample.readsets], [
-                os.path.join("dedup",sample.name , sample.name + ".merged.deduplicated.bam")]])
+                os.path.join("dedup", sample.name, sample.name + ".merged.deduplicated.bam")]])
             output_files = [
                 os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.bismark.cov.gz"),
                 os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.M-bias.txt"),

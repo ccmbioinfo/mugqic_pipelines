@@ -306,7 +306,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
             if len(input_files) > 1:
                 picard_v2 = Job(
                     input_files,
-                    [output_bam, re.sub("\.([sb])am$", ".\\1ai", output_bam)],
+                    [output_bam],
                     [
                         ['picard_merge_sam_files', 'module_java'],
                         ['picard_merge_sam_files', 'module_picard']

@@ -296,7 +296,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
 
             mkdir_job = Job(command='mkdir -p ' + merge_prefix)
 
-            coverage_calc = Job(output_files=[os.path.join(merge_prefix, sample.name) + 'merged.nucleotide_stats.txt'],
+            coverage_calc = Job(output_files=[os.path.join(merge_prefix, sample.name) + '.merged.nucleotide_stats.txt'],
                                 module_entries=[['bismark_deduplicate', 'module_samtools'],
                                                 ['bismark_deduplicate', 'module_perl'],
                                                 ['bismark_deduplicate', 'module_bismark']],

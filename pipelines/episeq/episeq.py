@@ -459,7 +459,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
             report_list[2] = os.path.join("methyl_calls", sample.name, sample.name +
                                           ".merged.deduplicated_splitting_report.txt")
             report_list[3] = os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.M-bias.txt")
-            report_list[4] = os.path.join('merged', sample.name, sample.name + '.merged.bam.nucleotide_stats.txt')
+            report_list[4] = os.path.join('merged', sample.name, sample.name + '.merged.nucleotide_stats.txt')
             html_report = [sample.name + '_final_bismark_report.html']
 
             job = Job(input_files=report_list, output_files=filter(None, html_report), module_entries=module_list,

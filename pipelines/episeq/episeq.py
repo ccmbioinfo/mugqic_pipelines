@@ -426,20 +426,21 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                 os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated_splitting_report.txt")]
             run_type = sample.readsets[0].run_type
             job = Job(
-                merged_sample, output_files,
+                merged_sample + ['bismark_prepare_genome/'], output_files,
                 [['bismark_methylation_caller', 'module_samtools'],
                  ['bismark_methylation_caller', 'module_perl'],
                  ['bismark_methylation_caller', 'module_bismark']],
                 command="""\
 mkdir -p {directory}
 bismark_methylation_extractor {library_type} {other} --multicore {core} --output {directory} \
---bedGraph --cytosine_report --gzip {sample}
+--bedGraph --cytosine_report --gzip --genome_folder {genome} {sample}
         """.format(
                     directory=os.path.join("methyl_calls", sample.name),
                     library_type="--paired-end" if run_type == "PAIRED_END" else "--single-end",
                     other=config.param("bismark_methylation_caller", "other_options"),
                     core=config.param('bismark_methylation_caller', 'cores'),
-                    sample=" ".join(merged_sample)),
+                    sample=" ".join(merged_sample),
+                    genome=os.path.join(self.output_dir, 'bismark_prepare_genome')),
                 name="bismark_methylation_caller." + sample.name)
 
             jobs.append(job)

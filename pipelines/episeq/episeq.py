@@ -374,8 +374,8 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
 
             if protocol == 'RRBS':  # Deduplication is not recommended for RRBS datatypes. Keep what we have
                 # You can only make a relative link in the current directory, so use absolute paths.
-                abs_in_file = os.path.abspath(in_file)
-                abs_out_file = os.path.abspath(out_file)
+                abs_in_file = os.path.join(self.output_dir, in_file)
+                abs_out_file = os.path.join(self.output_dir, out_file)
                 job = concat_jobs([mkdir_job,
                                    Job([in_file], [out_file],
                                        command="cp -L -s -f " + abs_in_file + " " + abs_out_file)],

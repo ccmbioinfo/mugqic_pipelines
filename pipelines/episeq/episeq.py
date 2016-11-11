@@ -372,6 +372,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
 
             mkdir_job = Job(command='mkdir -p ' + work_dir)
 
+            # A job name that is different from the heading will not use the params listed. (Use default, instead)
             if protocol == 'RRBS':  # Deduplication is not recommended for RRBS datatypes. Keep what we have
                 # You can only make a relative link in the current directory, so use absolute paths.
                 abs_in_file = os.path.join(self.output_dir, in_file)
@@ -379,7 +380,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                 job = concat_jobs([mkdir_job,
                                    Job([in_file], [out_file],
                                        command="cp -L -s -f " + abs_in_file + " " + abs_out_file)],
-                                  name="bismark_deduplication." + sample.name)
+                                  name="skip_rrbs_deduplicate." + sample.name)  # Default settings only
             else:
                 merge_job = Job([in_file], output_files=[report_file, out_file],
                                 module_entries=[['bismark_deduplicate', 'module_samtools'],
@@ -395,7 +396,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                                                                 os.path.basename(report_file)) + ' ' + report_file)
 
                 job = concat_jobs([mkdir_job, merge_job, move_bam, move_log],
-                                  name='bismark_deduplication.' + sample.name)
+                                  name='bismark_deduplicate.' + sample.name)  # Use high mem
             jobs.append(job)
         return jobs
 

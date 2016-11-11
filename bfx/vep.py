@@ -31,7 +31,7 @@ def annotate(vcf, out_file):
     Annotate vcf using options specified in config
     :return: Job
     """
-    config_section = 'gemini_annotations'
+    config_section = 'VEP'
     return Job(
         [vcf],
         [out_file],
@@ -45,9 +45,9 @@ perl {vep_location} -i {input} --vcf \
 --force_overwrite --output_file STDOUT {options} | \
 grep -v -- "- INFO: Disabling" > {out_file} \
 """.format(input=vcf,
-           vep_location=config.param(config_section, 'vep_location'),
-           assembly=config.param(config_section, 'vep_assembly'),
-           options=config.param(config_section, 'vep_options', required=False),
+           vep_location=config.param(config_section, 'location'),
+           assembly=config.param(config_section, 'assembly'),
+           options=config.param(config_section, 'options', required=False),
            out_file=out_file)
     )
 

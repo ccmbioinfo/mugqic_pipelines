@@ -319,7 +319,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
       {inputs} \\
       OUTPUT={output} \\
       USE_THREADING=true \\
-      SORT_ORDER=queryname \\
+      SORT_ORDER=unsorted \\
       MAX_RECORDS_IN_RAM={max_records_in_ram}""".format(
                         tmp_dir=config.param('picard_merge_sam_files', 'tmp_dir'),
                         java_other_options=config.param('picard_merge_sam_files', 'java_other_options'),

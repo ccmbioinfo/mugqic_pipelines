@@ -270,7 +270,7 @@ class DnaSeqHighCoverage(dnaseq.DnaSeq):
 
         return jobs
 
-    def gemini_annotations(self):
+    def gemini_load(self):
         """
         Load functionally annotated vcf file into a mysql lite annotation database : http://gemini.readthedocs.org/en/latest/index.html
         """
@@ -280,12 +280,12 @@ class DnaSeqHighCoverage(dnaseq.DnaSeq):
         output_directory = "variants"
         temp_dir = os.path.join(os.getcwd(), output_directory)
         gemini_prefix = os.path.join(output_directory, "allSamples")
-        gemini_module=config.param("DEFAULT", 'module_gemini').split(".")
+        gemini_module=config.param("gemini_load", 'module_gemini').split(".")
         gemini_version = ".".join([gemini_module[-2],gemini_module[-1]])
 
         jobs.append(concat_jobs([
             Job(command="mkdir -p " + output_directory),
-            gemini.gemini_annotations( gemini_prefix + ".vt.snpeff.vcf.gz", gemini_prefix + ".gemini."+gemini_version+".db", temp_dir)
+            gemini.gemini_load(gemini_prefix + ".vt.snpeff.vcf.gz", gemini_prefix + ".gemini." + gemini_version + ".db", temp_dir)
         ], name="gemini_annotations.allSamples"))
 
         return jobs
@@ -308,7 +308,7 @@ class DnaSeqHighCoverage(dnaseq.DnaSeq):
             self.call_variants,
             self.preprocess_vcf,
             self.snp_effect,
-            self.gemini_annotations
+            self.gemini_load
         ]
 
 if __name__ == '__main__': 

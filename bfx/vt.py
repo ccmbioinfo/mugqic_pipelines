@@ -33,15 +33,15 @@ def decompose_and_normalize_mnps(input, vt_output):
         [input],
         [vt_output],
         [
-            ['DEFAULT', 'module_htslib'],
+            ['decompose_and_normalize_mnps', 'module_htslib'],
             ['decompose_and_normalize_mnps', 'module_vt'],
-            ['DEFAULT', 'module_tabix']
+            ['decompose_and_normalize_mnps', 'module_tabix']
         ],
         command="""\
 zcat -f {input} | sed 's/ID=AD,Number=./ID=AD,Number=R/' | vt decompose -s - | vt normalize -r {reference_sequence} - | bgzip -cf > {vt_output} \\
         """.format(
         input=input,
-        reference_sequence=config.param('DEFAULT', 'genome_fasta', type='filepath'),
+        reference_sequence=config.param('decompose_and_normalize_mnps', 'genome_fasta', type='filepath'),
         vt_output=vt_output
         )
     )

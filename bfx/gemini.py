@@ -26,14 +26,14 @@ from core.config import *
 from core.job import *
 
 
-def gemini_annotations(variants, gemini_output, tmp_dir, annotations=''):
+def gemini_load(variants, gemini_output, tmp_dir, annotations=''):
     """
     Store variants in a gemini database
 
     :param variants: vcf file to load
     :param gemini_output: db file to load to
     :param tmp_dir: dir to put temporary database chunks
-    :param annotations: which annotations were use, either 'VEP', or 'snpEff'
+    :param annotations: which annotations were used, either 'VEP', or 'snpEff'
     :return: Job
     """
     # Temporarily remove PYTHONPATH so that we import platform from gemini
@@ -41,16 +41,16 @@ def gemini_annotations(variants, gemini_output, tmp_dir, annotations=''):
         [variants],
         [gemini_output],
         [
-            ['gemini_annotations', 'module_gemini'],
-            ['gemini_annotations', 'module_htslib'],
-            ['gemini_annotations', 'module_tabix']
+            ['gemini_load', 'module_gemini'],
+            ['gemini_load', 'module_htslib'],
+            ['gemini_load', 'module_tabix']
         ],
         command="""\
 PYTHONPATH='' gemini load -v {variants} \\
 {options} {annotations} \\
 --tempdir {temp} \\
 {output}""".format(
-        options=config.param('gemini_annotations', 'options'),
+        options=config.param('gemini_load', 'options', required=False),
         annotations='-t ' + annotations if annotations else '',
         variants=variants,
         output=gemini_output,

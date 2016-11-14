@@ -1212,7 +1212,7 @@ cp \\
         return jobs
 
 
-    def normalize_vcf(self):
+    def decompose_and_normalize_mnps(self):
         """
         Normalize the vcf using vt
         """
@@ -1225,7 +1225,7 @@ cp \\
             out_file = os.path.join("annotation", sample.name, sample.name + ".annovar_out.normalized.vcf.gz")
 
             job = vt.decompose_and_normalize_mnps(vcf_file, out_file)
-            job.name = "normalize_vcf." + sample.name
+            job.name = "decompose_and_normalize_mnps." + sample.name
             jobs.append(job)
 
         return jobs
@@ -1241,22 +1241,22 @@ cp \\
         for sample in self.samples:
             vcf_file = os.path.join("annotation", sample.name, sample.name + ".annovar_out.normalized.vcf.gz")
 
-            if vep.is_vep_requested():
+            if "vep" in config.param("gemini_annotations", "annotations", required=False).lower():
                 vep_out_file = os.path.join("annotation", sample.name, sample.name + ".vep-annotated.vcf")
                 job = vep.annotate(vcf_file, vep_out_file)
-                job.name = "VEP_annotation." + sample.name
+                job.name = "VEP." + sample.name
                 jobs.append(job)
 
-            if snpeff.is_snpeff_requested():
+            if "snpeff" in config.param("gemini_annotations", "annotations", required=False).lower():
                 snpeff_out_file = os.path.join("annotation", sample.name, sample.name + ".snpeff-annotated.vcf")
                 job = snpeff.compute_effects(vcf_file, snpeff_out_file)
-                job.name = "SnpEff_annotation." + sample.name
+                job.name = "SnpEff." + sample.name
                 jobs.append(job)
 
         return jobs
 
 
-    def gemini_load_to_db(self):
+    def gemini_load(self):
         """
         Load each vcf into a db
         """
@@ -1264,21 +1264,21 @@ cp \\
         jobs = []
 
         for sample in self.samples:
-            if vep.is_vep_requested():
-                vcf_file = os.path.join("annotation", sample.name, sample.name + ".vep-annotated.vcf")
-                db_name = os.path.join("annotation", sample.name, sample.name + ".vep-annotated.db")
+            if "vep" in config.param("gemini_annotations", "annotations", required=False).lower():
+               vcf_file = os.path.join("annotation", sample.name, sample.name + ".vep-annotated.vcf")
+               db_name = os.path.join("annotation", sample.name, sample.name + ".vep-annotated.db")
 
-                job = gemini.gemini_annotations(vcf_file, db_name, os.path.join("annotation", sample.name), annotations='VEP')
-                job.name = "gemini_load_vep_to_db." + sample.name
-                jobs.append(job)
+               job = gemini.gemini_load(vcf_file, db_name, os.path.join("annotation", sample.name), annotations='VEP')
+               job.name = "gemini_load.VEP." + sample.name
+               jobs.append(job)
 
-            if snpeff.is_snpeff_requested():
-                vcf_file = os.path.join("annotation", sample.name, sample.name + ".snpeff-annotated.vcf")
-                db_name = os.path.join("annotation", sample.name, sample.name + ".snpeff-annotated.db")
+            if "snpeff" in config.param("gemini_annotations", "annotations", required=False).lower():
+               vcf_file = os.path.join("annotation", sample.name, sample.name + ".snpeff-annotated.vcf")
+               db_name = os.path.join("annotation", sample.name, sample.name + ".snpeff-annotated.db")
 
-                job = gemini.gemini_annotations(vcf_file, db_name, os.path.join("annotation", sample.name), annotations='snpEff')
-                job.name = "gemini_load_snpeff_to_db." + sample.name
-                jobs.append(job)
+               job = gemini.gemini_load(vcf_file, db_name, os.path.join("annotation", sample.name), annotations='snpEff')
+               job.name = "gemini_load.SnpEff." + sample.name
+               jobs.append(job)
 
         return jobs
 
@@ -1633,9 +1633,9 @@ cp \\
             self.convert2annovar, #25
             self.annovar_annotation, #26
             self.combine_annovar_files, #27
-            self.normalize_vcf, #28
+            self.decompose_and_normalize_mnps, #28
             self.gemini_annotations,
-            self.gemini_load_to_db, #30
+            self.gemini_load, #30
             self.prev_seen,
             self.gene_mutation_counts,
             self.evs,

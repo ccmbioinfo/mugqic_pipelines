@@ -31,7 +31,7 @@ def annotate(vcf, out_file):
     Annotate vcf using options specified in config
     :return: Job
     """
-    config_section = 'gemini_annotations'
+    config_section = 'VEP'
     return Job(
         [vcf],
         [out_file],
@@ -40,11 +40,14 @@ def annotate(vcf, out_file):
             [config_section, 'module_tabix']
         ],
         command="""\
-perl {vep_location} -i {input} --assembly {assembly} --stats_file {out_file}.summary.html {options} | grep -v -- "- INFO: Disabling" > {out_file}
+perl {vep_location} -i {input} --vcf \
+--assembly {assembly} --stats_file {out_file}.summary.html \
+--force_overwrite --output_file STDOUT {options} | \
+grep -v -- "- INFO: Disabling" > {out_file} \
 """.format(input=vcf,
-           vep_location=config.param(config_section, 'vep_location'),
+           vep_location=config.param(config_section, 'location'),
            assembly=config.param(config_section, 'assembly'),
-           options=config.param(config_section, 'vep_options', required=False),
+           options=config.param(config_section, 'options', required=False),
            out_file=out_file)
     )
 

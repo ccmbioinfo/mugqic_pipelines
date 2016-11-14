@@ -420,7 +420,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
             # Either select aligned sample from previous alignment step or aligned BAM/SAM files in readset file
             merged_sample = self.select_input_files([[readset.bam for readset in sample.readsets], [
                 # os.path.join("dedup", sample.name, sample.name + ".merged.deduplicated.bam")]])
-                os.path.join("merge", sample.name, sample.name + '.merged.bam')]])
+                os.path.join("merged", sample.name, sample.name + '.merged.bam')]])
             output_files = [
                 os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.bismark.cov.gz"),
                 os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.M-bias.txt"),

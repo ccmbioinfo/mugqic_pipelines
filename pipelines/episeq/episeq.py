@@ -474,9 +474,9 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                               out=html_report[0],
                               align=report_list[0],
                               dedup=' --dedup_report ' + report_list[1] if report_list[1] else '',
-                              split=' --splitting_report ' + report_list[1],
-                              mbias=' --mbias_report ' + report_list[2],
-                              nt=' --nucleotide_report ' + report_list[3]))
+                              split=' --splitting_report ' + report_list[2],
+                              mbias=' --mbias_report ' + report_list[3],
+                              nt=' --nucleotide_report ' + report_list[4]))
             jobs.append(job)
         return jobs
 

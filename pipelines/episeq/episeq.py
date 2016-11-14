@@ -153,7 +153,7 @@ class Episeq(common.Illumina):
                                        trim_galore {protocol} {library_type} {other} --output_dir {directory} {fastq}
                                        """.format(
                                            library_type="--paired" if run_type == "PAIRED_END" else "",
-                                           protocol='--rrbs --non_directional' if protocol == 'RRBS' else '',
+                                           protocol='--rrbs' if protocol == 'RRBS' else '',
                                            other=config.param("trim_galore", "other_options"),
                                            directory=trim_directory,
                                            fastq=' '.join(input_files)),
@@ -319,7 +319,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
       {inputs} \\
       OUTPUT={output} \\
       USE_THREADING=true \\
-      SORT_ORDER=unsorted \\
+      SORT_ORDER=queryname \\
       MAX_RECORDS_IN_RAM={max_records_in_ram}""".format(
                         tmp_dir=config.param('picard_merge_sam_files', 'tmp_dir'),
                         java_other_options=config.param('picard_merge_sam_files', 'java_other_options'),
@@ -419,7 +419,8 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
         for sample in self.samples:
             # Either select aligned sample from previous alignment step or aligned BAM/SAM files in readset file
             merged_sample = self.select_input_files([[readset.bam for readset in sample.readsets], [
-                os.path.join("dedup", sample.name, sample.name + ".merged.deduplicated.bam")]])
+                # os.path.join("dedup", sample.name, sample.name + ".merged.deduplicated.bam")]])
+                os.path.join("merge", sample.name, sample.name + '.merged.bam')]])
             output_files = [
                 os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.bismark.cov.gz"),
                 os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.M-bias.txt"),

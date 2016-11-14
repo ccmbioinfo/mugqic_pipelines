@@ -109,7 +109,7 @@ usearch --derep_fullseq --cluster remove_duplicates/cow2_qual_all.fasta --seedso
             self.format_fastq,
             self.trimmomatic,
             self.flash,
-            self.fastq_to_fasta,
+            self.fastq_to_fasta
             self.remove_duplicates
         ]
 

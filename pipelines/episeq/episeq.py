@@ -81,9 +81,10 @@ class Episeq(common.Illumina):
         ref_seq = config.param('bismark_prepare_genome', 'genome_file', type='filepath')
         local_ref_seq = os.path.join('bismark_prepare_genome', os.path.basename(ref_seq))
         output_idx = "bismark_prepare_genome/Bisulfite_Genome"
+        report_file = "bismark_prepare_genome/genomic_nucleotide_frequencies.txt"
 
         mkdir_job = Job(command='mkdir -p bismark_prepare_genome')
-        link_job = Job(input_files=[ref_seq], output_files=[local_ref_seq],
+        link_job = Job(input_files=[ref_seq],
                        command='cp -sfu ' + os.path.abspath(ref_seq) + ' ' + os.path.abspath(local_ref_seq),
                        removable_files=[local_ref_seq])
         main_job = Job(output_files=[output_idx],
@@ -91,10 +92,16 @@ class Episeq(common.Illumina):
                                        ['bismark_prepare_genome', 'module_samtools'],
                                        ['bismark_prepare_genome', 'module_perl'],
                                        ['bismark_prepare_genome', 'module_bismark']],
-                       command="bismark_genome_preparation --verbose bismark_prepare_genome/",
-                       report_files=['genomic_nucleotide_frequencies.txt'],
-                       removable_files=[output_idx])
-        return [concat_jobs([mkdir_job, link_job, main_job],
+                       command="bismark_genome_preparation --verbose bismark_prepare_genome/")
+        nuc_count = Job(input_files=[], output_files=[],
+                        module_entries=[['bismark_prepare_genome', 'module_bowtie2'],
+                                        ['bismark_prepare_genome', 'module_samtools'],
+                                        ['bismark_prepare_genome', 'module_perl'],
+                                        ['bismark_prepare_genome', 'module_bismark']],
+                        command="bam2nuc --genomic_composition_only --genome_dir bismark_prepare_genome/ "
+                                "--dir bismark_prepare_genome/",
+                        report_files=[report_file])
+        return [concat_jobs([mkdir_job, link_job, main_job, nuc_count],
                             name='bismark_prepare_genome.' + os.path.basename(ref_seq))]
 
     def trim_galore(self):
@@ -145,7 +152,7 @@ class Episeq(common.Illumina):
                 mkdir_job = Job(command="mkdir -p " + trim_directory)
                 job = concat_jobs([mkdir_job,
                                    Job(input_files,
-                                       output_files + report_logs,
+                                       output_files + [report_logs[0]],
                                        [['trim_galore', 'module_fastqc'],
                                         ['trim_galore', 'module_trim_galore'],
                                         ['trim_galore', 'module_cutadapt']],
@@ -198,15 +205,16 @@ class Episeq(common.Illumina):
                                    os.path.join(trim_prefix, readset.name + "_2_val_2.fq.gz")]
                     cmd_in = '-1 {fastq1} -2 {fastq2}'.format(fastq1=input_files[0], fastq2=input_files[1])
                     readset_sam = readset_base + "_aligned_pe.bam"
-                    report_log = [readset_base + "_aligned_PE_report.txt"]
+                    report_log = [readset_base + "_aligned_PE_report.txt",
+                                  readset_base + "_aligned_pe.nucleotide_stats.txt"]
                 elif run_type == "SINGLE_END":
                     input_files = [os.path.join(trim_prefix, readset.name + "_trimmed.fq.gz")]
                     cmd_in = '--single_end {fastq1}'.format(fastq1=input_files[0])
                     readset_sam = readset_base + "_aligned.bam"
-                    report_log = [readset_base + "_aligned_SE_report.txt"]
+                    report_log = [readset_base + "_aligned_SE_report.txt",
+                                  readset_base + "_aligned.nucleotide_stats.txt"]
                 else:
                     raise AttributeError("Unknown run_type: " + run_type + ". Unknown file output name.")
-
                 mkdir_job = Job(command="mkdir -p " + align_directory)
                 job = concat_jobs([
                     mkdir_job,
@@ -228,6 +236,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                             input=cmd_in,
                             basename=readset.name + '_aligned'
                         ),
+                        report_files=report_log,
                         removable_files=[readset_sam]
                     )], name="bismark_align." + readset.name)
                 jobs.append(job)
@@ -266,7 +275,8 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                                 script_loc=config.param('DEFAULT', 'extern_script'),
                                 output=output_report,
                                 name=sample.name,
-                                logs=' '.join(log_reports)))
+                                logs=' '.join(log_reports)),
+                            report_files=[output_report])
 
             job = concat_jobs([mkdir_job, merge_job], name="merge_align_reports." + sample.name)
             jobs.append(job)
@@ -300,7 +310,8 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                                 module_entries=[['bismark_deduplicate', 'module_samtools'],
                                                 ['bismark_deduplicate', 'module_perl'],
                                                 ['bismark_deduplicate', 'module_bismark']],
-                                command='bam2nuc --dir merged --genome_folder bismark_prepare_genome ' + output_bam)
+                                command='bam2nuc --dir merged --genome_folder bismark_prepare_genome ' + output_bam,
+                                report_files=[os.path.join(merge_prefix, sample.name) + '.merged.nucleotide_stats.txt'])
 
             # I want to use Picard Tools v2.0.1, which has a different syntax than v1.x
             if len(input_files) > 1:
@@ -327,7 +338,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                         inputs=" \\\n  ".join(["INPUT=" + in_put for in_put in input_files]),
                         output=output_bam,
                         max_records_in_ram=config.param('picard_merge_sam_files', 'max_records_in_ram', type='int')),
-                    removable_files=[output_bam, re.sub("\.([sb])am$", ".\\1ai", output_bam)],
+                    # removable_files=[output_bam, re.sub("\.([sb])am$", ".\\1ai", output_bam)],
                     local=config.param('picard_merge_sam_files', 'use_localhd', required=False))
 
                 job = concat_jobs([mkdir_job, picard_v2, coverage_calc], name="picard_merge_sam_files." + sample.name)
@@ -340,8 +351,9 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                     target_readset_bam = os.path.relpath(readset_bam, merge_prefix)
                 job = concat_jobs([
                     mkdir_job,
-                    Job([readset_bam], [output_bam], command="cp -s -L -f " + os.path.abspath(target_readset_bam) +
-                                                             " " + os.path.abspath(output_bam),
+                    Job([readset_bam], [output_bam],
+                        command="cp -s -L -f " + os.path.abspath(target_readset_bam) +
+                                " " + os.path.abspath(output_bam),
                         removable_files=[output_bam]),
                     coverage_calc],
                     name="symlink_readset_sample_bam." + sample.name)
@@ -382,7 +394,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                                        command="cp -L -s -f " + abs_in_file + " " + abs_out_file)],
                                   name="skip_rrbs_deduplicate." + sample.name)  # Default settings only
             else:
-                merge_job = Job([in_file], output_files=[report_file, out_file],
+                merge_job = Job([in_file],
                                 module_entries=[['bismark_deduplicate', 'module_samtools'],
                                                 ['bismark_deduplicate', 'module_perl'],
                                                 ['bismark_deduplicate', 'module_bismark']],
@@ -390,11 +402,14 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                                     type='--paired' if run_type == 'PAIRED_END' else '--single',
                                     input=in_file,
                                     other=config.param('bismark_deduplicate', 'other_options', required=False)))
-                move_bam = Job(command='mv -fu ' + os.path.join(os.path.dirname(in_file), os.path.basename(out_file))
-                                       + ' ' + out_file)
-                move_log = Job(command='mv -fu ' + os.path.join(os.path.dirname(in_file),
-                                                                os.path.basename(report_file)) + ' ' + report_file)
-
+                move_bam = Job(output_files=[out_file],
+                               command='mv -fu ' + os.path.join(os.path.dirname(in_file),
+                                                                os.path.basename(out_file)) + ' ' + out_file,
+                               removable_files=[out_file])
+                move_log = Job(output_files=[report_file],
+                               command='mv -fu ' + os.path.join(os.path.dirname(in_file),
+                                                                os.path.basename(report_file)) + ' ' + report_file,
+                               report_files=[report_file])
                 job = concat_jobs([mkdir_job, merge_job, move_bam, move_log],
                                   name='bismark_deduplicate.' + sample.name)  # Use high mem
             jobs.append(job)
@@ -419,15 +434,24 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
         for sample in self.samples:
             # Either select aligned sample from previous alignment step or aligned BAM/SAM files in readset file
             merged_sample = self.select_input_files([[readset.bam for readset in sample.readsets], [
-                # os.path.join("dedup", sample.name, sample.name + ".merged.deduplicated.bam")]])
                 os.path.join("dedup", sample.name, sample.name + '.merged.deduplicated.bam')]])
-            output_files = [
+            report_files = [
+                os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.bedGraph.gz"),
                 os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.bismark.cov.gz"),
                 os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.M-bias.txt"),
-                os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated_splitting_report.txt")]
+                os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated_splitting_report.txt"),
+                os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.CpG_report.txt.gz")]
+            other_files = [
+                os.path.join("methyl_calls", sample.name, "CHG_OB_" + sample.name + ".merged.deduplicated.txt.gz"),
+                os.path.join("methyl_calls", sample.name, "CHG_OT_" + sample.name + ".merged.deduplicated.txt.gz"),
+                os.path.join("methyl_calls", sample.name, "CHH_OB_" + sample.name + ".merged.deduplicated.txt.gz"),
+                os.path.join("methyl_calls", sample.name, "CHH_OT_" + sample.name + ".merged.deduplicated.txt.gz"),
+                os.path.join("methyl_calls", sample.name, "CpG_OT_" + sample.name + ".merged.deduplicated.txt.gz"),
+                os.path.join("methyl_calls", sample.name, "CpG_OB_" + sample.name + ".merged.deduplicated.txt.gz")]
             run_type = sample.readsets[0].run_type
             job = Job(
-                merged_sample + ['bismark_prepare_genome/'], output_files,
+                merged_sample + ['bismark_prepare_genome/'],
+                report_files + other_files,
                 [['bismark_methylation_caller', 'module_samtools'],
                  ['bismark_methylation_caller', 'module_perl'],
                  ['bismark_methylation_caller', 'module_bismark']],
@@ -442,10 +466,10 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                     core=config.param('bismark_methylation_caller', 'cores'),
                     sample=" ".join(merged_sample),
                     genome=os.path.join(self.output_dir, 'bismark_prepare_genome')),
+                report_files=report_files,
+                removable_files=other_files,
                 name="bismark_methylation_caller." + sample.name)
-
             jobs.append(job)
-
         return jobs
 
     def bismark_html_report_generator(self):
@@ -467,18 +491,20 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                                           ".merged.deduplicated_splitting_report.txt")
             report_list[3] = os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.M-bias.txt")
             report_list[4] = os.path.join('merged', sample.name, sample.name + '.merged.nucleotide_stats.txt')
-            html_report = [sample.name + '_final_bismark_report.html']
+            html_report = os.path.join('bismark_summary_report', sample.name + '_final_bismark_report.html')
 
-            job = Job(input_files=report_list, output_files=filter(None, html_report), module_entries=module_list,
-                      name=sample.name + ".combined_report_generation", report_files=[html_report],
-                      command='bismark2report -o {out} --alignment_report {align} {dedup} {split} {mbias} {nt}'.format(
-                              out=html_report[0],
+            mkdir_job = Job(command='mkdir -p ' + os.path.dirname(html_report))
+            job = Job(input_files=report_list, output_files=filter(None, [html_report]),
+                      module_entries=module_list, report_files=[html_report],
+                      command="""bismark2report -o {out} --alignment_report {align} \
+                      {dedup} {split} {mbias} {nt}""".format(
+                              out=html_report,
                               align=report_list[0],
                               dedup=' --dedup_report ' + report_list[1] if report_list[1] else '',
                               split=' --splitting_report ' + report_list[2] if report_list[2] else '',
                               mbias=' --mbias_report ' + report_list[3] if report_list[3] else '',
-                              nt=' --nucleotide_report ' + report_list[4]) if report_list[4] else '')
-            jobs.append(job)
+                              nt=' --nucleotide_report ' + report_list[4] if report_list[4] else ''))
+            jobs.append(concat_jobs([mkdir_job, job], name='bismark_report ' + sample.name))
         return jobs
 
     def differential_methylated_pos(self):

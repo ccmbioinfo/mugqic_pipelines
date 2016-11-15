@@ -387,7 +387,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                                                 ['bismark_deduplicate', 'module_perl'],
                                                 ['bismark_deduplicate', 'module_bismark']],
                                 command="""deduplicate_bismark {type} --bam {other} {input}""".format(
-                                    type='--paired' if run_type == 'PAIRED' else '--single',
+                                    type='--paired' if run_type == 'PAIRED_END' else '--single',
                                     input=in_file,
                                     other=config.param('bismark_deduplicate', 'other_options', required=False)))
                 move_bam = Job(command='mv -fu ' + os.path.join(os.path.dirname(in_file), os.path.basename(out_file))
@@ -420,7 +420,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
             # Either select aligned sample from previous alignment step or aligned BAM/SAM files in readset file
             merged_sample = self.select_input_files([[readset.bam for readset in sample.readsets], [
                 # os.path.join("dedup", sample.name, sample.name + ".merged.deduplicated.bam")]])
-                os.path.join("merged", sample.name, sample.name + '.merged.bam')]])
+                os.path.join("dedup", sample.name, sample.name + '.merged.deduplicated.bam')]])
             output_files = [
                 os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.bismark.cov.gz"),
                 os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.M-bias.txt"),
@@ -475,9 +475,9 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                               out=html_report[0],
                               align=report_list[0],
                               dedup=' --dedup_report ' + report_list[1] if report_list[1] else '',
-                              split=' --splitting_report ' + report_list[2],
-                              mbias=' --mbias_report ' + report_list[3],
-                              nt=' --nucleotide_report ' + report_list[4]))
+                              split=' --splitting_report ' + report_list[2] if report_list[2] else '',
+                              mbias=' --mbias_report ' + report_list[3] if report_list[3] else '',
+                              nt=' --nucleotide_report ' + report_list[4]) if report_list[4] else '')
             jobs.append(job)
         return jobs
 

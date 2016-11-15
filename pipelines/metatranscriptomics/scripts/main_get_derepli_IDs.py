@@ -12,6 +12,7 @@ def get_ids(file):
                 id_to_length[re.match('^(\S+\t){8}(\S+)', line).group(2)] = None
     return id_to_length
 
+
 for i in (1, 2):
     id_to_length = get_ids('cow{}_qual_all_unique.uc'.format(i))
 

@@ -76,7 +76,8 @@ class Metatranscriptomics(common.Illumina):
         return [concat_jobs([Job(command='mkdir -p remove_duplicates'),
                              Job(input_files=['flash/cow1_qual_all.fastq',
                                               'flash/cow2_qual_all.fastq'],
-                                 output_files=['fastq_to_fasta'],
+                                 output_files=['remove_duplicates/cow1_qual_all.fasta',
+                                               'remove_duplicates/cow2_qual_all.fasta'],
                                  module_entries=[
                                      ['fastq_to_fasta', 'module_seqtk'],
                                      ['fastq_to_fasta', 'module_perl']
@@ -88,7 +89,7 @@ seqtk seq -a flash/cow2_qual_all.fastq > remove_duplicates/cow2_qual_all.fasta''
 
     def remove_duplicates(self):
         return [
-            Job(input_files=['remove_duplicates/cow1_qual_all.fastq',
+            Job(input_files=['remove_duplicates/cow1_qual_all.fasta',
                              'remove_duplicates/cow2_qual_all.fasta'],
                 output_files=['remove_duplicates/cow1_qual_all_unique.fasta',
                               'remove_duplicates/cow1_qual_all_unique.uc',
@@ -103,14 +104,47 @@ usearch --derep_fullseq --cluster remove_duplicates/cow2_qual_all.fasta --seedso
                 name='remove_duplicates.cow')
         ]
 
+    def remove_abundant_rrna(self):
+        return [
+            concat_jobs([
+                Job(command='mkdir -p remove_abundant_rrna'),
+                Job(input_files=['remove_duplicates/cow1_qual_all_unique.fasta'],
+                    output_files=['remove_abundant_rrna/cow1_rRNA.log',
+                                  'remove_abundant_rrna/cow1_rRNa.infernalout'],
+                    module_entries=[
+                        ['remove_abundant_rrna', 'module_infernal'],
+                        ['remove_abundant_rrna', 'module_perl']
+                    ],
+                    command='cmscan -o remove_abundant_rrna/cow1_rRNA.log '
+                            '--tblout remove_abundant_rrna/cow1_rRNA.infernalout '
+                            '--noali --notextw --rfam -E 0.001 '
+                            '{rfam} '
+                            'remove_duplicates/cow1_qual_all_unique.fasta'.format(rfam=config.param('remove_abundant_rrna', 'rfam_location'))),
+                Job(input_files=['remove_duplicates/cow2_qual_all_unique.fasta'],
+                    output_files=['remove_abundant_rrna/cow2_rRNA.log',
+                                  'remove_abundant_rrna/cow2_rRNa.infernalout'],
+                    module_entries=[
+                        ['remove_abundant_rrna', 'module_infernal'],
+                        ['remove_abundant_rrna', 'module_perl']
+                    ],
+                    command='cmscan -o remove_abundant_rrna/cow2_rRNA.log '
+                            '--tblout remove_abundant_rrna/cow2_rRNA.infernalout '
+                            '--noali --notextw --rfam -E 0.001 '
+                            '{rfam} '
+                            'remove_duplicates/cow2_qual_all_unique.fasta'.format(rfam=config.param('remove_abundant_rrna', 'rfam_location')))
+                ], name='remove_abundant_rrna.cow'
+            )
+        ]
+
     @property
     def steps(self):
         return [
             self.format_fastq,
             self.trimmomatic,
             self.flash,
-            self.fastq_to_fasta
-            self.remove_duplicates
+            self.fastq_to_fasta,
+            self.remove_duplicates, #5
+            self.remove_abundant_rrna,
         ]
 
 if __name__ == '__main__':

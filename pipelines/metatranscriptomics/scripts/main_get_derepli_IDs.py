@@ -4,7 +4,7 @@ import os
 from Bio import SeqIO
 
 
-def get_ids(file):
+def get_id_to_length(file):
     id_to_length = dict()
     with open(file) as f:
         for line in f:
@@ -14,7 +14,7 @@ def get_ids(file):
 
 
 for i in (1, 2):
-    id_to_length = get_ids('cow{}_qual_all_unique.uc'.format(i))
+    id_to_length = get_id_to_length('cow{}_qual_all_unique.uc'.format(i))
 
     for record in SeqIO.parse('cow{}_qual_all.fastq'.format(i), 'fastq'):
         if record.id in id_to_length:

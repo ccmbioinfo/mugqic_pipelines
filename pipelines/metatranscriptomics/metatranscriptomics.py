@@ -30,18 +30,18 @@ class Metatranscriptomics(common.Illumina):
 
     def format_fastq(self):
         return [Job(name='format_fastq.cow',
-                    input_files=['../pipeline-testing/cow1.fastq',
-                                 '../pipeline-testing/cow2.fastq'],  # TODO: use select_input_files, candidate_files
-                    output_files=['../pipeline-testing/cow1_new.fastq',
-                                  '../pipeline-testing/cow2_new.fastq'],
+                    input_files=['../reference-files/cow1.fastq',
+                                 '../reference-files/cow2.fastq'],  # TODO: use select_input_files, candidate_files
+                    output_files=['../reference-files/cow1_new.fastq',
+                                  '../reference-files/cow2_new.fastq'],
                     module_entries=[['DEFAULT', 'module_perl']],
-                    command='perl {script_path}/scripts/main_add_subID_reads_fastq.pl'
-                            '../pipeline-testing/cow'.format(script_path=config.param('DEFAULT', 'metatranscriptomics_location')))]
+                    command='perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_add_subID_reads_fastq.pl'
+                            '../reference-files/cow'.format(script_path=config.param('DEFAULT', 'metatranscriptomics_location')))]
 
     def trimmomatic(self):
         return [concat_jobs([Job(command='mkdir -p ' + 'trim'),
-                             trimmomatic.trimmomatic('../pipeline-testing/cow1_new.fastq',
-                                                     '../pipeline-testing/cow2_new.fastq',
+                             trimmomatic.trimmomatic('../reference-files/cow1_new.fastq',
+                                                     '../reference-files/cow2_new.fastq',
                                                      'trim/cow1_qual_paired.fastq',
                                                      'trim/cow1_qual_unpaired.fastq',
                                                      'trim/cow2_qual_paired.fastq',
@@ -60,7 +60,7 @@ class Metatranscriptomics(common.Illumina):
                                                'flash/cow_qual.hist',
                                                'flash/cow_qual.histogram',
                                                'flash/cow_qual.notCombined_1.fastq',
-                                               'flash/cow_qual.notCombined_2.fastq'], # TODO
+                                               'flash/cow_qual.notCombined_2.fastq'],
                                  command='{flash} -M 75 -p 64 -t 2 -o cow_qual -d flash '
                                          'trim/cow1_qual_paired.fastq trim/cow2_qual_paired.fastq'.format(flash=config.param('flash', 'location'))),
                              Job(input_files=['flash/cow_qual.extendedFrags.fastq',

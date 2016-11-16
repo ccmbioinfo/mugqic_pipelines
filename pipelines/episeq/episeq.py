@@ -493,7 +493,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                        ['bismark_html_report_generator', 'module_bismark']]
         for sample in self.samples:
             report_list = ['', '', '', '', '']
-            if sample.readset[0].run_type == 'PAIRED_END':
+            if sample.readsets[0].run_type == 'PAIRED_END':
                 report_list[0] = os.path.join("merged", sample.name, sample.name + ".merged_aligned_PE_report.txt")
             else:
                 report_list[0] = os.path.join("merged", sample.name, sample.name + ".merged_aligned_SE_report.txt")

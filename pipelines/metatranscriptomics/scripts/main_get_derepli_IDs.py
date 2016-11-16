@@ -14,19 +14,19 @@ def get_id_to_length(file):
 
 
 for i in (1, 2):
-    id_to_length = get_id_to_length('cow{}_qual_all_unique.uc'.format(i))
+    id_to_length = get_id_to_length('remove_duplicates/cow{}_qual_all_unique.uc'.format(i))
 
-    for record in SeqIO.parse('cow{}_qual_all.fastq'.format(i), 'fastq'):
+    for record in SeqIO.parse('remove_duplicates/cow{}_qual_all.fastq'.format(i), 'fastq'):
         if record.id in id_to_length:
             id_to_length[record.id] = len(record.seq)
 
-    os.remove('cow{}_qual_all_unique_IDs.txt'.format(i))
-    with open('cow{}_qual_all_unique_IDs.txt'.format(i), 'w+') as f:
+    os.remove('remove_duplicates/cow{}_qual_all_unique_IDs.txt'.format(i))
+    with open('remove_duplicates/cow{}_qual_all_unique_IDs.txt'.format(i), 'w+') as f:
         for id, length in id_to_length.items():
             f.write('{id}\t{length}\n'.format(id=id, length=length))
 
-    os.remove('cow{}_qual_all_unique.fastq'.format(i))
-    with open('cow{}_qual_all_unique.fastq'.format(i), 'w+') as out:
-        for record in SeqIO.parse('cow{}_qual_all.fastq'.format(i), 'fastq'):
+    os.remove('remove_duplicates/cow{}_qual_all_unique.fastq'.format(i))
+    with open('remove_duplicates/cow{}_qual_all_unique.fastq'.format(i), 'w+') as out:
+        for record in SeqIO.parse('remove_duplicates/cow{}_qual_all.fastq'.format(i), 'fastq'):
             if record.id in id_to_length:
                 out.write(record.format('fastq'))

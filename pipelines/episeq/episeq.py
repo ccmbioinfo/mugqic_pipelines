@@ -516,7 +516,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                               split=' --splitting_report ' + report_list[2] if report_list[2] else '',
                               mbias=' --mbias_report ' + report_list[3] if report_list[3] else '',
                               nt=' --nucleotide_report ' + report_list[4] if report_list[4] else ''))
-            jobs.append(concat_jobs([mkdir_job, job], name='bismark_report ' + sample.name))
+            jobs.append(concat_jobs([mkdir_job, job], name='bismark_report.' + sample.name))
         return jobs
 
     def differential_methylated_pos(self):

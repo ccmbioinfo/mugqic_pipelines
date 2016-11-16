@@ -571,16 +571,16 @@ beta <- methLevel(rawToRel(rrbs.filtered))
 #dmpFinder does not work with M values that are 0 or INF so the beta values must be shifted slightly
 #Although there is no such thing as a beta value > 1, it will not matter in this step because only
 #the average beta values are shown to the user
-beta[beta == 0] = 0.0001
-beta[beta == 1] = 1.0001
+beta[beta == 0] = 0.000001
+beta[beta == 1] = 0.999999
 M <- log2(beta/(1-beta))
 
 dmp <- dmpFinder(M, pheno=colData(rrbs.filtered)[,"group"], type="categorical")
 dmp["pval"] <- p.adjust(dmp[,"pval"], method = "{padjust_method}")
 dmp <- dmp[dmp["pval"] < {pvalue},]["pval"]
 
-controls <- c{controls}
-cases <- c{cases}
+controls <- c({controls})
+cases <- c({cases})
 result = as.data.frame(rowRanges(rrbs.filtered))[1:4]
 result["Avg Control Beta"] = rowMeans(beta[,controls])
 result["Avg Case Beta"] = rowMeans(beta[,cases])

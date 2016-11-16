@@ -115,7 +115,7 @@ Merged reports from: {readsets}
 Final Alignment report
 ======================
 {sequences} analysed in total:\t{seqs}
-Number of {alignments} with a unique best hit from the different alignments:\t{uniq}
+Number of {alignments} with a unique best hit{word}:\t{uniq}
 Mapping efficiency:\t{efficient:.1%}
 {sequences} with no alignments under any condition:\t{no_align}
 {sequences} did not map uniquely:\t{no_uniq}
@@ -151,6 +151,7 @@ C methylated in Unknown context (CN or CHN):\t{rate_unk:.1%}
         """.format(sample=name, version="v0.16.3", readsets=' '.join(log_reports), seqs=value_all[0],
                    alignments="paired-end alignments" if run_type == 'PE' else 'alignments',
                    sequences="Sequence pairs" if run_type == 'PE' else 'Sequences',
+                   word=' from' if run_type == 'SE' else '',
                    uniq=value_all[3], efficient=float(value_all[3]) / float(value_all[0]),
                    no_align=value_all[4], no_uniq=value_all[5], discarded=value_all[6],
                    ct_ct=value_all[7], ga_ct=value_all[8], ga_ga=value_all[9], ct_ga=value_all[10],

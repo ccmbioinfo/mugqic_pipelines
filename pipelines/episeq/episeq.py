@@ -234,8 +234,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                             tmpdir=config.param('bismark_align', 'tmp_dir', required=False) or
                                    config.param('DEFAULT', 'tmp_dir', required='True'),
                             input=cmd_in,
-                            basename=readset.name + '_aligned'
-                        ),
+                            basename=readset.name + '_aligned'),
                         report_files=report_log,
                         removable_files=[readset_sam]
                     )], name="bismark_align." + readset.name)
@@ -254,7 +253,6 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
         jobs = []
         for sample in self.samples:
             log_reports = []
-            output_report = os.path.join("merged", sample.name, sample.name + "_aligned_report.txt")
             align_directory = os.path.join("aligned", sample.name)
 
             # Get all log reports for this sample
@@ -264,8 +262,10 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                 log_basename = os.path.join(align_directory, readset.name)
                 if readset.run_type == "PAIRED_END":
                     log_reports.append(log_basename + "_aligned_PE_report.txt")
+                    output_report = os.path.join("merged", sample.name, sample.name + ".merged_aligned_PE_report.txt")
                 else:
                     log_reports.append(log_basename + "_aligned_SE_report.txt")
+                    output_report = os.path.join("merged", sample.name, sample.name + ".merged_aligned_SE_report.txt")
 
             mkdir_job = Job(command="mkdir -p merged/" + sample.name)
 
@@ -378,11 +378,20 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
             work_dir = os.path.join('dedup', sample.name)
             in_file = os.path.join('merged', sample.name, sample.name + '.merged.bam')
             out_file = os.path.join(work_dir, sample.name + '.merged.deduplicated.bam')
+            in_report_file = os.path.join('merged', sample.name, sample.name + '.merged_aligned_SE_report.txt')
             report_file = os.path.join(work_dir, sample.name + '.merged.deduplication_report.txt')
+            if sample.readset.run_type == 'PAIRED END':
+                copy_report = os.path.join(work_dir, sample.name + '.merged.deduplication_aligned_PE_report.txt')
+            else:
+                copy_report = os.path.join(work_dir, sample.name + '.merged.deduplication_aligned_SE_report.txt')
             run_type = sample.readsets[0].run_type
             protocol = sample.readsets[0].library
 
             mkdir_job = Job(command='mkdir -p ' + work_dir)
+            copy_job = Job([in_report_file],
+                           [copy_report],
+                           command="cp -fu " + in_report_file + " " + copy_report,
+                           report_files=[copy_report])
 
             # A job name that is different from the heading will not use the params listed. (Use default, instead)
             if protocol == 'RRBS':  # Deduplication is not recommended for RRBS datatypes. Keep what we have
@@ -390,9 +399,9 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                 abs_in_file = os.path.join(self.output_dir, in_file)
                 abs_out_file = os.path.join(self.output_dir, out_file)
                 job = concat_jobs([mkdir_job,
-                                   Job([in_file], [out_file],
-                                       command="cp -L -s -f " + abs_in_file + " " + abs_out_file)],
-                                  name="skip_rrbs_deduplicate." + sample.name)  # Default settings only
+                                   Job([in_file], [out_file], command="cp -Ls -f " + abs_in_file + " " + abs_out_file),
+                                   copy_job],
+                                  name="skip_rrbs_deduplicate." + sample.name)
             else:
                 merge_job = Job([in_file],
                                 module_entries=[['bismark_deduplicate', 'module_samtools'],
@@ -410,7 +419,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                                command='mv -fu ' + os.path.join(os.path.dirname(in_file),
                                                                 os.path.basename(report_file)) + ' ' + report_file,
                                report_files=[report_file])
-                job = concat_jobs([mkdir_job, merge_job, move_bam, move_log],
+                job = concat_jobs([mkdir_job, merge_job, move_bam, move_log, copy_job],
                                   name='bismark_deduplicate.' + sample.name)  # Use high mem
             jobs.append(job)
         return jobs
@@ -484,7 +493,10 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                        ['bismark_html_report_generator', 'module_bismark']]
         for sample in self.samples:
             report_list = ['', '', '', '', '']
-            report_list[0] = os.path.join("merged", sample.name, sample.name + "_aligned_report.txt")
+            if sample.readset[0].run_type == 'PAIRED_END':
+                report_list[0] = os.path.join("merged", sample.name, sample.name + ".merged_aligned_PE_report.txt")
+            else:
+                report_list[0] = os.path.join("merged", sample.name, sample.name + ".merged_aligned_SE_report.txt")
             if sample.readsets[0].library != 'RRBS':
                 report_list[1] = os.path.join('dedup', sample.name, sample.name + '.merged.deduplication_report.txt')
             report_list[2] = os.path.join("methyl_calls", sample.name, sample.name +

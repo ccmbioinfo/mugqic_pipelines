@@ -16,7 +16,7 @@ from shutil import copyfile
 
 # Constant strings containing needed regular expressions to capture data
 SEARCH_TOTAL_SEQS = '^Sequence.+? analysed in total.*?\s+([0-9]+)'
-SEARCH_UNIQ_HIT = '^Number of .+? alignments with a unique best hit.*?\s+([0-9]+)'
+SEARCH_UNIQ_HIT = '^Number of.+? alignments with a unique best hit.*?\s+([0-9]+)'
 SEARCH_NO_ALIGN = '^Sequence.+? with no alignments under any condition.*?\s+([0-9]+)'
 SEARCH_NOT_UNIQ = '^Sequence.+? did not map uniquely.*?\s+([0-9]+)'
 SEARCH_DISCARDED = 'Sequence.+? which were discarded because genomic sequence.*?\s+([0-9]+)'
@@ -59,14 +59,6 @@ def merge_logs(output_report, name, log_reports):
     :return: None
     :rtype: None
     """
-    # Check arg values
-    if not output_report and name:
-        output_report = path.join('.', name + '_aligned_report.txt')
-    elif output_report and not name:
-        name = path.splitext(path.basename(output_report))
-    elif not (output_report and name):
-        name = ' '.join([path.splitext(path.basename(log))[0] for log in log_reports])
-        output_report = path.join('.', name + '_aligned_report.txt')
 
     if len(log_reports) == 1:
         copyfile(log_reports[0], output_report)
@@ -84,8 +76,12 @@ def merge_logs(output_report, name, log_reports):
                   SEARCH_MC_CPG, SEARCH_MC_CHG, SEARCH_MC_CHH, SEARCH_MC_UNK,
                   SEARCH_C_CPG, SEARCH_C_CHG, SEARCH_C_CHH, SEARCH_C_UNK]
 
+    run_type = ''
     # Read all files and store in memory
     for log in log_reports:
+        if not run_type:
+            if log.split('_')[-2] in ['PE', 'SE']:
+                run_type = log.split('_')[-2]
         with open(log) as log_handle:
             file_data = log_handle.readlines()  # For each metric, parse strings to get desired values.
             item = 0
@@ -96,19 +92,34 @@ def merge_logs(output_report, name, log_reports):
                         value_all[item] += int(result.group(1))
                         item += 1
                         break
+
+    # Check arg values
+    if not name:
+       name = ' '.join([path.splitext(path.basename(log))[0] for log in log_reports])
+    if not run_type:
+        if not output_report:
+            run_type = log_reports[0].split('_')[-2] if log_reports[0].split('_')[-2] in ['PE', 'SE'] else ''
+        else:
+            run_type = output_report.split('_')[-2] if log_reports[0].split('_')[-2] in ['PE', 'SE'] else ''
+        if not run_type:
+            run_type = 'SE'  # Give up here
+    if not output_report:
+        output_report = path.join('.', name + '_aligned_' + run_type + '_report.txt')
+
     # Write out results
     with open(output_report, 'w') as writer:
         writer.write("""\
-Merged Bismark report for {sample}: {readsets}
+Bismark report for: {sample} (version: {version})
+Merged reports from: {readsets}
 
 Final Alignment report
 ======================
-Sequences analysed in total:\t{seqs}
-Number of alignments with a unique best hit from the different alignments:\t{uniq}
+{sequences} analysed in total:\t{seqs}
+Number of {alignments} with a unique best hit from the different alignments:\t{uniq}
 Mapping efficiency:\t{efficient:.1%}
-Sequences with no alignments under any condition:\t{no_align}
-Sequences did not map uniquely:\t{no_uniq}
-Sequences which were discarded because genomic sequence could not be extracted:\t{discarded}
+{sequences} with no alignments under any condition:\t{no_align}
+{sequences} did not map uniquely:\t{no_uniq}
+{sequences} which were discarded because genomic sequence could not be extracted:\t{discarded}
 
 Number of sequences with unique best (first) alignment came from the bowtie output:
 CT/GA/CT:\t{ct_ct}\t((converted) top strand)
@@ -137,7 +148,9 @@ C methylated in CpG context:\t{rate_cpg:.1%}
 C methylated in CHG context:\t{rate_chg:.1%}
 C methylated in CHH context:\t{rate_chh:.1%}
 C methylated in Unknown context (CN or CHN):\t{rate_unk:.1%}
-        """.format(sample=name, readsets=' '.join(log_reports), seqs=value_all[0],
+        """.format(sample=name, version="v0.16.3", readsets=' '.join(log_reports), seqs=value_all[0],
+                   alignments="paired-end alignments" if run_type == 'PE' else 'alignments',
+                   sequences="Sequence pairs" if run_type == 'PE' else 'Sequences',
                    uniq=value_all[3], efficient=float(value_all[3]) / float(value_all[0]),
                    no_align=value_all[4], no_uniq=value_all[5], discarded=value_all[6],
                    ct_ct=value_all[7], ga_ct=value_all[8], ga_ga=value_all[9], ct_ga=value_all[10],

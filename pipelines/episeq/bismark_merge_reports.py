@@ -42,6 +42,18 @@ ct_ct, ga_ct, ga_ga, ct_ga = (0, 0, 0, 0)
 mc_cpg, mc_chg, mc_chh, mc_unk = (0, 0, 0, 0)
 c_cpg, c_chg, c_chh, c_unk = (0, 0, 0, 0)
 
+# Enumerate desired counters
+value_all = [total_seqs, total_c, direction_rejected,
+             uniq_hit, no_align, not_uniq, discarded,
+             ct_ct, ga_ct, ga_ga, ct_ga,
+             mc_cpg, mc_chg, mc_chh, mc_unk,
+             c_cpg, c_chg, c_chh, c_unk]
+search_all = [SEARCH_TOTAL_SEQS, SEARCH_TOTALC, SEARCH_DIRECT,
+              SEARCH_UNIQ_HIT, SEARCH_NO_ALIGN, SEARCH_NOT_UNIQ, SEARCH_DISCARDED,
+              SEARCH_CT_CT, SEARCH_GA_CT, SEARCH_GA_GA, SEARCH_CT_GA,
+              SEARCH_MC_CPG, SEARCH_MC_CHG, SEARCH_MC_CHH, SEARCH_MC_UNK,
+              SEARCH_C_CPG, SEARCH_C_CHG, SEARCH_C_CHH, SEARCH_C_UNK]
+
 
 def merge_logs(output_report, name, log_reports):
     """
@@ -59,22 +71,9 @@ def merge_logs(output_report, name, log_reports):
     :return: None
     :rtype: None
     """
-
     if len(log_reports) == 1:
         copyfile(log_reports[0], output_report)
         return 0
-
-    # Enumerate desired counters
-    value_all = [total_seqs, total_c, direction_rejected,
-                 uniq_hit, no_align, not_uniq, discarded,
-                 ct_ct, ga_ct, ga_ga, ct_ga,
-                 mc_cpg, mc_chg, mc_chh, mc_unk,
-                 c_cpg, c_chg, c_chh, c_unk]
-    search_all = [SEARCH_TOTAL_SEQS, SEARCH_TOTALC, SEARCH_DIRECT,
-                  SEARCH_UNIQ_HIT, SEARCH_NO_ALIGN, SEARCH_NOT_UNIQ, SEARCH_DISCARDED,
-                  SEARCH_CT_CT, SEARCH_GA_CT, SEARCH_GA_GA, SEARCH_CT_GA,
-                  SEARCH_MC_CPG, SEARCH_MC_CHG, SEARCH_MC_CHH, SEARCH_MC_UNK,
-                  SEARCH_C_CPG, SEARCH_C_CHG, SEARCH_C_CHH, SEARCH_C_UNK]
 
     run_type = ''
     # Read all files and store in memory

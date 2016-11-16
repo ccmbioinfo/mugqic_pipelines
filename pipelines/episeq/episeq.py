@@ -547,9 +547,8 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
             sample_group = ["control" if sample in contrast.controls else "case" for sample in contrast_samples]
             dmps_file = os.path.join("differential_methylated_positions",
                                      contrast.name + "_RRBS_differential_methylated_pos.csv")
-            study_size = len(sample_group) + len(contrast_samples)
-            if study_size <= 2:  # Script will fail for 1 vs 1 comparisons.
-                log.warn("Insufficient sample size to compare case and control. (Size: " + str(study_size) + ")")
+            if len(contrast.controls) == 0 or contrast.treatments == 0 or len(contrast_samples) <= 2:  # No 1v1 or less
+                log.warn("Insufficient sample size to compare case and control.")
                 log.warn("Skipping contrast: " + contrast.name)
                 continue
             job = Job(

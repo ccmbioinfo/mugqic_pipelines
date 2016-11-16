@@ -508,7 +508,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
             mkdir_job = Job(command='mkdir -p ' + os.path.dirname(html_report))
             job = Job(input_files=report_list, output_files=filter(None, [html_report]),
                       module_entries=module_list, report_files=[html_report],
-                      command="""bismark2report -o {out} --alignment_report {align} \
+                      command="""bismark2report -o {out} --verbose --alignment_report {align} \
                       {dedup} {split} {mbias} {nt}""".format(
                               out=html_report,
                               align=report_list[0],

@@ -137,7 +137,7 @@ class Episeq(common.Illumina):
                           command="fastqc -o {out_dir} {others} -d {tmpdir} {inputs}".format(
                               inputs=' '.join(raw_fq),
                               out_dir=out_dir,
-                              others=config.param('pre_qc_check', 'other_options'),
+                              others=config.param('pre_qc_check', 'other_options', required=False),
                               tmpdir=tmpdir),
                           report_files=output,
                           removable_files=[])

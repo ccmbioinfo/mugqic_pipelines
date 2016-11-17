@@ -380,12 +380,12 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
             out_file = os.path.join(work_dir, sample.name + '.merged.deduplicated.bam')
             in_report_file = os.path.join('merged', sample.name, sample.name + '.merged_aligned_SE_report.txt')
             report_file = os.path.join(work_dir, sample.name + '.merged.deduplication_report.txt')
-            if sample.readsets[0].run_type == 'PAIRED END':
+            protocol = sample.readsets[0].library
+            run_type = sample.readsets[0].run_type
+            if run_type == 'PAIRED_END':
                 copy_report = os.path.join(work_dir, sample.name + '.merged.deduplication_aligned_PE_report.txt')
             else:
                 copy_report = os.path.join(work_dir, sample.name + '.merged.deduplication_aligned_SE_report.txt')
-            run_type = sample.readsets[0].run_type
-            protocol = sample.readsets[0].library
 
             mkdir_job = Job(command='mkdir -p ' + work_dir)
             copy_job = Job([in_report_file],

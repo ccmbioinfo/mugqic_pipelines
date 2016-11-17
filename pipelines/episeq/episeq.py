@@ -380,7 +380,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
             out_file = os.path.join(work_dir, sample.name + '.merged.deduplicated.bam')
             in_report_file = os.path.join('merged', sample.name, sample.name + '.merged_aligned_SE_report.txt')
             report_file = os.path.join(work_dir, sample.name + '.merged.deduplication_report.txt')
-            if sample.readset.run_type == 'PAIRED END':
+            if sample.readsets[0].run_type == 'PAIRED END':
                 copy_report = os.path.join(work_dir, sample.name + '.merged.deduplication_aligned_PE_report.txt')
             else:
                 copy_report = os.path.join(work_dir, sample.name + '.merged.deduplication_aligned_SE_report.txt')

@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl -w
+#!/usr/bin/env perl
 
 #my ($read_files) = @ARGV;
 #my $read_files='cow';

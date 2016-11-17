@@ -1,14 +1,16 @@
 #!/usr/local/bin/perl -w
 
-my ($read_files) = @ARGV;
+#my ($read_files) = @ARGV;
 #my $read_files='cow';
 
 my $Datapath = "~/CourseData/metagenomics/metatranscriptomics/";
 my $Workpath = "";
 
 for (my $i = 1; $i <= 2; $i++) {
-    $infile = $Workpath.$read_files.$i.".fastq";
-    $outfile = $Workpath.$read_files.$i."_new.fastq";
+#    $infile = $Workpath.$read_files.$i.".fastq";
+#    $outfile = $Workpath.$read_files.$i."_new.fastq";
+    $infile = shift;
+    $outfile = shift;
     print "Outputfile: $outfile\n";
 
     unlink($outfile);

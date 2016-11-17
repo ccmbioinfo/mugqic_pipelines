@@ -29,19 +29,16 @@ class Metatranscriptomics(common.Illumina):
         super(Metatranscriptomics, self).__init__()
 
     def format_fastq(self):
-        return [Job(name='format_fastq.cow',
-                    input_files=['../reference-files/cow1.fastq',
-                                 '../reference-files/cow2.fastq'],  # TODO: use select_input_files, candidate_files
-                    output_files=['../reference-files/cow1_new.fastq',
-                                  '../reference-files/cow2_new.fastq'],
+        return [Job(name='format_fastq_headers.cow',
                     module_entries=[['DEFAULT', 'module_perl']],
-                    command='perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_add_subID_reads_fastq.pl'
-                            '../reference-files/cow'.format(script_path=config.param('DEFAULT', 'metatranscriptomics_location')))]
+                    command='perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_add_subID_reads_fastq.pl '
+                            '../reference-files/cow1.fastq format_fastq_headers/cow1_new.fastq '
+                            '../reference-files/cow2.fastq format_fastq_headers/cow2_new.fastq '.format(script_path=config.param('DEFAULT', 'metatranscriptomics_location')))]
 
     def trimmomatic(self):
         return [concat_jobs([Job(command='mkdir -p ' + 'trim'),
-                             trimmomatic.trimmomatic('../reference-files/cow1_new.fastq',
-                                                     '../reference-files/cow2_new.fastq',
+                             trimmomatic.trimmomatic('format_fastq_headers/cow1_new.fastq',
+                                                     'format_fastq_headers/cow2_new.fastq',
                                                      'trim/cow1_qual_paired.fastq',
                                                      'trim/cow1_qual_unpaired.fastq',
                                                      'trim/cow2_qual_paired.fastq',
@@ -140,7 +137,7 @@ usearch --derep_fullseq --cluster remove_duplicates/cow2_qual_all.fasta --seedso
     @property
     def steps(self):
         return [
-            self.format_fastq,
+            self.format_fastq_headers,
             self.trimmomatic,
             self.flash,
             self.fastq_to_fasta,

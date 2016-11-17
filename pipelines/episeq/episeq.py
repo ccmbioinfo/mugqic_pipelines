@@ -141,9 +141,8 @@ class Episeq(common.Illumina):
                               tmpdir=tmpdir),
                           report_files=output,
                           removable_files=[])
-                concat_jobs([mkdir_job, job], name='pre_qc_check.' + readset.name)
                 # Add to list of jobs
-                jobs.append(job)
+                jobs.append(concat_jobs([mkdir_job, job], name='pre_qc_check.' + readset.name))
         return jobs
 
     def trim_galore(self):

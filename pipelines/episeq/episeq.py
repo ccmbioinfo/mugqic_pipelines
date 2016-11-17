@@ -128,7 +128,7 @@ class Episeq(common.Illumina):
                     out_dir = os.path.join('pre_qc_check', sample.name)
                 else:
                     out_dir = os.path.join('pre_qc_check', sample.name, readset.name)
-                output = [os.path.join(out_dir, ''.join(os.path.splitext(os.path.basename(name))) +
+                output = [os.path.join(out_dir, ''.join(os.path.splitext(os.path.basename(name))[:-2]) +
                                        '_fastqc.html') for name in raw_fq]
                 mkdir_job = Job(command='mkdir -p ' + out_dir)
                 job = Job(input_files=raw_fq,

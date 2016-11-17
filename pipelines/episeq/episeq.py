@@ -116,7 +116,7 @@ class Episeq(common.Illumina):
         requires = [['pre_qc_check', 'module_java'],
                     ['pre_qc_check', 'module_perl'],
                     ['pre_qc_check', 'module_fastqc']]
-        tmpdir = config.param('pre_qc_check', 'temp_dir', required=False, type='dirpath') or \
+        tmpdir = config.param('pre_qc_check', 'temp_dir', required=False) or \
                  config.param('DEFAULT', 'tmp_dir', type='dirpath')
         for sample in self.samples:
             for readset in sample.readsets:

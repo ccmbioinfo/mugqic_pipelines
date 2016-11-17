@@ -117,7 +117,7 @@ class Episeq(common.Illumina):
                     ['pre_qc_check', 'module_perl'],
                     ['pre_qc_check', 'module_fastqc']]
         tmpdir = config.param('pre_qc_check', 'temp_dir', required=False) or \
-                 config.param('DEFAULT', 'tmp_dir', type='dirpath')
+                 config.param('DEFAULT', 'tmp_dir')
         for sample in self.samples:
             for readset in sample.readsets:
                 raw_fq = filter(None, [readset.fastq1, readset.fastq2])

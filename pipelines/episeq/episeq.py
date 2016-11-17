@@ -104,6 +104,48 @@ class Episeq(common.Illumina):
         return [concat_jobs([mkdir_job, link_job, main_job, nuc_count],
                             name='bismark_prepare_genome.' + os.path.basename(ref_seq))]
 
+    def pre_qc_check(self):
+        """
+
+        :return:
+        :rtype:
+        """
+        jobs = []  # List of jobs to run
+
+        # Other invariants
+        requires = [['pre_qc_check', 'module_java'],
+                    ['pre_qc_check', 'module_perl'],
+                    ['pre_qc_check', 'module_fastqc']]
+        tmpdir = config.param('pre_qc_check', 'temp_dir', required=False, type='dirpath') or \
+                 config.param('DEFAULT', 'tmp_dir', type='dirpath')
+        for sample in self.samples:
+            for readset in sample.readsets:
+                raw_fq = filter(None, [readset.fastq1, readset.fastq2])
+                if not raw_fq:
+                    log.info('No fastq files found for readset for ' + readset.name + '. Skipping...')
+                    continue
+                if len(sample.readsets) == 1:
+                    out_dir = os.path.join('pre_qc_check', sample.name)
+                else:
+                    out_dir = os.path.join('pre_qc_check', sample.name, readset.name)
+                output = [os.path.join(out_dir, ''.join(os.path.splitext(os.path.basename(name))) +
+                                       '_fastqc.html') for name in raw_fq]
+                mkdir_job = Job(command='mkdir -p ' + out_dir)
+                job = Job(input_files=raw_fq,
+                          output_files=output,
+                          module_entries=requires,
+                          command="fastqc -o {out_dir} {others} -d {tmpdir} {inputs}".format(
+                              inputs=' '.join(raw_fq),
+                              out_dir=out_dir,
+                              others=config.param('pre_qc_check', 'other_options'),
+                              tmpdir=tmpdir),
+                          report_files=output,
+                          removable_files=[])
+                concat_jobs([mkdir_job, job], name='pre_qc_check.' + readset.name)
+                # Add to list of jobs
+                jobs.append(job)
+        return jobs
+
     def trim_galore(self):
         """
         This step trims raw FASTQ files for quality control using Trim Galore!
@@ -120,17 +162,18 @@ class Episeq(common.Illumina):
         for sample in self.samples:
             for readset in sample.readsets:
                 if readset.bam and not readset.fastq1:
+                    log.info('No fastq files found for readset for ' + readset.name + '. Skipping...')
                     continue  # There's still a bam file to process later
                 elif not (readset.bam or readset.fastq1 or readset.fastq2):
-                    raise ValueError("There is no data files in this readset: " + readset.name + "!\n")
+                    raise ValueError("There are no data associated with this readset: " + readset.name + "!\n")
                 # Get metadata and names
                 run_type = readset.run_type
                 protocol = readset.library
-                trim_directory = os.path.join("trimmed", sample.name, readset.name)  # output directory
+                if len(sample.readsets) == 1:  # output directory
+                    trim_directory = os.path.join("trimmed", sample.name)
+                else:
+                    trim_directory = os.path.join("trimmed", sample.name, readset.name)
                 file_basename = os.path.join(trim_directory, readset.name)  # output basename
-
-                if readset.bam or not readset.fastq1:  # aligned bam files don't need this step
-                    continue
 
                 # Trim Galoree has no built in option to change the filenames of the output
                 # Below are the default output names when running in paired or single mode
@@ -154,6 +197,8 @@ class Episeq(common.Illumina):
                                    Job(input_files,
                                        output_files + [report_logs[0]],
                                        [['trim_galore', 'module_fastqc'],
+                                        ['trim_galore', 'module_java'],
+                                        ['trim_galore', 'module_perl'],
                                         ['trim_galore', 'module_trim_galore'],
                                         ['trim_galore', 'module_cutadapt']],
                                        command="""
@@ -188,7 +233,10 @@ class Episeq(common.Illumina):
         for sample in self.samples:
             for readset in sample.readsets:
                 run_type = readset.run_type
-                trim_prefix = os.path.join("trimmed", sample.name, readset.name)
+                if len(sample.readsets) == 1:
+                    trim_prefix = os.path.join("trimmed", sample.name)
+                else:
+                    trim_prefix = os.path.join("trimmed", sample.name, readset.name)
                 align_directory = os.path.join("aligned", sample.name)
                 readset_base = os.path.join(align_directory, readset.name)
 
@@ -703,6 +751,7 @@ EOF
         """
         return [
             self.bismark_prepare_genome,
+            self.pre_qc_check,
             self.trim_galore,
             self.bismark_align,
             self.merge_bismark_alignment_report,

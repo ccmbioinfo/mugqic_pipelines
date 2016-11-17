@@ -28,7 +28,7 @@ class Metatranscriptomics(common.Illumina):
         # self._lastPGStep = {}
         super(Metatranscriptomics, self).__init__()
 
-    def format_fastq(self):
+    def format_fastq_headers(self):
         return [Job(name='format_fastq_headers.cow',
                     module_entries=[['DEFAULT', 'module_perl']],
                     command='perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_add_subID_reads_fastq.pl '

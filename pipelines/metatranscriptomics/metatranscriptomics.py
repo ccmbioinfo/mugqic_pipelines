@@ -33,7 +33,7 @@ class Metatranscriptomics(common.Illumina):
                     module_entries=[['DEFAULT', 'module_perl']],
                     command='perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_add_subID_reads_fastq.pl '
                             '../reference-files/cow1.fastq format_fastq_headers/cow1_new.fastq '
-                            '../reference-files/cow2.fastq format_fastq_headers/cow2_new.fastq '.format(script_path=config.param('DEFAULT', 'metatranscriptomics_location')))]
+                            '../reference-files/cow2.fastq format_fastq_headers/cow2_new.fastq ')]
 
     def trimmomatic(self):
         return [concat_jobs([Job(command='mkdir -p ' + 'trim'),

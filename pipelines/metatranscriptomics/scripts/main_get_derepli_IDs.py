@@ -4,29 +4,22 @@ import os
 from Bio import SeqIO
 
 
-def get_id_to_length(file):
-    id_to_length = dict()
+def get_ids(file):
+    ids = set()
     with open(file) as f:
         for line in f:
             if line.startswith('S'):
-                id_to_length[re.match('^(\S+\t){8}(\S+)', line).group(2)] = None
-    return id_to_length
+                ids.add(re.match('^(\S+\t){8}(\S+)', line).group(2))
+    return ids
 
 
 for i in (1, 2):
-    id_to_length = get_id_to_length('remove_duplicates/cow{}_qual_all_unique.uc'.format(i))
+    unique_ids = get_ids('remove_duplicates/cow{}_qual_all_unique.uc'.format(i))
+    unique_records = [recrd for recrd in SeqIO.parse('flash/cow{}_qual_all.fastq'.format(i), 'fastq') if recrd.id in unique_ids]
 
-    for record in SeqIO.parse('remove_duplicates/cow{}_qual_all.fastq'.format(i), 'fastq'):
-        if record.id in id_to_length:
-            id_to_length[record.id] = len(record.seq)
-
-    os.remove('remove_duplicates/cow{}_qual_all_unique_IDs.txt'.format(i))
     with open('remove_duplicates/cow{}_qual_all_unique_IDs.txt'.format(i), 'w+') as f:
-        for id, length in id_to_length.items():
-            f.write('{id}\t{length}\n'.format(id=id, length=length))
+        for record in unique_records:
+           f.write('{id}\t{length}\n'.format(id=id, length=len(record.seq)))
 
-    os.remove('remove_duplicates/cow{}_qual_all_unique.fastq'.format(i))
-    with open('remove_duplicates/cow{}_qual_all_unique.fastq'.format(i), 'w+') as out:
-        for record in SeqIO.parse('remove_duplicates/cow{}_qual_all.fastq'.format(i), 'fastq'):
-            if record.id in id_to_length:
-                out.write(record.format('fastq'))
+    with open('remove_duplicates/cow{}_qual_all_unique_updated_ids.fasta'.format(i), 'w+') as out:
+        SeqIO.write(unique_records, out, 'fasta')

@@ -548,8 +548,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
             dmps_file = os.path.join("differential_methylated_positions",
                                      contrast.name + "_RRBS_differential_methylated_pos.csv")
             if len(contrast.controls) == 0 or contrast.treatments == 0 or len(contrast_samples) <= 2:  # No 1v1 or less
-                log.warn("Insufficient sample size to compare case and control.")
-                log.warn("Skipping contrast: " + contrast.name)
+                log.warn("Insufficient sample size to compare case and control. Skipping contrast: " + contrast.name)
                 continue
             job = Job(
                 cov_files,

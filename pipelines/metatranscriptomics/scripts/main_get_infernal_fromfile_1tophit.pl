@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl -w
+#!/usr/bin/env perl
 use List::Util qw[min max];
 
 my ($read_files, $read_type, $cutoff_type, $cutoff1, $cutoff2) = @ARGV;
@@ -17,11 +17,13 @@ if ($read_type eq 'pairs') {
 }
 
 for (my $i = 1; $i <= $II; $i++) {
-    my $lengthfile = $Workpath.$read_files.$i."_qual_all_unique_IDs_length.txt";
-    my $infile = $Workpath.$read_files.$i."_rRNA.infernalout";
-    my $outfile1 = $Workpath.$read_files.$i."_rRNA_infernal_IDs.txt";
-    my $outfile2 = $Workpath.$read_files.$i."_rRNA_infernal_pairs.txt";
-    my $outfile3 = $Workpath.$read_files.$i."_rRNA_infernal_hitsID.txt";
+    my $lengthfile = "remove_rrna/cow" . $i . "_IDs_length.txt";
+#    my $lengthfile = "remove_rrna/cow" . $i . "_qual_all_unique_IDs_length.txt";
+    my $infile = "remove_rrna/cow" . $i . "_rRNA.infernalout";
+
+    my $outfile1 = "remove_rrna/cow" . $i . "_rRNA_infernal_IDs.txt";
+    my $outfile2 = "remove_rrna/cow" . $i . "_rRNA_infernal_pairs.txt";
+    my $outfile3 = "remove_rrna/cow" . $i . "_rRNA_infernal_hitsID.txt";
     print "Outputfile: $outfile1\n\n";
 
     my %reads;
@@ -143,17 +145,18 @@ for (my $i = 1; $i <= $II; $i++) {
 }
 
 if ($II == 2) {
-    my $infile11 = $Workpath.$read_files."1_rRNA_infernal_IDs.txt";
-    my $infile12 = $Workpath.$read_files."1_rRNA_infernal_pairs.txt";
-    my $infile13 = $Workpath.$read_files."1_rRNA_infernal_hitsID.txt";
+    my $output_dir = "remove_rrna/";
+    my $infile11 = $output_dir . "cow1_rRNA_infernal_IDs.txt";
+    my $infile12 = $output_dir . "cow1_rRNA_infernal_pairs.txt";
+    my $infile13 = $output_dir . "cow1_rRNA_infernal_hitsID.txt";
 
-    my $infile21 = $Workpath.$read_files."2_rRNA_infernal_IDs.txt";
-    my $infile22 = $Workpath.$read_files."2_rRNA_infernal_pairs.txt";
-    my $infile23 = $Workpath.$read_files."2_rRNA_infernal_hitsID.txt";
+    my $infile21 = $output_dir . "cow2_rRNA_infernal_IDs.txt";
+    my $infile22 = $output_dir . "cow2_rRNA_infernal_pairs.txt";
+    my $infile23 = $output_dir . "cow2_rRNA_infernal_hitsID.txt";
 
-    my $outfile1 = $Workpath.$read_files."_rRNA_infernal_IDs.txt";
-    my $outfile2 = $Workpath.$read_files."_rRNA_infernal_pairs.txt";
-    my $outfile3 = $Workpath.$read_files."_rRNA_infernal_hitsID.txt";
+    my $outfile1 = $output_dir . "cow_rRNA_infernal_IDs.txt";
+    my $outfile2 = $output_dir . "cow_rRNA_infernal_pairs.txt";
+    my $outfile3 = $output_dir . "cow_rRNA_infernal_hitsID.txt";
     print "Outputfiles: $outfile1\n$outfile2\n$outfile3\n\n";
 
     system("cat $infile12 $infile22 > $outfile2");

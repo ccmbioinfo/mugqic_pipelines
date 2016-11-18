@@ -19,7 +19,12 @@ for i in (1, 2):
 
     with open('remove_duplicates/cow{}_qual_all_unique_IDs.txt'.format(i), 'w+') as f:
         for record in unique_records:
-           f.write('{id}\t{length}\n'.format(id=id, length=len(record.seq)))
+           f.write('{id}\t{length}\n'.format(id=record.id, length=len(record.seq)))
 
-    with open('remove_duplicates/cow{}_qual_all_unique_updated_ids.fasta'.format(i), 'w+') as out:
+    # Overwrite the unique fastq file
+    with open('remove_duplicates/cow{}_qual_all_unique.fastq'.format(i), 'w+') as out:
+        SeqIO.write(unique_records, out, 'fastq')
+
+    # Overwrite the unique fasta file
+    with open('remove_duplicates/cow{}_qual_all_unique.fasta'.format(i), 'w+') as out:
         SeqIO.write(unique_records, out, 'fasta')

@@ -114,7 +114,7 @@ class Episeq(common.Illumina):
 
         # Other invariants
         requires = [['pre_qc_check', 'module_java'],
-                    ['pre_qc_check', 'module_perl'],
+                    # ['pre_qc_check', 'module_perl'], DO NOT LOAD. fastqc uses /usr/bin/perl, not the right perl.
                     ['pre_qc_check', 'module_fastqc']]
         tmpdir = config.param('pre_qc_check', 'temp_dir', required=False) or \
                  config.param('DEFAULT', 'tmp_dir')
@@ -197,7 +197,7 @@ class Episeq(common.Illumina):
                                        output_files + [report_logs[0]],
                                        [['trim_galore', 'module_fastqc'],
                                         ['trim_galore', 'module_java'],
-                                        ['trim_galore', 'module_perl'],
+                                        # ['trim_galore', 'module_perl'], Trim Galore and fastqc does not obey modules.
                                         ['trim_galore', 'module_trim_galore'],
                                         ['trim_galore', 'module_cutadapt']],
                                        command="""

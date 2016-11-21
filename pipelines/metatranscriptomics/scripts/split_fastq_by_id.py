@@ -24,6 +24,6 @@ with open(args.id_filename) as id_file:
 
 
 # Write to either included_filename or excluded filename depending on whether id is in ids
-with open(args.included_filename) as included_file, open(args.excluded_filename) as excluded_file:
+with open(args.included_filename, 'w+') as included_file, open(args.excluded_filename, 'w+') as excluded_file:
     for read in SeqIO.parse(args.fastq_filename, 'fastq'):
         included_file.write(read.format('fastq')) if read.id in ids else excluded_file.write(read.format('fastq'))

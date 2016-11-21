@@ -1,16 +1,18 @@
 #!/usr/bin/env python
+"""
+Output: cow{1,2}_IDs_length.txt
 
-import sys
+Write out:
+<ID><TAB><2nd column of *unique_IDs.txt><TAB><sequence length>
+"""
+
 import os
 from Bio import SeqIO
 
-# if len(sys.argv) != 3:
-#     raise Exception('Need an input directory and output directory')
-#
-# input_dir = sys.argv[1]
-# output_dir = sys.argv[2]
+
 input_dir = 'remove_duplicates'
 output_dir = 'remove_rrna'
+
 
 for i in (1, 2):
     id_filename = os.path.join(input_dir, 'cow{}_qual_all_unique_IDs.txt'.format(i))

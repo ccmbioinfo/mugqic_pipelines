@@ -237,12 +237,13 @@ class Episeq(common.Illumina):
                 else:
                     trim_prefix = os.path.join("trimmed", sample.name, readset.name)
                 align_directory = os.path.join("aligned", sample.name)
+
                 output_basename = os.path.join(align_directory, readset.name)
                 input_basename = [os.path.join(trim_prefix, os.path.basename(in_file).split('.')[0])
-                                  for in_file in input_files]
+                                  for in_file in filter(None, [readset.fastq1, readset.fastq2])]
 
                 # Case when only a bam file is given for a readset
-                if not readset.fastq1:
+                if not input_basename:
                     if readset.bam:
                         continue
                     else:

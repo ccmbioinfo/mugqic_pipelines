@@ -391,14 +391,10 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                 job = concat_jobs([mkdir_job, picard_v2, coverage_calc], name="picard_merge_sam_files." + sample.name)
 
             elif len(input_files) == 1:
-                readset_bam = input_files[0]
-                if os.path.isabs(readset_bam):
-                    target_readset_bam = readset_bam
-                else:
-                    target_readset_bam = os.path.relpath(readset_bam, merge_prefix)
+                target_readset_bam = input_files[0]
                 job = concat_jobs([
                     mkdir_job,
-                    Job([readset_bam], [output_bam],
+                    Job([input_files[0]], [output_bam],
                         command="cp -s -L -f " + os.path.abspath(target_readset_bam) +
                                 " " + os.path.abspath(output_bam),
                         removable_files=[output_bam]),

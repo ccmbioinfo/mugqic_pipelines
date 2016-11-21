@@ -395,8 +395,8 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                 job = concat_jobs([
                     mkdir_job,
                     Job([input_files[0]], [output_bam],
-                        command="cp -s -L -f " + os.path.join(os.getcwd(), target_readset_bam) +
-                                " " + os.path.join(os.getcwd(), output_bam),
+                        command="cp -s -L -f " + os.path.join(os.getcwd(), 'output', target_readset_bam) +
+                                " " + os.path.join(os.getcwd(), 'output', output_bam),
                         removable_files=[output_bam]),
                     coverage_calc],
                     name="symlink_readset_sample_bam." + sample.name)

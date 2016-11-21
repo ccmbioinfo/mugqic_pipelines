@@ -172,24 +172,24 @@ class Episeq(common.Illumina):
                     trim_directory = os.path.join("trimmed", sample.name)
                 else:
                     trim_directory = os.path.join("trimmed", sample.name, readset.name)
-                file_basename = os.path.join(trim_directory, readset.name)  # output basename
+                input_files = filter(None, [readset.fastq1, readset.fastq2])
+                file_basename = [os.path.join(trim_directory, os.path.basename(in_file).split('.')[0])
+                                 for in_file in input_files]
 
                 # Trim Galoree has no built in option to change the filenames of the output
                 # Below are the default output names when running in paired or single mode
                 if run_type == "PAIRED_END":
                     if not readset.fastq2:
                         raise ValueError("Expecting paired reads be named as follows file1_1.fq file1_2.fq.")
-                    input_files = [readset.fastq1, readset.fastq2]
-                    output_files = [file_basename + "_1_val_1.fq.gz", file_basename + "_2_val_2.fq.gz"]
+                    output_files = [file_basename[0] + "_val_1.fq.gz", file_basename[1] + "_val_2.fq.gz"]
                     report_logs = [trim_directory + '/' + os.path.basename(readset.fastq1) + '_trimming_report.txt',
-                                   file_basename + "_1_val_1_fastqc.html", file_basename + "_1_val_1_fastqc.zip",
+                                   file_basename[0] + "_val_1_fastqc.html", file_basename[0] + "_val_1_fastqc.zip",
                                    trim_directory + '/' + os.path.basename(readset.fastq2) + '_trimming_report.txt',
-                                   file_basename + "_2_val_2_fastqc.html", file_basename + "_2_val_2_fastqc.zip"]
+                                   file_basename[1] + "_val_2_fastqc.html", file_basename[1] + "_val_2_fastqc.zip"]
                 else:  # Implicit single end
-                    input_files = [readset.fastq1]
-                    output_files = [file_basename + "_trimmed.fq.gz"]
+                    output_files = [file_basename[0] + "_trimmed.fq.gz"]
                     report_logs = [trim_directory + '/' + os.path.basename(readset.fastq1) + '_trimming_report.txt',
-                                   file_basename + "_trimmed_fastqc.html", file_basename + '_trimmed_fastqc.zip']
+                                   file_basename[0] + "_trimmed_fastqc.html", file_basename[0] + '_trimmed_fastqc.zip']
 
                 mkdir_job = Job(command="mkdir -p " + trim_directory)
                 job = concat_jobs([mkdir_job,
@@ -237,7 +237,9 @@ class Episeq(common.Illumina):
                 else:
                     trim_prefix = os.path.join("trimmed", sample.name, readset.name)
                 align_directory = os.path.join("aligned", sample.name)
-                readset_base = os.path.join(align_directory, readset.name)
+                output_basename = os.path.join(align_directory, readset.name)
+                input_basename = [os.path.join(trim_prefix, os.path.basename(in_file).split('.')[0])
+                                  for in_file in input_files]
 
                 # Case when only a bam file is given for a readset
                 if not readset.fastq1:
@@ -248,18 +250,17 @@ class Episeq(common.Illumina):
 
                 # If a bam file is given, it should be an aligned, unsorted bam file.
                 if run_type == "PAIRED_END" and readset.fastq2:
-                    input_files = [os.path.join(trim_prefix, readset.name + "_1_val_1.fq.gz"),
-                                   os.path.join(trim_prefix, readset.name + "_2_val_2.fq.gz")]
+                    input_files = [input_basename[0] + '_val_1.fq.gz', input_basename[1] + "_val_2.fq.gz"]
                     cmd_in = '-1 {fastq1} -2 {fastq2}'.format(fastq1=input_files[0], fastq2=input_files[1])
-                    readset_sam = readset_base + "_aligned_pe.bam"
-                    report_log = [readset_base + "_aligned_PE_report.txt",
-                                  readset_base + "_aligned_pe.nucleotide_stats.txt"]
+                    readset_sam = output_basename + "_aligned_pe.bam"
+                    report_log = [output_basename + "_aligned_PE_report.txt",
+                                  output_basename + "_aligned_pe.nucleotide_stats.txt"]
                 elif run_type == "SINGLE_END":
-                    input_files = [os.path.join(trim_prefix, readset.name + "_trimmed.fq.gz")]
+                    input_files = [input_basename[0] + "_trimmed.fq.gz"]
                     cmd_in = '--single_end {fastq1}'.format(fastq1=input_files[0])
-                    readset_sam = readset_base + "_aligned.bam"
-                    report_log = [readset_base + "_aligned_SE_report.txt",
-                                  readset_base + "_aligned.nucleotide_stats.txt"]
+                    readset_sam = output_basename + "_aligned.bam"
+                    report_log = [output_basename + "_aligned_SE_report.txt",
+                                  output_basename + "_aligned.nucleotide_stats.txt"]
                 else:
                     raise AttributeError("Unknown run_type: " + run_type + ". Unknown file output name.")
                 mkdir_job = Job(command="mkdir -p " + align_directory)

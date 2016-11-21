@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 """
-
+Split fastq_filename into 2 output files, based on the given IDs in id_filename
+See --help
 """
 
 import argparse
 from Bio import SeqIO
+
 
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument('fastq_filename')
@@ -21,7 +23,7 @@ with open(args.id_filename) as id_file:
 # print('Total number of IDs: {}'.format(len(ids)))
 
 
-# Write to either included_filename or excluded filename by id
+# Write to either included_filename or excluded filename depending on whether id is in ids
 with open(args.included_filename) as included_file, open(args.excluded_filename) as excluded_file:
     for read in SeqIO.parse(args.fastq_filename, 'fastq'):
         included_file.write(read.format('fastq')) if read.id in ids else excluded_file.write(read.format('fastq'))

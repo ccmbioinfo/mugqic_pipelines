@@ -10,9 +10,13 @@ my $Datapath = "~/CourseData/metagenomics/metatranscriptomics/";
 my $Workpath = "";
 
 for (my $i = 1; $i <= 2; $i++) {
-    my $IDfile = $Workpath.$read_files.$i."_qual_all_unique_IDs_length.txt";
-    my $infile = $Workpath.$read_files.$i."_qual_unique_n_rRNA_n_host.fastq";
-    my $outfile = $Workpath.$read_files.$i."_mRNA.fastq";
+    my $IDfile = "remove_duplicates/cow".$i."_qual_all_unique_IDs.txt";
+#    my $IDfile = "remove_duplicates/cow".$i."_qual_all_unique_IDs_length.txt";
+    my $infile = "remove_host_reads/cow".$i."_qual_unique_n_rRNA_n_host.fastq";
+    my $outfile = "add_duplicates/cow".$i."_mRNA.fastq";
+#    my $IDfile = $Workpath.$read_files.$i."_qual_all_unique_IDs_length.txt";
+#    my $infile = $Workpath.$read_files.$i."_qual_unique_n_rRNA_n_host.fastq";
+#    my $outfile = $Workpath.$read_files.$i."_mRNA.fastq";
     print "Outputfile: $outfile\n\n";
 
     my $total;

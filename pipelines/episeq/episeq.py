@@ -352,18 +352,18 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
             input_files = processed_fastq + listed_bam_files  # All bam files that belong to the sample
             merge_prefix = os.path.join('merged', sample.name)
             output_bam = os.path.join(merge_prefix, sample.name + '.merged.bam')
-
+            out_cov_file = os.path.join(merge_prefix, sample.name) + '.merged.nucleotide_stats.txt'
             mkdir_job = Job(command='mkdir -p ' + merge_prefix)
-
-            coverage_calc = Job(output_files=[os.path.join(merge_prefix, sample.name) + '.merged.nucleotide_stats.txt'],
-                                module_entries=[['bismark_deduplicate', 'module_samtools'],
-                                                ['bismark_deduplicate', 'module_perl'],
-                                                ['bismark_deduplicate', 'module_bismark']],
-                                command='bam2nuc --dir merged --genome_folder bismark_prepare_genome ' + output_bam,
-                                report_files=[os.path.join(merge_prefix, sample.name) + '.merged.nucleotide_stats.txt'])
 
             # I want to use Picard Tools v2.0.1, which has a different syntax than v1.x
             if len(input_files) > 1:
+                coverage_calc = Job(
+                    output_files=[out_cov_file],
+                    module_entries=[['bismark_deduplicate', 'module_samtools'],
+                                    ['bismark_deduplicate', 'module_perl'],
+                                    ['bismark_deduplicate', 'module_bismark']],
+                    command='bam2nuc --dir merged --genome_folder bismark_prepare_genome ' + output_bam,
+                    report_files=[out_cov_file])
                 picard_v2 = Job(
                     input_files,
                     [output_bam],
@@ -393,6 +393,15 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                 job = concat_jobs([mkdir_job, picard_v2, coverage_calc], name="picard_merge_sam_files." + sample.name)
 
             elif len(input_files) == 1:
+                input_nuc_stats = os.path.join('align', sample.name, sample.readsets[0].name)
+                if processed_fastq_pe:
+                    input_nuc_stats += '.merged_aligned_PE_report.txt'
+                else:
+                    input_nuc_stats += '.merged_aligned_SE_report.txt'
+                coverage_calc = Job(input_files=[input_nuc_stats],
+                                    output_files=[out_cov_file],
+                                    command='cp -f ' + input_nuc_stats + ' ' + out_cov_file,
+                                    report_files=[out_cov_file])
                 target_readset_bam = input_files[0]
                 job = concat_jobs([
                     mkdir_job,

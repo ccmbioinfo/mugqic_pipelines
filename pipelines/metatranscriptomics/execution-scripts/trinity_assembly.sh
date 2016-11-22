@@ -1,11 +1,10 @@
 #!/bin/bash -x
 
-#PBS -N Job_trinity
+#PBS -N trinity_assembly
 #PBS -l nodes=1:ppn=8
 #PBS -l gres=localhd:20
 #PBS -l vmem=90g
 #PBS -l walltime=48:00:00
-#PBS -joe /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/execution-scripts
 
 
 module load trinityrnaseq/2.1.1

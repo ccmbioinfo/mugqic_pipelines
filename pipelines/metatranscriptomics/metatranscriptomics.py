@@ -19,14 +19,10 @@ log = logging.getLogger(__name__)
 
 
 class Metatranscriptomics(common.Illumina):
-    """
-    Metatranscriptomics
-    ===============================
-    """
-    def __init__(self):
-        # Add pipeline specific arguments
-        # self._lastPGStep = {}
-        super(Metatranscriptomics, self).__init__()
+    # def __init__(self):
+    #     # Add pipeline specific arguments
+    #     # self._lastPGStep = {}
+    #     super(Metatranscriptomics, self).__init__()
 
     def format_fastq_headers(self):
         return [Job(name='format_fastq_headers.cow',

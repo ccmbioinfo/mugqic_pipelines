@@ -2,12 +2,9 @@
 #PBS -l vmem=40g
 #PBS -l nodes=1:ppn=6
 #PBS -l walltime=48:00:00
-#PBS -d /hpf/largeprojects/ccmbio/nreinhardt/metatranscriptomics-test/small-test
+#PBS -d /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/execution-scripts
 
-if [ "$PBS_ENVIRONMENT" = "PBS_BATCH" ]; then
-    cd $PBS_O_WORKDIR
-fi
-
+module load mugqic-pipelines/2.2.0
 module load infernal
 module load perl
 

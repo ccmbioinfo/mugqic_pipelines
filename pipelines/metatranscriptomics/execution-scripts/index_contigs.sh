@@ -4,7 +4,7 @@ module load mugqic/bwa/0.7.12
 module load mugqic/samtools/1.3
 
 INPUT_DIR=trinity_assembly
-OUTPUT_DIR=index_contig
+OUTPUT_DIR=index_contigs
 mkdir $OUTPUT_DIR
 
 cp $INPUT_DIR/cow_contigs.fasta $OUTPUT_DIR/cow_contigs.fasta

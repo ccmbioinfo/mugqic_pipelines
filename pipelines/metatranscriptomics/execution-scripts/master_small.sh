@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 #PBS -N run-all
-#PBS -l nodes=1:ppn=8
+#PBS -l nodes=1:ppn=2
 #PBS -l gres=localhd:20
-#PBS -l vmem=90g
-#PBS -l walltime=100:00:00
+#PBS -l vmem=40g
+#PBS -l walltime=23:00:00
 
 # Run all the steps
 

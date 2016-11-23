@@ -19,7 +19,17 @@ cmscan -o $OUTPUT_DIR/cow1_rRNA.log --tblout $OUTPUT_DIR/cow1_rRNA.infernalout -
 cmscan -o $OUTPUT_DIR/cow2_rRNA.log --tblout $OUTPUT_DIR/cow2_rRNA.infernalout --noali --notextw --rfam -E 0.001 $RFAM_PATH %INPUT_DIR/cow2_qual_all_unique.fasta
 
 
-python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_get_sequence_length.py
+# cow1
+python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_get_sequence_length.py \
+    --fasta $INPUT_DIR/cow1_qual_all_unique.fasta \
+    --id-file $INPUT_DIR/cow1_qual_all_unique_IDs.txt \
+    --output $OUTPUT_DIR/cow1_IDs_length.txt
+# cow2
+python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_get_sequence_length.py \
+    --fasta $INPUT_DIR/cow2_qual_all_unique.fasta \
+    --id-file $INPUT_DIR/cow2_qual_all_unique_IDs.txt \
+    --output $OUTPUT_DIR/cow2_IDs_length.txt
+#python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_get_sequence_length.py
 #perl main_get_sequence_length.pl cow rRNA
 
 perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_get_infernal_fromfile_1tophit.pl cow pairs 1 0.001 90

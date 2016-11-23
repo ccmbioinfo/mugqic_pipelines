@@ -2,9 +2,10 @@
 """
 Pipeline Performance
 """
+from __future__ import division
 import argparse
 from datetime import timedelta
-import string
+import sys
 import re
 from collections import OrderedDict
 
@@ -24,7 +25,7 @@ class Step(object):
         self.failure = 0  # type: int
 
         # Quasi-Constant Members
-        self.max_time = None  # type: [timedelta]
+        self.max_time = None  # type: timedelta
         self.max_mem = 0  # type: int
         self.max_vmem = 0  # type: int
         self.name = name  # type: str
@@ -51,9 +52,9 @@ class Step(object):
         :rtype:
         """
         attr_vals = filter(None, [val.get(attr) for val in self.tasks])
-        if type(attr_vals[0]) == timedelta:
-            attr_vals = [val.total_seconds() for val in attr_vals]
-        else:
+        if re.search('^\d\d:\d\d:\d\d$', attr_vals[0]):
+            attr_vals = [get_delta(val).total_seconds() for val in attr_vals]
+        elif re.search('^\d+\.\d+\s?[A-Z]|[a-z]i?b$', attr_vals[0]):
             attr_vals = [get_bytes(val) for val in attr_vals]
         return func(attr_vals)
 
@@ -63,12 +64,20 @@ class Step(object):
         :return:
         :rtype:
         """
-        row = "{:^15}" + "{:>15}" * 15
+        row = "{:<35}" + "{:>25}" * 15
         stat_general = [self.name, len(self.tasks), self.success, self.failure]
-        stat_time = [self.max_time, timedelta(self.get_stat(max, 'Wallclock Duration')),
-                     timedelta(self.get_stat(min, 'Wallclock Duration'))]
-        stat_vmem = [self.max_vmem, self.get_stat(max, 'vmem Used'), self.get_stat(min, 'vmem Used')]
-        stat_pmem = [self.max_mem, self.get_stat(max, 'Memory Used'), self.get_stat(min, 'Memory Used')]
+        stat_time = [str(self.max_time),
+                     str(timedelta(seconds=self.get_stat(max, 'Wallclock Duration'))),
+                     str(timedelta(seconds=self.get_stat(sum, 'Wallclock Duration')/stat_general[1])),
+                     str(timedelta(seconds=self.get_stat(min, 'Wallclock Duration')))]
+        stat_vmem = [humansize(self.max_vmem),
+                     humansize(self.get_stat(max, 'vmem Used')),
+                     humansize(self.get_stat(sum, 'vmem Used')/stat_general[1]),
+                     humansize(self.get_stat(min, 'vmem Used'))]
+        stat_pmem = [humansize(self.max_mem),
+                     humansize(self.get_stat(max, 'Memory Used')),
+                     humansize(self.get_stat(sum, 'Memory Used')/stat_general[1]),
+                     humansize(self.get_stat(min, 'Memory Used'))]
         stat_all = stat_general + stat_time + stat_vmem + stat_pmem
         return row.format(*stat_all)
 
@@ -141,12 +150,16 @@ class Task(object):
     """
 
     def __init__(self, section=None):
+        # type: (List[str]) -> None
         self.data = OrderedDict()
-        for attr, value in [line.split(':') for line in section]:
-            self.data[attr.strip()] = value.strip()
-        self.name = self.data.setdefault('Job Name')
-        self.name += self.data.setdefault('Job Id')
-        self.name += self.data.setdefault('Start Time')
+        for line in section:
+            trim = line.strip()
+            if trim:
+                (attr, value) = line.strip().split(': ')
+                self.data[attr.strip()] = value.strip()
+        self.name = self.data.setdefault('Job Name', '')
+        self.name += '.' + self.data.setdefault('Job Id', '')
+        self.name += '.' + self.data.setdefault('Start Time', '')
 
     def __str__(self):
         val = '-' * 64 + '\n'
@@ -165,8 +178,6 @@ class Task(object):
         :return: The value that is associated with attr in the task's data dictionary.
         :rtype: any
         """
-        if attr not in self.data:
-            raise KeyError('Attribute ' + attr + ' is not in this task. Use one of ' + ', '.join(self.data.keys()))
         return self.data.setdefault(attr)
 
     def set_value(self, attr, val):
@@ -197,7 +208,7 @@ class StatsManager(object):
                "Walltime Limit", "Max Walltime", "Average Walltime", "Min Walltime",
                "V. Mem Limit", "Max V. Mem", "Average V. Mem", "Min V. Mem",
                "Memory Limit", "Max Memory", "Average Memory", "Min Memory"]
-    header = ("{:^15}" * 16).format(*metrics)
+    header = ("{:^30}" + "{:^25}" * 15).format(*metrics)
 
     def __init__(self, step_list, name=None, pipeline=None):
         self.name = name
@@ -216,9 +227,12 @@ class StatsManager(object):
 
         :rtype: None
         """
-        new_step = list()
+        if not self.pipeline:
+            raise AttributeError('Missing object member: pipeline')
+        new_step = dict()
         for step in self.pipeline:
-            new_step += [item for item in self.steps if item.name == step]
+            step = step.strip()
+            new_step[step] = self.steps[step]
         if new_step:
             self.steps = new_step
         else:
@@ -232,7 +246,7 @@ class StatsManager(object):
         """
         out_str = self.header  # type: str
         for step in self.steps:
-            out_str += step.row_print()
+            out_str += self.steps[step].row_print() + '\n'
         print (self.template.format(pipeline_name=self.name, table=out_str))
 
 
@@ -248,7 +262,20 @@ def parse_pbs_job_data(in_file):
     entries = []  # type: [Task]
     entry = []  # type: list(str)
 
-    with open(in_file) as f:
+    if in_file:  # File log is given
+        with open(in_file) as f:
+            for line in f:
+                if line.startswith(delim):
+                    if entry:  # If we hit a delimiter, create object
+                        entries.append(Task(entry))
+                        entry = []  # reset buffer
+                        continue  # Skip delimiter line
+                elif line:
+                    entry.append(line)  # Don't add blank lines
+            if entry:
+                entries.append(Task(entry))
+    else:  # Read from stdin
+        f = sys.stdin
         for line in f:
             if line.startswith(delim):
                 if entry:  # If we hit a delimiter, create object
@@ -276,10 +303,12 @@ def generate_steps(jobs):
     step_map = dict()
 
     for job in jobs:  # type: Task
-        name = job.get('Job Name').split[0]
+        if len(job.data) <= 3:
+            continue  # This job doesn't have enough data for anything
+        name = job.get('Job Name').split('.')[0]
         if name not in step_map:
             step_map[name] = Step(name=name)  # Set limits here.
-        step_map[name].add_job(job)
+        step_map[name].add_task(job)
 
     return step_map
 
@@ -294,12 +323,37 @@ def get_bytes(size_string):
     """
     try:
         size_string = size_string.lower().replace(',', '')
-        size = re.search('^(\d+)[a-z]i?b$', size_string).groups()[0]
-        suffix = re.search('^\d+([kmgtp])i?b$', size_string).groups()[0]
+        size = float(re.search('^(\d+(\.\d+)?)\s?[a-z]?b$', size_string).groups()[0])
+        suffix = re.search('^\d+(\.\d+)?\s?([kmgtp])?b$', size_string).groups()[1]
     except AttributeError:
-        raise ValueError("Invalid Input")
-    shft = suffix.translate(string.maketrans('kmgtp', '12345')) + '0'
-    return int(size) << int(shft)
+        raise
+    symbols = ('b', 'k', 'm', 'g', 't', 'p', 'e', 'z', 'y')
+    prefix = {symbols[0]: 1}
+    for i, s in enumerate(symbols[1:]):
+        prefix[s] = 1 << (i + 1) * 10
+    return int(size * prefix[suffix])
+
+
+# Attributed to: nneonneo @ StackOverflow
+# (http://stackoverflow.com/questions/14996453/python-libraries-to-calculate-human-readable-filesize-from-bytes)
+def humansize(nbytes):
+    # type: (int) -> str
+    """
+
+    :param nbytes:
+    :type nbytes: int
+    :return:
+    :rtype: str
+    """
+    if nbytes == 0:
+        return '0 B'
+    i = 0
+    suffixes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+    while nbytes >= 1024 and i < len(suffixes) - 1:
+        nbytes /= 1024.
+        i += 1
+    f = ('%.2f' % nbytes).rstrip('0').rstrip('.')
+    return '%s %s' % (f, suffixes[i])
 
 
 def get_delta(time_str):
@@ -333,14 +387,15 @@ def get_delta(time_str):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="""This script reads in data from showjobs and create aggregate
-    performance statistics.""",
+    performance statistics. It accepts from stdin or files, as needed.""",
                                      epilog='By Michael Li, Nov. 2016')
-    parser.add_argument('in_file', type=str, metavar='Log', help="""Output from showjobs.""")
-    parser.add_argument('pipe_steps', type=str, metavar='File', help="""Names of steps of a pipeline in a file""")
+    parser.add_argument('-i', '--input', type=str, metavar='log_file', action='store', dest='in_file',
+                        help="""Output from showjobs, stored in a file.""")
+    parser.add_argument('-s', '--steps', type=str, metavar='list_steps', action='store', dest='pipe_steps',
+                        help="""Names of steps of a pipeline in a file, with one step per line.""")
     args = parser.parse_args()
 
     steps = parse_pbs_job_data(args.in_file)
-    
-    with open(args.pipe_steps) as f:
-        pipeline = f.readlines()
-    StatsManager(steps, '', pipeline)
+
+    StatsManager(steps, '', args.pipe_steps).print_table()
+    exit(0)

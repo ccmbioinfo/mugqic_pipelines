@@ -32,13 +32,21 @@ samtools view -bS remove_host_reads/cow_host.sam | samtools sort -n -o remove_ho
 samtools view remove_host_reads/cow_host.bam > remove_host_reads/cow_host.bwaout
 #samtools view -F 4 remove_host_reads/cow_host.bam > remove_host_reads/cow_host.bwaout
 
-perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_read_samout.pl cow host bwa pairs
+perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_read_samout.pl \
+    remove_host_reads/cow_host.bwaout \
+    remove_host_reads/cow_host_bwa_IDs.txt \
+    remove_host_reads/cow_host_bwa_pairs.txt \
+    remove_host_reads/cow_host_bwa_hitsID.txt
+#perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_read_samout.pl cow host bwa pairs
 #perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_select_reads_fromfile.pl cow host bwa pairs
+
+# cow1
 /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_fastq_by_id.py \
     remove_rrna/cow1_qual_unique_n_rRNA.fastq \
     remove_host_reads/cow_host_bwa_IDs.txt \
     remove_host_reads/cow1_qual_unique_n_rRNA_host.fastq \
     remove_host_reads/cow1_qual_unique_n_rRNA_n_host.fastq
+# cow2
 /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_fastq_by_id.py \
     remove_rrna/cow2_qual_unique_n_rRNA.fastq \
     remove_host_reads/cow_host_bwa_IDs.txt \

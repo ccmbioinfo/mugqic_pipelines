@@ -1,39 +1,40 @@
 #!/usr/bin/env perl
 
 
-my ($read_files, $db_type, $map_type, $read_type, $strain_type) = @ARGV;
+#my ($read_files, $db_type, $map_type, $read_type, $strain_type) = @ARGV;
+my ($infile, $outfile1, $outfile2, $outfile3) = @ARGV;
 
 my $Datapath = "~/CourseData/metagenomics/metatranscriptomics/";
 my $Workpath = "";
 
 
-my $DBfile;
-my $reads;
-my $infile;
-my $outfile1;
-my $outfile2;
-my $outfile3;
-if ($db_type eq 'host') {
-    my $input_dir = "remove_host_reads";
-    my $output_dir = "remove_host_reads";
-
-    $infile = $input_dir."/".$Workpath.$read_files."_host.".$map_type."out";
-    $outfile1 = $output_dir."/".$Workpath.$read_files."_host_".$map_type."_IDs.txt";
-    $outfile2 = $output_dir."/".$Workpath.$read_files."_host_".$map_type."_pairs.txt";
-    $outfile3 = $output_dir."/".$Workpath.$read_files."_host_".$map_type."_hitsID.txt";
+#my $DBfile;
+#my $reads;
+#my $infile;
+#my $outfile1;
+#my $outfile2;
+#my $outfile3;
+#if ($db_type eq 'host') {
+#    my $input_dir = "remove_host_reads";
+#    my $output_dir = "remove_host_reads";
+#
+#    $infile = $input_dir."/".$Workpath.$read_files."_host.".$map_type."out";
+#    $outfile1 = $output_dir."/".$Workpath.$read_files."_host_".$map_type."_IDs.txt";
+#    $outfile2 = $output_dir."/".$Workpath.$read_files."_host_".$map_type."_pairs.txt";
+#    $outfile3 = $output_dir."/".$Workpath.$read_files."_host_".$map_type."_hitsID.txt";
 #    $infile = $Workpath.$read_files."_host.".$map_type."out";
 #    $outfile1 = $Workpath.$read_files."_host_".$map_type."_IDs.txt";
 #    $outfile2 = $Workpath.$read_files."_host_".$map_type."_pairs.txt";
 #    $outfile3 = $Workpath.$read_files."_host_".$map_type."_hitsID.txt";
-}
-elsif ($db_type eq 'assembly') {
-    my $input_dir = "map_reads";
-    my $output_dir = "map_reads";
-    $infile = $input_dir."/".$read_files."_trinity.".$map_type."out";
-    $outfile1 = $output_dir."/".$Workpath.$read_files."_trinity_".$map_type."_IDs.txt";
-    $outfile2 = $output_dir."/".$Workpath.$read_files."_trinity_".$map_type."_pairs.txt";
-    $outfile3 = $output_dir."/".$Workpath.$read_files."_trinity_".$map_type."_hitsID.txt";
-}
+#}
+#elsif ($db_type eq 'assembly') {
+#    my $input_dir = "map_reads";
+#    my $output_dir = "map_reads";
+#    $infile = $input_dir."/".$read_files."_trinity.".$map_type."out";
+#    $outfile1 = $output_dir."/".$Workpath.$read_files."_trinity_".$map_type."_IDs.txt";
+#    $outfile2 = $output_dir."/".$Workpath.$read_files."_trinity_".$map_type."_pairs.txt";
+#    $outfile3 = $output_dir."/".$Workpath.$read_files."_trinity_".$map_type."_hitsID.txt";
+#}
 #elsif ($db_type eq 'microgenes') {
 #    $DBfile = "microbial_all_cds.fasta";
 #

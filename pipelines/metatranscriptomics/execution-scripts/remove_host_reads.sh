@@ -41,14 +41,14 @@ perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscr
 #perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_select_reads_fromfile.pl cow host bwa pairs
 
 # cow1
-/hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_fastq_by_id.py \
-    remove_rrna/cow1_qual_unique_n_rRNA.fastq \
-    remove_host_reads/cow_host_bwa_IDs.txt \
-    remove_host_reads/cow1_qual_unique_n_rRNA_host.fastq \
-    remove_host_reads/cow1_qual_unique_n_rRNA_n_host.fastq
+/hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_reads_by_id.py \
+    --fastq remove_rrna/cow1_qual_unique_n_rRNA.fastq \
+    --id-file remove_host_reads/cow_host_bwa_IDs.txt \
+    --included remove_host_reads/cow1_qual_unique_n_rRNA_host.fastq \
+    --excluded remove_host_reads/cow1_qual_unique_n_rRNA_n_host.fastq
 # cow2
-/hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_fastq_by_id.py \
-    remove_rrna/cow2_qual_unique_n_rRNA.fastq \
-    remove_host_reads/cow_host_bwa_IDs.txt \
-    remove_host_reads/cow2_qual_unique_n_rRNA_host.fastq \
-    remove_host_reads/cow2_qual_unique_n_rRNA_n_host.fastq
+/hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_reads_by_id.py \
+    --fastq remove_rrna/cow2_qual_unique_n_rRNA.fastq \
+    --id-file remove_host_reads/cow_host_bwa_IDs.txt \
+    --included remove_host_reads/cow2_qual_unique_n_rRNA_host.fastq \
+    --excluded remove_host_reads/cow2_qual_unique_n_rRNA_n_host.fastq

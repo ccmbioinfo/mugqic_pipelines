@@ -36,16 +36,16 @@ perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscr
 #perl main_get_infernal_fromfile_1tophit.pl cow pairs 1 0.001 90
 
 # cow1
-python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_fastq_by_id.py \
-    $INPUT_DIR/cow1_qual_all_unique.fastq \
-    $OUTPUT_DIR/cow1_rRNA_infernal_IDs.txt \
-    $OUTPUT_DIR/cow1_qual_unique_rRNA.fastq \
-    $OUTPUT_DIR/cow1_qual_unique_n_rRNA.fastq
+python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_reads_by_id.py \
+    --fastq $INPUT_DIR/cow1_qual_all_unique.fastq \
+    --id-file $OUTPUT_DIR/cow1_rRNA_infernal_IDs.txt \
+    --included $OUTPUT_DIR/cow1_qual_unique_rRNA.fastq \
+    --excluded $OUTPUT_DIR/cow1_qual_unique_n_rRNA.fastq
 # cow2
-python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_fastq_by_id.py \
-    $INPUT_DIR/cow2_qual_all_unique.fastq \
-    $OUTPUT_DIR/cow2_rRNA_infernal_IDs.txt \
-    $OUTPUT_DIR/cow2_qual_unique_rRNA.fastq \
-    $OUTPUT_DIR/cow2_qual_unique_n_rRNA.fastq
+python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_reads_by_id.py \
+    --fastq $INPUT_DIR/cow2_qual_all_unique.fastq \
+    --id-file $OUTPUT_DIR/cow2_rRNA_infernal_IDs.txt \
+    --included $OUTPUT_DIR/cow2_qual_unique_rRNA.fastq \
+    --excluded $OUTPUT_DIR/cow2_qual_unique_n_rRNA.fastq
 #perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_select_reads_fromfile.pl
 #perl main_select_reads_fromfile.pl cow rRNA infernal pairs

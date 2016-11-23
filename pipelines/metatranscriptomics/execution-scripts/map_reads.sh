@@ -27,17 +27,17 @@ perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscr
 
 
 # cow1
-python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_fastq_by_id.py \
-    $mrna_dir/cow1_mRNA.fastq \
-    $output_dir/cow_trinity_bwa_IDs.txt \
-    $output_dir/cow1_mRNA_mappedreads.fastq \
-    $output_dir/cow1_singletons.fastq
+python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_reads_by_id.py \
+    --fastq $mrna_dir/cow1_mRNA.fastq \
+    --id-file $output_dir/cow_trinity_bwa_IDs.txt \
+    --included $output_dir/cow1_mRNA_mappedreads.fastq \
+    --excluded $output_dir/cow1_singletons.fastq
 # cow2
-python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_fastq_by_id.py \
-    $mrna_dir/cow2_mRNA.fastq \
-    $output_dir/cow_trinity_bwa_IDs.txt \
-    $output_dir/cow2_mRNA_mappedreads.fastq \
-    $output_dir/cow2_singletons.fastq
+python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_reads_by_id.py \
+    --fastq $mrna_dir/cow2_mRNA.fastq \
+    --id-file $output_dir/cow_trinity_bwa_IDs.txt \
+    --included $output_dir/cow2_mRNA_mappedreads.fastq \
+    --excluded $output_dir/cow2_singletons.fastq
 #perl main_select_reads_fromfile.pl cow assembly bwa pairs
 
 # cow1

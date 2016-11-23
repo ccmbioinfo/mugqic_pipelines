@@ -10,14 +10,14 @@ input_dir=map_reads
 contigs_dir=index_contigs
 singletons_dir=map_reads
 output_dir=bwa_search_with_singletons
-reference_dir=../reference-files
+blastdb=../reference-files
 
 mkdir $output_dir
 
 
-bwa aln -t 4 $reference_dir/microbial_all_cds.fasta $contigs_dir/cow1_singletons.fastq > $output_dir/cow1_singletons.sai
-bwa aln -t 4 $reference_dir/microbial_all_cds.fasta $contigs_dir/cow2_singletons.fastq > $output_dir/cow2_singletons.sai
-bwa sampe $reference_dir/microbial_all_cds.fasta $output_dir/cow1_singletons.sai  $output_dir/cow2_singletons.sai $output_dir/cow1_singletons.fastq $output_dir/cow2_singletons.fastq > $output_dir/cow_singletons.sam
+bwa aln -t 4 $blastdb/microbial_all_cds.fasta $contigs_dir/cow1_singletons.fastq > $output_dir/cow1_singletons.sai
+bwa aln -t 4 $blastdb/microbial_all_cds.fasta $contigs_dir/cow2_singletons.fastq > $output_dir/cow2_singletons.sai
+bwa sampe $blastdb/microbial_all_cds.fasta $output_dir/cow1_singletons.sai  $output_dir/cow2_singletons.sai $output_dir/cow1_singletons.fastq $output_dir/cow2_singletons.fastq > $output_dir/cow_singletons.sam
 samtools view -bS $output_dir/cow_singletons.sam | samtools sort -n -o $output_dir/cow_singletons.bam
 samtools view -F 4 $output_dir/cow_singletons.bam > $output_dir/cow_singletons_micro_cds.bwaout
 

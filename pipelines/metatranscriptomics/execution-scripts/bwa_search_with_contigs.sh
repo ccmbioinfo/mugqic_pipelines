@@ -9,14 +9,14 @@ module load blastp/2.2.27
 input_dir=map_reads
 contigs_dir=index_contigs
 output_dir=bwa_search_with_contigs
-reference_dir=../reference-files
+blastdb=../reference-files
 
 mkdir $output_dir
 
 
 # Contig searches
-bwa aln -t 4 $reference_dir/microbial_all_cds.fasta $contigs_dir/cow_contigs.fasta > $output_dir/cow_contigs.sai
-bwa samse $reference_dir/microbial_all_cds.fasta $output_dir/cow_contigs.sai $contigs_dir/cow_contigs.fasta > $output_dir/cow_contigs.sam
+bwa aln -t 4 $blastdb/microbial_all_cds.fasta $contigs_dir/cow_contigs.fasta > $output_dir/cow_contigs.sai
+bwa samse $blastdb/microbial_all_cds.fasta $output_dir/cow_contigs.sai $contigs_dir/cow_contigs.fasta > $output_dir/cow_contigs.sam
 samtools view -bS $output_dir/cow_contigs.sam | samtools sort -n -o $output_dir/cow_contigs.bam
 samtools view -F 4 $output_dir/cow_contigs.bam > $output_dir/cow_contigs_micro_cds.bwaout
 

@@ -1,18 +1,16 @@
-#!/usr/bin/env perl
+#!/usr/local/bin/perl -w
 use strict;
 use Bio::SeqIO;
 
-#my ($read_files, $db_type, $map_type, $read_type, $strain_type) = @ARGV;
-my $db_type = 'rRNA';
+my ($read_files, $db_type, $map_type, $read_type, $strain_type) = @ARGV;
 
 my $Datapath = "~/CourseData/metagenomics/metatranscriptomics/";
 my $Workpath = "";
 
-my $II = 2;
-#my $II = 1;
-#if (($read_type eq 'pairs') or ($read_type eq 'singletons')) {
-#    $II = 2;
-#}
+my $II = 1;
+if (($read_type eq 'pairs') or ($read_type eq 'singletons')) {
+    $II = 2;
+}
 
 for (my $i = 1; $i <= $II; $i++) {
     my $IDfile;
@@ -20,64 +18,65 @@ for (my $i = 1; $i <= $II; $i++) {
     my $outfile1;
     my $outfile2;
     if ($db_type eq 'rRNA') {
-        $IDfile = "remove_rrna/cow" . $i . "_rRNA_infernal_IDs.txt";
-        $infile = "remove_duplicates/cow" . $i . "_qual_all_unique.fastq";
+        $IDfile = $Workpath.$read_files."_rRNA_infernal_IDs.txt";
 
-        $outfile1 = "remove_rrna/cow" . $i . "_qual_unique_rRNA.fastq";
-        $outfile2 = "remove_rrna/cow" . $i . "_qual_unique_n_rRNA.fastq";
+        $infile = $Workpath.$read_files.$i."_qual_all_unique.fastq";
+
+        $outfile1 = $Workpath.$read_files.$i."_qual_unique_rRNA.fastq";
+        $outfile2 = $Workpath.$read_files.$i."_qual_unique_n_rRNA.fastq";
     }
-#    elsif ($db_type eq 'host') {
-#        $IDfile = $Workpath.$read_files."_host_bwa_IDs.txt";
-#        $infile = $Workpath.$read_files.$i."_qual_unique_n_rRNA.fastq";
-#
-#        $outfile1 = $Workpath.$read_files.$i."_qual_unique_n_rRNA_host.fastq";
-#        $outfile2 = $Workpath.$read_files.$i."_qual_unique_n_rRNA_n_host.fastq";
-#    }
-#    elsif ($db_type eq 'assembly') {
-#        $IDfile = $Workpath.$read_files."_trinity_bwa_IDs.txt";
-#        $infile = $Workpath.$read_files.$i."_mRNA.fastq";
-#
-#        $outfile1 = $Workpath.$read_files.$i."_mRNA_mappedreads.fastq";
-#        $outfile2 = $Workpath.$read_files.$i."_singletons.fastq";
-#    }
-#    elsif ($db_type eq 'microgenes') {
-#        $IDfile = $Workpath.$read_files."_".$read_type."_".$strain_type."_".$map_type."_IDs.txt";
-#        if ($read_type eq 'contigs') {
-#            $infile = $Workpath.$read_files."_".$read_type.".fasta";
-#            $outfile1 = $Workpath.$read_files."_".$read_type."_".$strain_type.".fasta";
-#            $outfile2 = $Workpath.$read_files."_".$read_type."_n_".$strain_type.".fasta";
-#        } else {
-#            $infile = $Workpath.$read_files.$i."_".$read_type.".fastq";
-#            $outfile1 = $Workpath.$read_files.$i."_".$read_type."_".$strain_type.".fasta";
-#            $outfile2 = $Workpath.$read_files.$i."_".$read_type."_n_".$strain_type.".fasta";
-#        }
-#    }
-#    elsif ($db_type eq 'microgenes_blat') {
-#        $IDfile = $Workpath.$read_files."_".$read_type."_n_".$strain_type."_".$map_type."_IDs.txt";
-#        if ($read_type eq 'contigs') {
-#            $infile = $Workpath.$read_files."_".$read_type."_n_".$strain_type.".fasta";
-#            $outfile1 = $Workpath.$read_files."_".$read_type."_n_".$strain_type."_blat.fasta";
-#            $outfile2 = $Workpath.$read_files."_".$read_type."_n_".$strain_type."_rest.fasta";
-#        } else {
-#            my $tmp = $Workpath.$read_files.$i."_singletons";
-#            $infile = $tmp."_n_".$strain_type.".fasta";
-#            $outfile1 = $tmp."_n_".$strain_type."_blat.fasta";
-#            $outfile2 = $tmp."_n_".$strain_type."_rest.fasta";
-#        }
-#    }
-#    elsif ($db_type eq 'nr') {
-#        $IDfile = $Workpath.$read_files."_nr_IDs.txt";
-#        if ($read_type eq 'contigs') {
-#            $infile = $Workpath.$read_files."_".$read_type."_n_".$strain_type."_rest.fasta";
-#            $outfile1 = $Workpath.$read_files."_".$read_type."_nr.fasta";
-#            $outfile2 = $Workpath.$read_files."_".$read_type."_n_nr.fasta";
-#        } else {
-#            my $tmp = $Workpath.$read_files.$i."_singletons";
-#            $infile = $tmp."_n_".$strain_type."_rest.fasta";
-#            $outfile1 = $tmp."_nr.fasta";
-#            $outfile2 = $tmp."_n_nr.fasta";
-#        }
-#    }
+    elsif ($db_type eq 'host') {
+        $IDfile = $Workpath.$read_files."_host_bwa_IDs.txt";
+        $infile = $Workpath.$read_files.$i."_qual_unique_n_rRNA.fastq";
+
+        $outfile1 = $Workpath.$read_files.$i."_qual_unique_n_rRNA_host.fastq";
+        $outfile2 = $Workpath.$read_files.$i."_qual_unique_n_rRNA_n_host.fastq";
+    }
+    elsif ($db_type eq 'assembly') {
+        $IDfile = $Workpath.$read_files."_trinity_bwa_IDs.txt";
+        $infile = $Workpath.$read_files.$i."_mRNA.fastq";
+
+        $outfile1 = $Workpath.$read_files.$i."_mRNA_mappedreads.fastq";
+        $outfile2 = $Workpath.$read_files.$i."_singletons.fastq";
+    }
+    elsif ($db_type eq 'microgenes') {
+        $IDfile = $Workpath.$read_files."_".$read_type."_".$strain_type."_".$map_type."_IDs.txt";
+        if ($read_type eq 'contigs') {
+            $infile = $Workpath.$read_files."_".$read_type.".fasta";
+            $outfile1 = $Workpath.$read_files."_".$read_type."_".$strain_type.".fasta";
+            $outfile2 = $Workpath.$read_files."_".$read_type."_n_".$strain_type.".fasta";
+        } else {
+            $infile = $Workpath.$read_files.$i."_".$read_type.".fastq";
+            $outfile1 = $Workpath.$read_files.$i."_".$read_type."_".$strain_type.".fasta";
+            $outfile2 = $Workpath.$read_files.$i."_".$read_type."_n_".$strain_type.".fasta";
+        }
+    }
+    elsif ($db_type eq 'microgenes_blat') {
+        $IDfile = $Workpath.$read_files."_".$read_type."_n_".$strain_type."_".$map_type."_IDs.txt";
+        if ($read_type eq 'contigs') {
+            $infile = $Workpath.$read_files."_".$read_type."_n_".$strain_type.".fasta";
+            $outfile1 = $Workpath.$read_files."_".$read_type."_n_".$strain_type."_blat.fasta";
+            $outfile2 = $Workpath.$read_files."_".$read_type."_n_".$strain_type."_rest.fasta";
+        } else {
+            my $tmp = $Workpath.$read_files.$i."_singletons";
+            $infile = $tmp."_n_".$strain_type.".fasta";
+            $outfile1 = $tmp."_n_".$strain_type."_blat.fasta";
+            $outfile2 = $tmp."_n_".$strain_type."_rest.fasta";
+        }
+    }
+    elsif ($db_type eq 'nr') {
+        $IDfile = $Workpath.$read_files."_nr_IDs.txt";
+        if ($read_type eq 'contigs') {
+            $infile = $Workpath.$read_files."_".$read_type."_n_".$strain_type."_rest.fasta";
+            $outfile1 = $Workpath.$read_files."_".$read_type."_nr.fasta";
+            $outfile2 = $Workpath.$read_files."_".$read_type."_n_nr.fasta";
+        } else {
+            my $tmp = $Workpath.$read_files.$i."_singletons";
+            $infile = $tmp."_n_".$strain_type."_rest.fasta";
+            $outfile1 = $tmp."_nr.fasta";
+            $outfile2 = $tmp."_n_nr.fasta";
+        }
+    }
     print "Outputfiles: $outfile1\n$outfile2\n\n";
 
     my %IDs;

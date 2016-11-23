@@ -1,20 +1,36 @@
 #!/usr/bin/env python
+"""
+Take only those reads from cow1 and cow2 with matching ids
+
+Input:
+remove_rrna/cow{1,2}_qual_unique_n_rRNA.fastq
+
+Output:
+remove_host_reads/cow{1,2}_matching_ids.fastq
+"""
 
 from Bio import SeqIO
 
 
 def pre_slash(id):
+    """
+    Eg. @SRR594215.10015644/1 ->
+        @SRR594215.10015644
+    """
     return id.split('/')[0]
 
 
+# Get the reads for cow1 and cow2
 cow = dict()
 for i in (1, 2):
     original_fastq = 'remove_rrna/cow{}_qual_unique_n_rRNA.fastq'.format(i)
     print('Getting reads from ' + original_fastq)
     cow[i] = set(SeqIO.parse(original_fastq, 'fastq'))
 
+
 print('Taking intersection of ids')
 ids_in_both = {pre_slash(e.id) for e in cow[1]} & {pre_slash(e.id) for e in cow[2]}
+
 
 cow_intersection = dict()
 for i in (1, 2):

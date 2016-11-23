@@ -1,4 +1,17 @@
 #!/usr/bin/env python
+"""
+Remove the duplicates from cow{1,2}_qual_all.fastq and note them in cow{1,2}_qual_all_unique_IDs.txt
+
+Input:
+Original fastq      - flash/cow{1,2}_qual_all.fastq
+Only unique reads   - cluster_duplicates/cow{1,2}_qual_all_unique.fasta
+IDs of unique reads - cluster_duplicates/cow{1,2}_qual_all_unique.uc
+
+Output:
+ID to # of duplicates - remove_duplicates/cow{1,2}_qual_all_unique_IDs.txt
+De-duplicated fastq - remove_duplicates/cow{1,2}_qual_all_unique.fastq
+De-duplicated fasta (with proper IDs) - remove_duplicates/cow{1,2}_qual_all_unique.fasta
+"""
 import re
 import os
 from Bio import SeqIO

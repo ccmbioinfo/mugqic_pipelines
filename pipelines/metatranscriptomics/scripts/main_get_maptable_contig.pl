@@ -8,7 +8,7 @@ my ($read_files, $data_type) = @ARGV;
 
 
 my $Datapath = "~/CourseData/metagenomics/metatranscriptomics/";
-my $Workpath = "";
+my $workpath = "";
 
 my $IDfile;
 my $IDfile2;
@@ -17,24 +17,27 @@ my $infile;
 my $outfile;
 my $outfile1;
 if ($data_type eq 'assembly') {
-    $IDfile = $Workpath.$read_files."_trinity_bwa_pairs.txt";
-    $infile = $Workpath.$read_files."_contigs.fasta";
+    my $contig_dir = "index_contigs";
+    my $output_dir = "map_reads";
 
-    $outfile = $Workpath.$read_files."_contigs_IDs.txt";
-    $outfile1 = $Workpath.$read_files."_contigs_IDs_length.txt";
+    $IDfile = $output_dir."/".$read_files."_trinity_bwa_pairs.txt";
+    $infile = $contig_dir."/".$read_files."_contigs.fasta";
+
+    $outfile = $output_dir."/".$read_files."_contigs_IDs.txt";
+    $outfile1 = $output_dir."/".$read_files."_contigs_IDs_length.txt";
     print "Outputfile: $outfile1\n\n";
 } elsif ($data_type eq 'bwa') {
-    $IDfile = $Workpath.$read_files."_contigs_IDs.txt";
-    $IDfile2 = $Workpath.$read_files."_contigs_micro_cds_bwa_IDs.txt";
-    $IDfile21 = $Workpath.$read_files."_singletons_micro_cds_bwa_IDs.txt";
+    $IDfile = $workpath.$read_files."_contigs_IDs.txt";
+    $IDfile2 = $workpath.$read_files."_contigs_micro_cds_bwa_IDs.txt";
+    $IDfile21 = $workpath.$read_files."_singletons_micro_cds_bwa_IDs.txt";
 } elsif ($data_type eq 'blat') {
-    $IDfile = $Workpath.$read_files."_contigs_IDs.txt";
-    $IDfile2 = $Workpath.$read_files."_contigs_n_micro_cds_blat_IDs.txt";
-    $IDfile21 = $Workpath.$read_files."_singletons_n_micro_cds_blat_IDs.txt";
+    $IDfile = $workpath.$read_files."_contigs_IDs.txt";
+    $IDfile2 = $workpath.$read_files."_contigs_n_micro_cds_blat_IDs.txt";
+    $IDfile21 = $workpath.$read_files."_singletons_n_micro_cds_blat_IDs.txt";
 } elsif ($data_type eq 'diamond') {
-    $IDfile = $Workpath.$read_files."_contigs_IDs.txt";
-    $IDfile2 = $Workpath.$read_files."_contigs_nr_diamond_IDs.txt";
-    $IDfile21 = $Workpath.$read_files."_singletons_nr_diamond_IDs.txt";
+    $IDfile = $workpath.$read_files."_contigs_IDs.txt";
+    $IDfile2 = $workpath.$read_files."_contigs_nr_diamond_IDs.txt";
+    $IDfile21 = $workpath.$read_files."_singletons_nr_diamond_IDs.txt";
 }
 
 if ($data_type eq 'assembly') {

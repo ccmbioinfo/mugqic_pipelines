@@ -3,11 +3,12 @@
 Pipeline Performance
 """
 from __future__ import division
+
 import argparse
-from datetime import timedelta
-import sys
 import re
+import sys
 from collections import OrderedDict
+from datetime import timedelta
 
 
 class Step(object):
@@ -19,6 +20,7 @@ class Step(object):
     """
 
     def __init__(self, name=''):
+        # type: (str) -> None
         # Variable Members
         self.tasks = []  # type: [Task]
         self.success = 0  # type: int
@@ -42,14 +44,17 @@ class Step(object):
         return val
 
     def get_stat(self, func, attr):
+        # type: (builtin_function_or_method, str) -> any
         """
+        Given a function and an attribute, generates a list with the corresponding attribute and
+        returns the result from the function against the list.
 
-        :param func:
-        :type func:
-        :param attr:
-        :type attr:
-        :return:
-        :rtype:
+        :param func: A function to call on a list of values.
+        :type func: (list) -> any
+        :param attr: The attribute to obtain from all member tasks.
+        :type attr: str
+        :return: The result of the function on the created list.
+        :rtype: any
         """
         attr_vals = filter(None, [val.get(attr) for val in self.tasks])
         if re.search('^\d\d:\d\d:\d\d$', attr_vals[0]):
@@ -59,29 +64,31 @@ class Step(object):
         return func(attr_vals)
 
     def row_print(self):
+        # type: () -> str
         """
 
-        :return:
-        :rtype:
+        :return: A row of values containing resource data for the given Step object.
+        :rtype: str
         """
         row = "{:<35}" + "{:>25}" * 15
         stat_general = [self.name, len(self.tasks), self.success, self.failure]
         stat_time = [str(self.max_time),
                      str(timedelta(seconds=self.get_stat(max, 'Wallclock Duration'))),
-                     str(timedelta(seconds=self.get_stat(sum, 'Wallclock Duration')/stat_general[1])),
+                     str(timedelta(seconds=self.get_stat(sum, 'Wallclock Duration') / stat_general[2])),
                      str(timedelta(seconds=self.get_stat(min, 'Wallclock Duration')))]
         stat_vmem = [humansize(self.max_vmem),
                      humansize(self.get_stat(max, 'vmem Used')),
-                     humansize(self.get_stat(sum, 'vmem Used')/stat_general[1]),
+                     humansize(self.get_stat(sum, 'vmem Used') / stat_general[2]),
                      humansize(self.get_stat(min, 'vmem Used'))]
         stat_pmem = [humansize(self.max_mem),
                      humansize(self.get_stat(max, 'Memory Used')),
-                     humansize(self.get_stat(sum, 'Memory Used')/stat_general[1]),
+                     humansize(self.get_stat(sum, 'Memory Used') / stat_general[2]),
                      humansize(self.get_stat(min, 'Memory Used'))]
         stat_all = stat_general + stat_time + stat_vmem + stat_pmem
         return row.format(*stat_all)
 
     def add_task(self, task):
+        # type: (Union[List[Task], Task]) -> None
         """
         Add a new task instance or instances to the step object.
 
@@ -106,6 +113,7 @@ class Step(object):
         self.set_limits()
 
     def remove_task(self, task_name=None, task_id=None):
+        # type: (str, int) -> None
         """
         Deletes any tasks with the given name and/or id. If only one is given, then only that attribute is used to
         check.
@@ -133,8 +141,9 @@ class Step(object):
                         self.set_limits()
 
     def set_limits(self):
+        # type: () -> None
         """
-        Determines the highest PBS resource limit requested from the list of tasks.
+        Determines the highest PBS resource limit requested from the list of tasks. Mutates the object.
 
         :rtype: None
         """
@@ -170,6 +179,7 @@ class Task(object):
         return val
 
     def get(self, attr):
+        # type: (str) -> any
         """
         A getter function for Task objects. In theory, task.data[key] is also sufficient.
 
@@ -198,9 +208,9 @@ class StatsManager(object):
     v
     """
     template = """
-    Performance and Resource Statistics for Pipeline {pipeline_name}
+Performance and Resource Statistics for Pipeline {pipeline_name}
 
-    {table}
+{table}
 
 
     """
@@ -208,9 +218,10 @@ class StatsManager(object):
                "Walltime Limit", "Max Walltime", "Average Walltime", "Min Walltime",
                "V. Mem Limit", "Max V. Mem", "Average V. Mem", "Min V. Mem",
                "Memory Limit", "Max Memory", "Average Memory", "Min Memory"]
-    header = ("{:^30}" + "{:^25}" * 15).format(*metrics)
+    header = ("{:^<0}" + "{:>25}" * 15).format(*metrics)
 
     def __init__(self, step_list, name=None, pipeline=None):
+        # type: (Dict[str, Step], str, Union[List[str], str]) -> None
         self.name = name
         self.steps = step_list
         if pipeline:
@@ -222,6 +233,7 @@ class StatsManager(object):
             self.filter_steps()
 
     def filter_steps(self):
+        # type: () -> None
         """
         Helps discard all irrelevant jobs that is not listed in self.pipeline.
 
@@ -239,10 +251,11 @@ class StatsManager(object):
             raise ValueError('No steps found that matches the steps in your pipeline')
 
     def print_table(self):
+        # type: () -> None
         """
+        Prints aggregate data into a table for easy reading.
 
-        :return:
-        :rtype:
+        :rtype: None
         """
         out_str = self.header  # type: str
         for step in self.steps:
@@ -251,12 +264,14 @@ class StatsManager(object):
 
 
 def parse_pbs_job_data(in_file):
+    # type: (str) -> Union[None, Dict[str, Step]]
     """
+    Either from stdin or a file, parse data from showjobs and produce a set of Step objects or analysis.
 
-    :param in_file:
+    :param in_file: A log file containing the data from showjobs on the PBS system.
     :type in_file: str
-    :return:
-    :rtype:
+    :return: The dictionary object containing the list of steps that are identified from the input log.
+    :rtype: Union[None, Dict[str, Step]
     """
     delim = '--------------------------------------------------------------------------------'
     entries = []  # type: [Task]
@@ -293,12 +308,14 @@ def parse_pbs_job_data(in_file):
 
 
 def generate_steps(jobs):
+    # type: (List[Task]) -> Union[None, Dict[str, Step]]
     """
+    Given a list of jobs, creates several steps by grouping jobs by name. The steps are stored as a dictionary.
 
-    :param jobs:
-    :type jobs: [Task]
-    :return:
-    :rtype: dict
+    :param jobs: A list of jobs parsed from the input log data.
+    :type jobs: List[Task]
+    :return: A mapping from a step name to the associated Step object.
+    :rtype: Dict[str, Step]
     """
     step_map = dict()
 
@@ -314,12 +331,14 @@ def generate_steps(jobs):
 
 
 def get_bytes(size_string):
+    # type: (str) -> Union[int, None]
     """
+    Converts any data size from string to integer as bytes.
 
-    :param size_string:
-    :type size_string:
-    :return:
-    :rtype:
+    :param size_string: The input string containing the data size.
+    :type size_string: str
+    :return: The number of bytes equivalent to size_string
+    :rtype: int
     """
     try:
         size_string = size_string.lower().replace(',', '')
@@ -339,10 +358,11 @@ def get_bytes(size_string):
 def humansize(nbytes):
     # type: (int) -> str
     """
+    Converts a number of bytes from an integer to a human readable value.
 
-    :param nbytes:
+    :param nbytes: The input string containing the data size.
     :type nbytes: int
-    :return:
+    :return: The number of bytes equivalent to nbytes
     :rtype: str
     """
     if nbytes == 0:
@@ -357,11 +377,13 @@ def humansize(nbytes):
 
 
 def get_delta(time_str):
+    # type: (str) -> datetime.timedelta
     """
+    Converts a given amount of time as a string and produces the equivalent datetime.timedelta object.
 
-    :param time_str:
+    :param time_str: The amount of time in the format dd:hh:mm:ss
     :type time_str: str
-    :return:
+    :return: A datetime.timedelta object
     :rtype: datetime.timedelta
     """
     delta_obj = timedelta()

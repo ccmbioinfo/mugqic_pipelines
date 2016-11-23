@@ -257,7 +257,7 @@ Performance and Resource Statistics for Pipeline {pipeline_name}
 
         :rtype: None
         """
-        out_str = self.header  # type: str
+        out_str = self.header + '\n'  # type: str
         for step in self.steps:
             out_str += self.steps[step].row_print() + '\n'
         print (self.template.format(pipeline_name=self.name, table=out_str))

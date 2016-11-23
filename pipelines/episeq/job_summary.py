@@ -70,7 +70,7 @@ class Step(object):
         :return: A row of values containing resource data for the given Step object.
         :rtype: str
         """
-        row = "{:<35}" + "{:>25}" * 15
+        row = "{:<35}" + "{:>20}" * 15
         stat_general = [self.name, len(self.tasks), self.success, self.failure]
         stat_time = [str(self.max_time),
                      str(timedelta(seconds=self.get_stat(max, 'Wallclock Duration'))),
@@ -218,7 +218,7 @@ Performance and Resource Statistics for Pipeline {pipeline_name}
                "Walltime Limit", "Max Walltime", "Average Walltime", "Min Walltime",
                "V. Mem Limit", "Max V. Mem", "Average V. Mem", "Min V. Mem",
                "Memory Limit", "Max Memory", "Average Memory", "Min Memory"]
-    header = ("{:^<0}" + "{:>25}" * 15).format(*metrics)
+    header = ("{:^<35}" + "{:>20}" * 15).format(*metrics)
 
     def __init__(self, step_list, name=None, pipeline=None):
         # type: (Dict[str, Step], str, Union[List[str], str]) -> None

@@ -20,4 +20,4 @@ cd $PBS_O_WORKDIR
 ./add_duplicates.sh
 ./trinity_assembly.sh
 ./index_contigs.sh
-#./map_reads.sh
+./map_reads.sh

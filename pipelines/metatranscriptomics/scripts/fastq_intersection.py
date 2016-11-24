@@ -9,8 +9,10 @@ Output:
 remove_host_reads/cow{1,2}_matching_ids.fastq
 """
 
-from Bio import SeqIO
 import argparse
+import operator
+
+from Bio import SeqIO
 
 
 def normalize(id):
@@ -32,13 +34,13 @@ arg_parser.add_argument('--output2')
 args = arg_parser.parse_args()
 
 
-reads1 = set(SeqIO.parse(args.fastq1, 'fastq'))
-reads2 = set(SeqIO.parse(args.fastq2, 'fastq'))
+reads1 = sorted(list(SeqIO.parse(args.fastq1, 'fastq')), key=operator.attrgetter('id'))
+reads2 = sorted(list(SeqIO.parse(args.fastq2, 'fastq')), key=operator.attrgetter('id'))
 
 ids_in_both = {normalize(read.id) for read in reads1} & {normalize(read.id) for read in reads2}
 
-reads1 = {read for read in reads1 if normalize(read.id) in ids_in_both}
-reads2 = {read for read in reads2 if normalize(read.id) in ids_in_both}
+reads1 = [read for read in reads1 if normalize(read.id) in ids_in_both]
+reads2 = [read for read in reads2 if normalize(read.id) in ids_in_both]
 
 SeqIO.write(reads1, args.output1, 'fastq')
 SeqIO.write(reads2, args.output2, 'fastq')

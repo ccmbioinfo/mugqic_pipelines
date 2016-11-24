@@ -1,19 +1,23 @@
 #!/usr/local/bin/perl -w
 use List::Util qw[min max];
 
-my ($read_files, $db_type, $map_type, $read_type, $cutoff_num) = @ARGV;
+#my ($read_files, $db_type, $map_type, $read_type, $cutoff_num) = @ARGV;
+my ($infile, $outfile, $cutoff_num) = @ARGV;
 
 my $Datapath = "~/CourseData/metagenomics/metatranscriptomics/";
 my $Workpath = "";
 
-my $infile = $Workpath.$read_files."_".$read_type."_".$db_type.".".$map_type."out";
-if ($read_type eq 'singletons') {
-    my $read1 = $Workpath.$read_files."1_singletons_".$db_type.".".$map_type."out";
-    my $read2 = $Workpath.$read_files."2_singletons_".$db_type.".".$map_type."out";
-    system("cat $read1 $read2 > $infile");
-}
-my $outfile = $Workpath.$read_files."_".$read_type."_".$db_type."_sorted.".$map_type."out";
-print "Outputfile: $outfile\n\n";
+#my $infile = $Workpath.$read_files."_".$read_type."_".$db_type.".".$map_type."out";
+#if ($read_type eq 'singletons') {
+#    my $read1 = $Workpath.$read_files."1_singletons_".$db_type.".".$map_type."out";
+#    my $read2 = $Workpath.$read_files."2_singletons_".$db_type.".".$map_type."out";
+#    system("cat $read1 $read2 > $infile");
+#}
+#my $outfile = $Workpath.$read_files."_".$read_type."_".$db_type."_sorted.".$map_type."out";
+#print "Outputfile: $outfile\n\n";
+#print "Infile: $infile\n";
+#print "Outfile: $outfile\n";
+#die;
 
 my %IDs;
 unlink($outfile);

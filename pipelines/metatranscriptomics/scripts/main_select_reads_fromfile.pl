@@ -77,7 +77,12 @@ for (my $i = 1; $i <= $II; $i++) {
             $outfile2 = $tmp."_n_nr.fasta";
         }
     }
-    print "Outputfiles: $outfile1\n$outfile2\n\n";
+#    print "Outputfiles: $outfile1\n$outfile2\n\n";
+#    print "infile: $infile\n";
+#    print "idfile: $IDfile\n";
+#    print "outfile1: $outfile1\n";
+#    print "outfile2: $outfile2\n";
+#    die;
 
     my %IDs;
     open(INPUT0, $IDfile) or die "Error opening $IDfile : $!\n";

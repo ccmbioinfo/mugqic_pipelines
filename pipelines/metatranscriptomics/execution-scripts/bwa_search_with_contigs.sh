@@ -6,7 +6,6 @@ module load mugqic/bwa/0.7.12
 module load mugqic/samtools/1.3
 module load blastp/2.2.27
 
-input_dir=map_reads
 contigs_dir=index_contigs
 output_dir=bwa_search_with_contigs
 blastdb=../reference-files

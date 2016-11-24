@@ -17,7 +17,8 @@ perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscr
     $map_reads/cow_contigs_IDs_length.txt \
     $output_dir/cow_contigs_nr_diamond_IDs.txt \
     $output_dir/cow_contigs_nr_diamond_pairs.txt \
-    $output_dir/cow_contigs_nr_diamond_hitsID.txt
+    $output_dir/cow_contigs_nr_diamond_hitsID.txt \
+    1 100 85 65 60
 #perl main_get_blast_fromfile_tophits.pl cow nr diamond contigs 1 100 85 65 60
 
 # main_get_blast_fromfile_1topbachit.pl

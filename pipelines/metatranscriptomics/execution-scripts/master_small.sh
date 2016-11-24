@@ -27,3 +27,6 @@ cd $PBS_O_WORKDIR
 
 #./blat_search_with_contigs.sh
 #./blat_search_with_singletons.sh
+
+#./diamond_search_with_contigs.sh
+#./diamond_search_with_singletons.sh

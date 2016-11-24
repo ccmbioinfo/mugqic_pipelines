@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-#PBS -l nodes=1:ppn=1
-#PBS -l vmem=120g
+#PBS -l nodes=1:ppn=8
+#PBS -l vmem=60g
 #PBS -l walltime=23:00:00
 #PBS -d /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/execution-scripts
 #PBS -joe /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/execution-scripts

@@ -9,6 +9,7 @@ import re
 import sys
 from collections import OrderedDict
 from datetime import timedelta
+from numpy import percentile
 
 
 class Step(object):
@@ -20,11 +21,15 @@ class Step(object):
     """
 
     def __init__(self, name=''):
-        # type: (str) -> None
+        """
+
+        :param name: Assigns a name to a new Step object. Empty string otherwise.
+        :type name: str
+        """
         # Variable Members
-        self.tasks = []  # type: [Task]
-        self.success = 0  # type: int
-        self.failure = 0  # type: int
+        self.tasks = 0  # type: int
+        self.success = []  # type: [Task]
+        self.failure = []  # type: [Task]
 
         # Quasi-Constant Members
         self.max_time = None  # type: timedelta
@@ -35,60 +40,55 @@ class Step(object):
     def __str__(self):
         val = '*' * 100 + '\n'
         val += "Step Name: " + self.name + '\n'
-        val += "Total jobs found: " + str(len(self.tasks)) + "\n"
-        val += "Success: " + str(self.success) + "\tFailure: " + str(self.failure)
+        val += "Total jobs found: " + str(len(self.success) + len(self.failure)) + "\n"
+        val += "Success: " + str(len(self.success)) + "\tFailure: " + str(len(self.failure))
         val += "Mem Limit: " + str(self.max_mem) + "\tVmem Limit: " + str(self.max_vmem) + "\n"
         val += "Walltime Limit: " + str(self.max_time) + '\n'
-        for task in self.tasks:
+        for task in (self.success + self.failure):
             val += str(task)
         return val
 
-    def get_stat(self, func, attr):
-        # type: (builtin_function_or_method, str) -> any
+    def get_stat(self, attr):
         """
         Given a function and an attribute, generates a list with the corresponding attribute and
         returns the result from the function against the list.
 
-        :param func: A function to call on a list of values.
-        :type func: (list) -> any
         :param attr: The attribute to obtain from all member tasks.
         :type attr: str
         :return: The result of the function on the created list.
-        :rtype: any
+        :rtype: [any]
         """
-        attr_vals = filter(None, [val.get(attr) for val in self.tasks])
+        attr_vals = filter(None, [val.get(attr) for val in self.success + self.failure])
         if re.search('^\d\d:\d\d:\d\d$', attr_vals[0]):
             attr_vals = [get_delta(val).total_seconds() for val in attr_vals]
         elif re.search('^\d+\.\d+\s?[A-Z]|[a-z]i?b$', attr_vals[0]):
             attr_vals = [get_bytes(val) for val in attr_vals]
-        return func(attr_vals)
+        return attr_vals
 
     def row_print(self):
-        # type: () -> str
         """
 
         :return: A row of values containing resource data for the given Step object.
         :rtype: str
         """
-        row = "{:<35}" + "{:>20}" * 15
-        stat_general = [self.name, len(self.tasks), self.success, self.failure]
+        row = "{:<35}" + "{:>10}" * 3 + "{:>17}" * 3 + "{:>15}" * 6
+        time_list = self.get_stat('Wallclock Duration')
+        vmem_list = self.get_stat('vmem Used')
+        pmem_list = self.get_stat('Memory Used')
+        stat_general = [self.name, self.tasks, len(self.success), len(self.failure)]
         stat_time = [str(self.max_time),
-                     str(timedelta(seconds=self.get_stat(max, 'Wallclock Duration'))),
-                     str(timedelta(seconds=self.get_stat(sum, 'Wallclock Duration') / stat_general[2])),
-                     str(timedelta(seconds=self.get_stat(min, 'Wallclock Duration')))]
+                     str(timedelta(seconds=max(time_list))),
+                     str(timedelta(seconds=int(percentile(time_list, 60))) // 1)]
         stat_vmem = [humansize(self.max_vmem),
-                     humansize(self.get_stat(max, 'vmem Used')),
-                     humansize(self.get_stat(sum, 'vmem Used') / stat_general[2]),
-                     humansize(self.get_stat(min, 'vmem Used'))]
+                     humansize(max(vmem_list)),
+                     humansize(int(percentile(vmem_list, 60)))]
         stat_pmem = [humansize(self.max_mem),
-                     humansize(self.get_stat(max, 'Memory Used')),
-                     humansize(self.get_stat(sum, 'Memory Used') / stat_general[2]),
-                     humansize(self.get_stat(min, 'Memory Used'))]
+                     humansize(max(pmem_list)),
+                     humansize(int(percentile(pmem_list, 60)))]
         stat_all = stat_general + stat_time + stat_vmem + stat_pmem
         return row.format(*stat_all)
 
     def add_task(self, task):
-        # type: (Union[List[Task], Task]) -> None
         """
         Add a new task instance or instances to the step object.
 
@@ -104,16 +104,15 @@ class Step(object):
 
         # Add metrics if it is a successful run, converting strings to objects as needed.
         if inst.get('Exit Code') == '0':
-            self.success += 1
+            self.success.append(inst)
         else:
-            self.failure += 1
+            self.failure.append(inst)
 
-        # Add task to list and generate new limit information
-        self.tasks.append(inst)
+        # Generate new limit information
         self.set_limits()
+        self.tasks += 1
 
     def remove_task(self, task_name=None, task_id=None):
-        # type: (str, int) -> None
         """
         Deletes any tasks with the given name and/or id. If only one is given, then only that attribute is used to
         check.
@@ -125,7 +124,7 @@ class Step(object):
         :rtype: None
         """
         if task_name or task_id:
-            for i, task in enumerate(self.tasks):
+            for i, task in enumerate(self.success + self.failure):
                 check_name = task_name == task.get('Job Name')
                 check_id = str(task_id) == task.get('Job Id')
 
@@ -134,22 +133,23 @@ class Step(object):
                         (not task_name and task_id and check_id):
                     if check_name and check_id:
                         if task.get('Exit Code') == 0:
-                            self.success -= 1
+                            del self.success[i]
                         else:
-                            self.failure -= 1
-                        del self.tasks[i]
+                            del self.failure[i-len(self.success)]
                         self.set_limits()
+                        self.tasks -= 1
 
     def set_limits(self):
-        # type: () -> None
         """
         Determines the highest PBS resource limit requested from the list of tasks. Mutates the object.
 
         :rtype: None
         """
-        self.max_time = max([get_delta(task.get('Wallclock Limit')) for task in self.tasks])
-        self.max_mem = max([get_bytes(task.get('Memory Limit')) for task in self.tasks])
-        self.max_vmem = max([get_bytes(task.get('vmem Limit')) for task in self.tasks])
+        if not self.success:
+            return
+        self.max_time = max([get_delta(task.get('Wallclock Limit')) for task in self.success])
+        self.max_mem = max([get_bytes(task.get('Memory Limit')) for task in self.success])
+        self.max_vmem = max([get_bytes(task.get('vmem Limit')) for task in self.success])
 
 
 class Task(object):
@@ -159,7 +159,11 @@ class Task(object):
     """
 
     def __init__(self, section=None):
-        # type: (List[str]) -> None
+        """
+
+        :param section: A list of strings containing one job entry from showjobs.
+        :type section: List[str]
+        """
         self.data = OrderedDict()
         for line in section:
             trim = line.strip()
@@ -179,7 +183,6 @@ class Task(object):
         return val
 
     def get(self, attr):
-        # type: (str) -> any
         """
         A getter function for Task objects. In theory, task.data[key] is also sufficient.
 
@@ -214,14 +217,22 @@ Performance and Resource Statistics for Pipeline {pipeline_name}
 
 
     """
-    metrics = ["Step Name", "Total Runs", "Successful Runs", "Failed Runs",
-               "Walltime Limit", "Max Walltime", "Average Walltime", "Min Walltime",
-               "V. Mem Limit", "Max V. Mem", "Average V. Mem", "Min V. Mem",
-               "Memory Limit", "Max Memory", "Average Memory", "Min Memory"]
-    header = ("{:^<35}" + "{:>20}" * 15).format(*metrics)
+    metrics = ["Step Name", "Total Runs", "Success", "Failed",
+               "Walltime Limit", "Max Walltime", "Avg Walltime",
+               "V. Mem Limit", "Max V. Mem", "Avg V. Mem",
+               "Memory Limit", "Max Memory", "Avg Memory"]
+    header = ("{:<35}" + "{:>10}" * 3 + "{:>17}" * 3 + "{:>15}" * 6).format(*metrics)
 
     def __init__(self, step_list, name=None, pipeline=None):
-        # type: (Dict[str, Step], str, Union[List[str], str]) -> None
+        """
+
+        :param step_list: A mapping between the step name and the step objects.
+        :type step_list: Dict[str, Step]
+        :param name: A string that will be used to name the StatsManager object.
+        :type name: str
+        :param pipeline: A list of strings containing the proper name of each step in a pipeline.
+        :type pipeline: List[str]
+        """
         self.name = name
         self.steps = step_list
         if pipeline:
@@ -233,7 +244,6 @@ Performance and Resource Statistics for Pipeline {pipeline_name}
             self.filter_steps()
 
     def filter_steps(self):
-        # type: () -> None
         """
         Helps discard all irrelevant jobs that is not listed in self.pipeline.
 
@@ -251,7 +261,6 @@ Performance and Resource Statistics for Pipeline {pipeline_name}
             raise ValueError('No steps found that matches the steps in your pipeline')
 
     def print_table(self):
-        # type: () -> None
         """
         Prints aggregate data into a table for easy reading.
 
@@ -264,7 +273,6 @@ Performance and Resource Statistics for Pipeline {pipeline_name}
 
 
 def parse_pbs_job_data(in_file):
-    # type: (str) -> Union[None, Dict[str, Step]]
     """
     Either from stdin or a file, parse data from showjobs and produce a set of Step objects or analysis.
 
@@ -308,7 +316,6 @@ def parse_pbs_job_data(in_file):
 
 
 def generate_steps(jobs):
-    # type: (List[Task]) -> Union[None, Dict[str, Step]]
     """
     Given a list of jobs, creates several steps by grouping jobs by name. The steps are stored as a dictionary.
 
@@ -331,7 +338,6 @@ def generate_steps(jobs):
 
 
 def get_bytes(size_string):
-    # type: (str) -> Union[int, None]
     """
     Converts any data size from string to integer as bytes.
 
@@ -356,7 +362,6 @@ def get_bytes(size_string):
 # Attributed to: nneonneo @ StackOverflow
 # (http://stackoverflow.com/questions/14996453/python-libraries-to-calculate-human-readable-filesize-from-bytes)
 def humansize(nbytes):
-    # type: (int) -> str
     """
     Converts a number of bytes from an integer to a human readable value.
 
@@ -372,12 +377,11 @@ def humansize(nbytes):
     while nbytes >= 1024 and i < len(suffixes) - 1:
         nbytes /= 1024.
         i += 1
-    f = ('%.2f' % nbytes).rstrip('0').rstrip('.')
+    f = ('%.2f' % nbytes).rstrip('.')
     return '%s %s' % (f, suffixes[i])
 
 
 def get_delta(time_str):
-    # type: (str) -> datetime.timedelta
     """
     Converts a given amount of time as a string and produces the equivalent datetime.timedelta object.
 
@@ -418,6 +422,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     steps = parse_pbs_job_data(args.in_file)
-
     StatsManager(steps, '', args.pipe_steps).print_table()
     exit(0)

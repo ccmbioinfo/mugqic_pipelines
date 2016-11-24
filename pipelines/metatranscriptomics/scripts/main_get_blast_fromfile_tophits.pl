@@ -1,6 +1,7 @@
 #!/usr/local/bin/perl -w
 
-my ($read_files, $db_type, $map_type, $read_type, $cutoff_type, $cutoff0, $cutoff1, $cutoff2, $cutoff3) = @ARGV;
+#my ($read_files, $db_type, $map_type, $read_type, $cutoff_type, $cutoff0, $cutoff1, $cutoff2, $cutoff3) = @ARGV;
+my ($infile, $lengthfile, $outfile1, $outfile2, $outfile3, $cutoff_type, $cutoff0, $cutoff1, $cutoff2, $cutoff3) = @ARGV;
 
 if ($cutoff_type == 0) {
     $cutoff0 = 0;
@@ -8,48 +9,54 @@ if ($cutoff_type == 0) {
     $cutoff2 = 0;
     $cutoff3 = 0;
 }
-
-my $Datapath = "~/CourseData/metagenomics/metatranscriptomics/";
-my $Workpath = "";
-
-my $tmp = $Workpath.$read_files."_".$read_type;
-my $lengthfile = $tmp."_IDs_length.txt";
-if ($read_type eq 'singletons') {
-    my $tmp1 = $Workpath.$read_files."1_".$read_type."_IDs_length.txt";
-    my $tmp2 = $Workpath.$read_files."2_".$read_type."_IDs_length.txt";
-    system("cat $tmp1 $tmp2 > $lengthfile");
-}
-
-my $infile;
-my $outfile1;
-my $outfile2;
-if ($db_type eq 'micro_cds') {
-    $infile = $tmp."_n_micro_cds_sorted.".$map_type."out";
-    $outfile1 = $tmp."_n_micro_cds_".$map_type."_IDs.txt";
-    $outfile2 = $tmp."_n_micro_cds_".$map_type."_pairs.txt";
-    $outfile3 = $tmp."_n_micro_cds_".$map_type."_hitsID.txt";
-} elsif ($db_type eq 'nr') {
-    $infile = $tmp."_nr.".$map_type."out";
-    if ($read_type eq 'singletons') {
-        $infile = $tmp."_nr_sorted.".$map_type."out";
-    }
-    $outfile1 = $tmp."_nr_".$map_type."_IDs.txt";
-    $outfile2 = $tmp."_nr_".$map_type."_pairs.txt";
-    $outfile3 = $tmp."_nr_".$map_type."_hitsID.txt";
-} elsif ($db_type eq 'ecoli_ppi') {
-    if ($read_type eq 'genes') {
-        $infile = $Workpath."microbial_cds_sub_ecoli_ppi.diamondout";
-        $lengthfile = $Workpath."microbial_cds_sub_IDs_length.txt";
-    } elsif ($read_type eq 'proteins') {
-        $infile = $Workpath."nr_all_sub_ecoli_ppi.diamondout";
-        $lengthfile = $Workpath."nr_all_sub_IDs_length.txt";
-    }
-    my ($root, $suff_in) = $infile =~ m/(.*)\.(.*)/;
-    $outfile1 = $root."_IDs.txt";
-    $outfile2 = $root."_pairs.txt";
-    $outfile3 = $root."_hitsID.txt";
-}
-print "Outputfile: $outfile1\n\n";
+#
+#my $Datapath = "~/CourseData/metagenomics/metatranscriptomics/";
+#my $Workpath = "";
+#
+#my $tmp = $Workpath.$read_files."_".$read_type;
+#my $lengthfile = $tmp."_IDs_length.txt";
+#if ($read_type eq 'singletons') {
+#    my $tmp1 = $Workpath.$read_files."1_".$read_type."_IDs_length.txt";
+#    my $tmp2 = $Workpath.$read_files."2_".$read_type."_IDs_length.txt";
+#    system("cat $tmp1 $tmp2 > $lengthfile");
+#}
+#
+#my $infile;
+#my $outfile1;
+#my $outfile2;
+#if ($db_type eq 'micro_cds') {
+#    $infile = $tmp."_n_micro_cds_sorted.".$map_type."out";
+#    $outfile1 = $tmp."_n_micro_cds_".$map_type."_IDs.txt";
+#    $outfile2 = $tmp."_n_micro_cds_".$map_type."_pairs.txt";
+#    $outfile3 = $tmp."_n_micro_cds_".$map_type."_hitsID.txt";
+#} elsif ($db_type eq 'nr') {
+#    $infile = $tmp."_nr.".$map_type."out";
+#    if ($read_type eq 'singletons') {
+#        $infile = $tmp."_nr_sorted.".$map_type."out";
+#    }
+#    $outfile1 = $tmp."_nr_".$map_type."_IDs.txt";
+#    $outfile2 = $tmp."_nr_".$map_type."_pairs.txt";
+#    $outfile3 = $tmp."_nr_".$map_type."_hitsID.txt";
+#} elsif ($db_type eq 'ecoli_ppi') {
+#    if ($read_type eq 'genes') {
+#        $infile = $Workpath."microbial_cds_sub_ecoli_ppi.diamondout";
+#        $lengthfile = $Workpath."microbial_cds_sub_IDs_length.txt";
+#    } elsif ($read_type eq 'proteins') {
+#        $infile = $Workpath."nr_all_sub_ecoli_ppi.diamondout";
+#        $lengthfile = $Workpath."nr_all_sub_IDs_length.txt";
+#    }
+#    my ($root, $suff_in) = $infile =~ m/(.*)\.(.*)/;
+#    $outfile1 = $root."_IDs.txt";
+#    $outfile2 = $root."_pairs.txt";
+#    $outfile3 = $root."_hitsID.txt";
+#}
+#print "Outputfile: $outfile1\n\n";
+#print "infile: $infile\n";
+#print "length: $lengthfile\n";
+#print "outfile1: $outfile1\n";
+#print "outfile2: $outfile2\n";
+#print "outfile3: $outfile3\n";
+#die;
 
 my %reads;
 open(INPUT0, $lengthfile) or die "Error opening $lengthfile : $!\n";

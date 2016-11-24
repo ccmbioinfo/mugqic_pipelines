@@ -1,18 +1,25 @@
 #!/usr/local/bin/perl -w
 
-my ($read_files, $db_type, $map_type, $read_type) = @ARGV;
+#my ($read_files, $db_type, $map_type, $read_type) = @ARGV;
+my ($infile1, $infile2, $outfile1, $outfile2, $outfile3) = @ARGV;
 
 my $Datapath = "~/CourseData/metagenomics/metatranscriptomics/";
 my $Workpath = "";
 
-my $readfile0 = $read_files."_".$read_type."_".$db_type;
+#my $readfile0 = $read_files."_".$read_type."_".$db_type;
 
-my $infile1 = $Workpath.$readfile0."_".$map_type."_IDs.txt";
-my $infile2 = $Workpath.$readfile0."_".$map_type."_pairs.txt";
-my $outfile1 = $Workpath.$readfile0."_".$map_type."_hitsID_sub.txt";
-my $outfile2 = $Workpath.$readfile0."_".$map_type."_pairs_sub.txt";
-my $outfile3 = $Workpath.$readfile0."_".$map_type."_hitsID_bacsub.txt";
-print "Outputfiles: $outfile2\n$outfile1\n\n";
+#my $infile1 = $Workpath.$readfile0."_".$map_type."_IDs.txt";
+#my $infile2 = $Workpath.$readfile0."_".$map_type."_pairs.txt";
+#my $outfile1 = $Workpath.$readfile0."_".$map_type."_hitsID_sub.txt";
+#my $outfile2 = $Workpath.$readfile0."_".$map_type."_pairs_sub.txt";
+#my $outfile3 = $Workpath.$readfile0."_".$map_type."_hitsID_bacsub.txt";
+#print "Outputfiles: $outfile2\n$outfile1\n\n";
+#print "infile1: $infile1\n";
+#print "infile2: $infile2\n";
+#print "outfile1: $outfile1\n";
+#print "outfile2: $outfile2\n";
+#print "outfile3: $outfile3\n";
+#die;
 
 my %IDs;
 my %hits;

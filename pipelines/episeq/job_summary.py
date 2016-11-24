@@ -71,7 +71,7 @@ class Step(object):
         :return: A row of values containing resource data for the given Step object.
         :rtype: str
         """
-        row = "{:<35}" + "{:>10}" * 3 + "{:>17}" * 3 + "{:>13}" * 6
+        row = "{:<35}" + "{:>10}" * 3 + "{:>18}" * 3 + "{:>15}" * 6
         time_list = self.get_stat('Wallclock Duration')
         vmem_list = self.get_stat('vmem Used')
         pmem_list = self.get_stat('Memory Used')
@@ -221,7 +221,7 @@ Performance and Resource Statistics for Pipeline {pipeline_name}
                "Walltime Limit", "Max Walltime", "Q3 Walltime",
                "V. Mem Limit", "Max V. Mem", "Q3 V. Mem",
                "Mem Limit", "Max Mem", "Q3 Mem"]
-    header = ("{:<35}" + "{:>10}" * 3 + "{:>17}" * 3 + "{:>13}" * 6).format(*metrics)
+    header = ("{:<35}" + "{:>10}" * 3 + "{:>18}" * 3 + "{:>15}" * 6).format(*metrics)
 
     def __init__(self, step_list, name=None, pipeline=None):
         """

@@ -38,13 +38,13 @@ perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscr
 python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_reads_by_id.py \
     --fastq $input_dir/cow1_singletons.fastq \
     --id-file $output_dir/cow_singletons_micro_cds_bwa_IDs.txt \
-    --included $output_dir/cow1_singletons_micro_cds.fasta \
-    --excluded $output_dir/cow1_singletons_n_micro_cds.fasta
+    --included $output_dir/cow1_singletons_micro_cds.fastq \
+    --excluded $output_dir/cow1_singletons_n_micro_cds.fastq
 # cow2
 python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_reads_by_id.py \
     --fastq $input_dir/cow2_singletons.fastq \
     --id-file $output_dir/cow_singletons_micro_cds_bwa_IDs.txt \
-    --included $output_dir/cow2_singletons_micro_cds.fasta \
-    --excluded $output_dir/cow2_singletons_n_micro_cds.fasta
+    --included $output_dir/cow2_singletons_micro_cds.fastq \
+    --excluded $output_dir/cow2_singletons_n_micro_cds.fastq
 #perl main_select_reads_fromfile.pl cow microgenes bwa singletons micro_cds
 

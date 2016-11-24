@@ -1,5 +1,6 @@
 #!/bin/bash
 
+module load mugqic-pipelines/2.2.0
 module load mugqic/bwa/0.7.12
 module load perl
 
@@ -21,7 +22,11 @@ bwa aln -t 4 $COW_CDS remove_rrna/cow2_qual_unique_n_rRNA.fastq > remove_host_re
 #    remove_rrna/cow2_qual_unique_n_rRNA.fastq
 
 # Keep only reads in both cow1 and cow2
-/hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/intersection_of_non_rnas.py
+python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/fastq_intersection.py \
+    remove_rrna/cow1_qual_unique_n_rRNA.fastq \
+    remove_rrna/cow2_qual_unique_n_rRNA.fastq \
+    remove_host_reads/cow1_matching_ids.fastq \
+    remove_host_reads/cow2_matching_ids.fastq
 
 bwa sampe $COW_CDS remove_host_reads/cow1_host.sai remove_host_reads/cow2_host.sai remove_host_reads/cow1_matching_ids.fastq remove_host_reads/cow2_matching_ids.fastq > remove_host_reads/cow_host.sam
 #bwa sampe $COW_CDS remove_host_reads/cow1_host.sai remove_host_reads/cow2_host.sai remove_rrna/cow1_qual_unique_n_rRNA.fastq remove_rrna/cow2_qual_unique_n_rRNA.fastq > remove_host_reads/cow_host.sam

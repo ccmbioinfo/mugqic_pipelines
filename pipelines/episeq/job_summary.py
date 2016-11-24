@@ -71,20 +71,20 @@ class Step(object):
         :return: A row of values containing resource data for the given Step object.
         :rtype: str
         """
-        row = "{:<35}" + "{:>10}" * 3 + "{:>17}" * 3 + "{:>15}" * 6
+        row = "{:<35}" + "{:>10}" * 3 + "{:>17}" * 3 + "{:>13}" * 6
         time_list = self.get_stat('Wallclock Duration')
         vmem_list = self.get_stat('vmem Used')
         pmem_list = self.get_stat('Memory Used')
         stat_general = [self.name, self.tasks, len(self.success), len(self.failure)]
         stat_time = [str(self.max_time),
                      str(timedelta(seconds=max(time_list))),
-                     str(timedelta(seconds=int(percentile(time_list, 60))) // 1)]
+                     str(timedelta(seconds=int(percentile(time_list, 75))) // 1)]
         stat_vmem = [humansize(self.max_vmem),
                      humansize(max(vmem_list)),
-                     humansize(int(percentile(vmem_list, 60)))]
+                     humansize(int(percentile(vmem_list, 75)))]
         stat_pmem = [humansize(self.max_mem),
                      humansize(max(pmem_list)),
-                     humansize(int(percentile(pmem_list, 60)))]
+                     humansize(int(percentile(pmem_list, 75)))]
         stat_all = stat_general + stat_time + stat_vmem + stat_pmem
         return row.format(*stat_all)
 
@@ -218,10 +218,10 @@ Performance and Resource Statistics for Pipeline {pipeline_name}
 
     """
     metrics = ["Step Name", "Total Runs", "Success", "Failed",
-               "Walltime Limit", "Max Walltime", "Avg Walltime",
-               "V. Mem Limit", "Max V. Mem", "Avg V. Mem",
-               "Memory Limit", "Max Memory", "Avg Memory"]
-    header = ("{:<35}" + "{:>10}" * 3 + "{:>17}" * 3 + "{:>15}" * 6).format(*metrics)
+               "Walltime Limit", "Max Walltime", "Q3 Walltime",
+               "V. Mem Limit", "Max V. Mem", "Q3 V. Mem",
+               "Mem Limit", "Max Mem", "Q3 Mem"]
+    header = ("{:<35}" + "{:>10}" * 3 + "{:>17}" * 3 + "{:>13}" * 6).format(*metrics)
 
     def __init__(self, step_list, name=None, pipeline=None):
         """

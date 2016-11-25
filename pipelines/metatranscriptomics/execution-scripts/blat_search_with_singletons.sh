@@ -10,14 +10,18 @@ output_dir=blat_search_with_singletons
 
 mkdir $output_dir
 
+# Convert .fasta -> .2bit
+faToTwoBit $input_dir/cow1_singletons_n_micro_cds.fasta $output_dir/cow1_singletons_n_micro_cds.2bit
 # cow1
-blat -noHead -minIdentity=90 -minScore=50 $blastdb/microbial_all_cds_1.fasta  $input_dir/cow1_singletons_n_micro_cds.fasta -fine -q=rna -t=dna -out=blast8 $output_dir/cow_singletons1_1.blatout
-blat -noHead -minIdentity=90 -minScore=50 $blastdb/microbial_all_cds_2.fasta  $input_dir/cow1_singletons_n_micro_cds.fasta -fine -q=rna -t=dna -out=blast8 $output_dir/cow_singletons1_2.blatout
+blat -noHead -minIdentity=90 -minScore=50 $blastdb/microbial_all_cds_1.fasta  $output_dir/cow1_singletons_n_micro_cds.2bit -fine -q=rna -t=dna -out=blast8 $output_dir/cow_singletons1_1.blatout
+blat -noHead -minIdentity=90 -minScore=50 $blastdb/microbial_all_cds_2.fasta  $output_dir/cow1_singletons_n_micro_cds.2bit -fine -q=rna -t=dna -out=blast8 $output_dir/cow_singletons1_2.blatout
 cat $output_dir/cow_singletons1_1.blatout $output_dir/cow_singletons1_2.blatout > $output_dir/cow1_singletons_n_micro_cds.blatout
 
+# Convert .fasta -> .2bit
+faToTwoBit $input_dir/cow2_singletons_n_micro_cds.fasta $output_dir/cow2_singletons_n_micro_cds.2bit
 # cow2
-blat -noHead -minIdentity=90 -minScore=50 $blastdb/microbial_all_cds_1.fasta  $input_dir/cow2_singletons_n_micro_cds.fasta -fine -q=rna -t=dna -out=blast8 $output_dir/cow_singletons2_1.blatout
-blat -noHead -minIdentity=90 -minScore=50 $blastdb/microbial_all_cds_2.fasta  $input_dir/cow2_singletons_n_micro_cds.fasta -fine -q=rna -t=dna -out=blast8 $output_dir/cow_singletons2_2.blatout
+blat -noHead -minIdentity=90 -minScore=50 $blastdb/microbial_all_cds_1.fasta  $input_dir/cow2_singletons_n_micro_cds.2bit -fine -q=rna -t=dna -out=blast8 $output_dir/cow_singletons2_1.blatout
+blat -noHead -minIdentity=90 -minScore=50 $blastdb/microbial_all_cds_2.fasta  $input_dir/cow2_singletons_n_micro_cds.2bit -fine -q=rna -t=dna -out=blast8 $output_dir/cow_singletons2_2.blatout
 cat $output_dir/cow_singletons2_1.blatout $output_dir/cow_singletons2_2.blatout > $output_dir/cow2_singletons_n_micro_cds.blatout
 
 cat $output_dir/cow1_singletons_n_micro_cds.blatout \

@@ -16,12 +16,11 @@ output_dir=blat_search_with_contigs
 
 mkdir $output_dir
 
-# single fasta
-#blat -noHead -minIdentity=90 -minScore=50 $blastdb/microbial_all_cds.fasta $input_dir/cow_contigs_n_micro_cds.fasta -fine -q=rna -t=dna -out=blast8 $output_dir/cow_contigs.blatout
-
+# Use a *.fa file instead of a *.fasta file
+faToTwoBit $input_dir/cow_contigs_n_micro_cds.fasta $output_dir/cow_contigs_n_micro_cds.2bit
 # blat against 2 fastas
-blat -noHead -minIdentity=90 -minScore=50 $blastdb/microbial_all_cds_1.fasta  $input_dir/cow_contigs_n_micro_cds.fasta -fine -q=rna -t=dna -out=blast8 $output_dir/cow_contigs_1.blatout
-blat -noHead -minIdentity=90 -minScore=50 $blastdb/microbial_all_cds_2.fasta  $input_dir/cow_contigs_n_micro_cds.fasta -fine -q=rna -t=dna -out=blast8 $output_dir/cow_contigs_2.blatout
+blat -noHead -minIdentity=90 -minScore=50 $blastdb/microbial_all_cds_1.fasta  $output_dir/cow_contigs_n_micro_cds.2bit -fine -q=rna -t=dna -out=blast8 $output_dir/cow_contigs_1.blatout
+blat -noHead -minIdentity=90 -minScore=50 $blastdb/microbial_all_cds_2.fasta  $output_dir/cow_contigs_n_micro_cds.2bit -fine -q=rna -t=dna -out=blast8 $output_dir/cow_contigs_2.blatout
 cat $output_dir/cow_contigs_1.blatout $output_dir/cow_contigs_2.blatout > $output_dir/cow_contigs_n_micro_cds.blatout
 
 # main_sort_blastout_fromfile.pl

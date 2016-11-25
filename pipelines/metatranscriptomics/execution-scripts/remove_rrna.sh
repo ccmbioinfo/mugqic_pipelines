@@ -8,27 +8,27 @@ module load mugqic-pipelines/2.2.0
 module load infernal
 module load perl
 
-RFAM_PATH=/hpf/largeprojects/ccmbio/nreinhardt/metatranscriptomics-test/reference-files/Rfam.cm
+rfam_path=/hpf/largeprojects/ccmbio/nreinhardt/metatranscriptomics-test/reference-files/Rfam.cm
 
-INPUT_DIR=remove_duplicates
-OUTPUT_DIR=remove_rrna
+input_dir=remove_duplicates
+output_dir=remove_rrna
 
-mkdir $OUTPUT_DIR
+mkdir $output_dir
 
-cmscan -o $OUTPUT_DIR/cow1_rRNA.log --tblout $OUTPUT_DIR/cow1_rRNA.infernalout --noali --notextw --rfam -E 0.001 $RFAM_PATH %INPUT_DIR/cow1_qual_all_unique.fasta
-cmscan -o $OUTPUT_DIR/cow2_rRNA.log --tblout $OUTPUT_DIR/cow2_rRNA.infernalout --noali --notextw --rfam -E 0.001 $RFAM_PATH %INPUT_DIR/cow2_qual_all_unique.fasta
+cmscan -o $output_dir/cow1_rRNA.log --tblout $output_dir/cow1_rRNA.infernalout --noali --notextw --rfam -E 0.001 $rfam_path $input_dir/cow1_qual_all_unique.fasta
+cmscan -o $output_dir/cow2_rRNA.log --tblout $output_dir/cow2_rRNA.infernalout --noali --notextw --rfam -E 0.001 $rfam_path $input_dir/cow2_qual_all_unique.fasta
 
 
 # cow1
 python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_get_sequence_length.py \
-    --fasta $INPUT_DIR/cow1_qual_all_unique.fasta \
-    --id-file $INPUT_DIR/cow1_qual_all_unique_IDs.txt \
-    --output $OUTPUT_DIR/cow1_IDs_length.txt
+    --fasta $input_dir/cow1_qual_all_unique.fasta \
+    --id-file $input_dir/cow1_qual_all_unique_IDs.txt \
+    --output $output_dir/cow1_IDs_length.txt
 # cow2
 python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_get_sequence_length.py \
-    --fasta $INPUT_DIR/cow2_qual_all_unique.fasta \
-    --id-file $INPUT_DIR/cow2_qual_all_unique_IDs.txt \
-    --output $OUTPUT_DIR/cow2_IDs_length.txt
+    --fasta $input_dir/cow2_qual_all_unique.fasta \
+    --id-file $input_dir/cow2_qual_all_unique_IDs.txt \
+    --output $output_dir/cow2_IDs_length.txt
 #python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_get_sequence_length.py
 #perl main_get_sequence_length.pl cow rRNA
 
@@ -37,15 +37,15 @@ perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscr
 
 # cow1
 python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_reads_by_id.py \
-    --fastq $INPUT_DIR/cow1_qual_all_unique.fastq \
-    --id-file $OUTPUT_DIR/cow1_rRNA_infernal_IDs.txt \
-    --included $OUTPUT_DIR/cow1_qual_unique_rRNA.fastq \
-    --excluded $OUTPUT_DIR/cow1_qual_unique_n_rRNA.fastq
+    --fastq $input_dir/cow1_qual_all_unique.fastq \
+    --id-file $output_dir/cow1_rRNA_infernal_IDs.txt \
+    --included $output_dir/cow1_qual_unique_rRNA.fastq \
+    --excluded $output_dir/cow1_qual_unique_n_rRNA.fastq
 # cow2
 python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_reads_by_id.py \
-    --fastq $INPUT_DIR/cow2_qual_all_unique.fastq \
-    --id-file $OUTPUT_DIR/cow2_rRNA_infernal_IDs.txt \
-    --included $OUTPUT_DIR/cow2_qual_unique_rRNA.fastq \
-    --excluded $OUTPUT_DIR/cow2_qual_unique_n_rRNA.fastq
+    --fastq $input_dir/cow2_qual_all_unique.fastq \
+    --id-file $output_dir/cow2_rRNA_infernal_IDs.txt \
+    --included $output_dir/cow2_qual_unique_rRNA.fastq \
+    --excluded $output_dir/cow2_qual_unique_n_rRNA.fastq
 #perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_select_reads_fromfile.pl
 #perl main_select_reads_fromfile.pl cow rRNA infernal pairs

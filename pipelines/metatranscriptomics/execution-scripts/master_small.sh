@@ -23,10 +23,9 @@ cd $PBS_O_WORKDIR
 ./map_reads.sh
 
 #./bwa_search_with_contigs.sh
-#./bwa_search_with_singletons.sh
-
 #./blat_search_with_contigs.sh
-#./blat_search_with_singletons.sh
-
 #./diamond_search_with_contigs.sh
+
+#./bwa_search_with_singletons.sh
+#./blat_search_with_singletons.sh
 #./diamond_search_with_singletons.sh

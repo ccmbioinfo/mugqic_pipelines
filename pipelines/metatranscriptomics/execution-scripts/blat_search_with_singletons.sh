@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 module load blat/35
+module load mugqic-pipelines/2.2.0
 
 blastdb=../reference-files
 map_reads=map_reads
@@ -40,5 +41,17 @@ perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscr
     1 100 85 65 60
 #perl main_get_blast_fromfile_1tophit.pl cow micro_cds blat singletons 1 100 85 65 60
 
-# TODO do for cow1 - split the n_micro_cds fasta
-perl main_select_reads_fromfile.pl cow microgenes_blat blat singletons micro_cds
+# cow1
+python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_reads_by_id.py \
+    --fasta $input_dir/cow2_singletons_n_micro_cds.fasta \
+    --id-file $output_dir/cow_singletons_n_micro_cds_blat_IDs.txt \
+    --included $output_dir/cow2_singletons_n_micro_cds_blat.fasta \
+    --excluded $output_dir/cow2_singletons_n_micro_cds_rest.fasta
+# cow2
+python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_reads_by_id.py \
+    --fasta $input_dir/cow2_singletons_n_micro_cds.fasta \
+    --id-file $output_dir/cow_singletons_n_micro_cds_blat_IDs.txt \
+    --included $output_dir/cow2_singletons_n_micro_cds_blat.fasta \
+    --excluded $output_dir/cow2_singletons_n_micro_cds_rest.fasta
+#perl main_select_reads_fromfile.pl cow microgenes_blat blat singletons micro_cds
+

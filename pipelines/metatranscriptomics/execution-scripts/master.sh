@@ -11,8 +11,8 @@
 cd $PBS_O_WORKDIR
 
 ./format_fastq_headers_small.sh
-./flash.sh
 ./trim.sh
+./flash.sh
 ./cluster_duplicates.sh
 ./remove_duplicates.sh
 ./remove_rrna.sh

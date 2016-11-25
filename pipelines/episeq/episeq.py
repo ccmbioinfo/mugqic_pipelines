@@ -510,9 +510,9 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
             elif len(input_files) == 1:  # Save time and resources by just copying the single data source
                 input_nuc_stats = os.path.join('aligned', sample.name, sample.readsets[0].name)
                 if processed_fastq_pe:
-                    input_nuc_stats += '.merged_aligned_PE_report.txt'
+                    input_nuc_stats += '_aligned_PE_report.txt'
                 else:
-                    input_nuc_stats += '.merged_aligned_SE_report.txt'
+                    input_nuc_stats += '_aligned_SE_report.txt'
                 coverage_calc = Job(input_files=[input_nuc_stats],
                                     output_files=[out_cov_file],
                                     command='cp -f ' + input_nuc_stats + ' ' + out_cov_file,

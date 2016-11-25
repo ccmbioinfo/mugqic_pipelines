@@ -479,7 +479,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
 
             # I want to use Picard Tools v2.0.1, which has a different syntax than v1.x
             if len(input_files) > 1:
-                coverage_calc = self.__bam2nuc__(merge_prefix, sample.name, output_bam)
+                coverage_calc = self.__bam2nuc__(merge_prefix, sample.name, ".merged", output_bam)
                 picard_v2 = Job(
                     input_files,
                     [output_bam],

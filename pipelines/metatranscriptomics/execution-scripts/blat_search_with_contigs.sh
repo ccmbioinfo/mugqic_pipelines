@@ -38,6 +38,7 @@ perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscr
     $output_dir/cow_contigs_n_micro_cds_blat_IDs.txt \
     $output_dir/cow_contigs_n_micro_cds_blat_pairs.txt \
     $output_dir/cow_contigs_n_micro_cds_blat_hitsID.txt \
+    cow micro_cds blat contigs \
     1 100 85 65 60
 #perl main_get_blast_fromfile_1tophit.pl cow micro_cds blat contigs 1 100 85 65 60
 

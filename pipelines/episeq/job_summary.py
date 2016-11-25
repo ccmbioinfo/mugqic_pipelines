@@ -251,7 +251,7 @@ Performance and Resource Statistics for Pipeline {pipeline_name}
         """
         if not self.pipeline:
             raise AttributeError('Missing object member: pipeline')
-        new_step = dict()
+        new_step = OrderedDict()
         for step in self.pipeline:
             step = step.strip()
             new_step[step] = self.steps[step]
@@ -267,8 +267,8 @@ Performance and Resource Statistics for Pipeline {pipeline_name}
         :rtype: None
         """
         out_str = self.header + '\n'  # type: str
-        for step in self.steps:
-            out_str += self.steps[step].row_print() + '\n'
+        for (name, step) in self.steps.items():
+            out_str += step.row_print() + '\n'
         print (self.template.format(pipeline_name=self.name, table=out_str))
 
 

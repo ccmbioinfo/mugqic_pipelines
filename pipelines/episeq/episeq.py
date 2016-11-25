@@ -508,7 +508,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                 job = concat_jobs([mkdir_job, picard_v2, coverage_calc], name="picard_merge_sam_files." + sample.name)
 
             elif len(input_files) == 1:  # Save time and resources by just copying the single data source
-                input_nuc_stats = os.path.join('align', sample.name, sample.readsets[0].name)
+                input_nuc_stats = os.path.join('aligned', sample.name, sample.readsets[0].name)
                 if processed_fastq_pe:
                     input_nuc_stats += '.merged_aligned_PE_report.txt'
                 else:

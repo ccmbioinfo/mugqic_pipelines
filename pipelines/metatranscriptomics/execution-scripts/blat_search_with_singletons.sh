@@ -26,12 +26,13 @@ cat $output_dir/cow_singletons1_1.blatout $output_dir/cow_singletons1_2.blatout 
     $input_dir/cow2_singletons_n_micro_cds.fastq \
     $output_dir/cow2_singletons_n_micro_cds.fasta
 # Convert .fasta -> .2bit
-faToTwoBit $output_dir/cow2_singletons_n_micro_cds.fasta $output_dir/cow1_singletons_n_micro_cds.2bit
+faToTwoBit $output_dir/cow2_singletons_n_micro_cds.fasta $output_dir/cow2_singletons_n_micro_cds.2bit
 # cow2
 blat -noHead -minIdentity=90 -minScore=50 $blastdb/microbial_all_cds_1.fasta  $output_dir/cow2_singletons_n_micro_cds.2bit -fine -q=rna -t=dna -out=blast8 $output_dir/cow_singletons2_1.blatout
 blat -noHead -minIdentity=90 -minScore=50 $blastdb/microbial_all_cds_2.fasta  $output_dir/cow2_singletons_n_micro_cds.2bit -fine -q=rna -t=dna -out=blast8 $output_dir/cow_singletons2_2.blatout
 cat $output_dir/cow_singletons2_1.blatout $output_dir/cow_singletons2_2.blatout > $output_dir/cow2_singletons_n_micro_cds.blatout
 
+# Cat the *.blatout files together
 cat $output_dir/cow1_singletons_n_micro_cds.blatout \
     $output_dir/cow2_singletons_n_micro_cds.blatout \
     > $output_dir/cow_singletons_n_micro_cds.blatout
@@ -42,7 +43,7 @@ perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscr
 #perl main_sort_blastout_fromfile.pl cow n_micro_cds blat singletons 10
 
 cat $map_reads/cow1_singletons_IDs_length.txt \
-    $map_reads/cow1_singletons_IDs_length.txt \
+    $map_reads/cow2_singletons_IDs_length.txt \
     > $output_dir/cow_singletons_IDs_length.txt
 perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_get_blast_fromfile_1tophit.pl \
     $output_dir/cow_singletons_n_micro_cds_sorted.blatout \

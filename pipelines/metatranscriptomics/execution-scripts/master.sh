@@ -4,13 +4,13 @@
 #PBS -l nodes=1:ppn=8
 #PBS -l gres=localhd:20
 #PBS -l vmem=90g
-#PBS -l walltime=100:00:00
+#PBS -l walltime=72:00:00
 
 # Run all the steps
 
 cd $PBS_O_WORKDIR
 
-./format_fastq_headers.sh
+./format_fastq_headers_small.sh
 ./flash.sh
 ./trim.sh
 ./cluster_duplicates.sh
@@ -22,11 +22,10 @@ cd $PBS_O_WORKDIR
 ./index_contigs.sh
 ./map_reads.sh
 
-#./bwa_search_with_contigs.sh
-#./bwa_search_with_singletons.sh
+./bwa_search_with_contigs.sh
+./blat_search_with_contigs.sh
+./diamond_search_with_contigs.sh
 
-#./blat_search_with_contigs.sh
-#./blat_search_with_singletons.sh
-
-#./diamond_search_with_contigs.sh
+./bwa_search_with_singletons.sh
+./blat_search_with_singletons.sh
 #./diamond_search_with_singletons.sh

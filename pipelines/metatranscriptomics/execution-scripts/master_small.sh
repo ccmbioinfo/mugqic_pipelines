@@ -4,7 +4,7 @@
 #PBS -l nodes=1:ppn=2
 #PBS -l gres=localhd:20
 #PBS -l vmem=40g
-#PBS -l walltime=23:00:00
+#PBS -l walltime=48:00:00
 
 # Run all the steps
 

@@ -28,8 +28,8 @@ cat $output_dir/cow_singletons1_1.blatout $output_dir/cow_singletons1_2.blatout 
 # Convert .fasta -> .2bit
 faToTwoBit $output_dir/cow2_singletons_n_micro_cds.fasta $output_dir/cow1_singletons_n_micro_cds.2bit
 # cow2
-blat -noHead -minIdentity=90 -minScore=50 $blastdb/microbial_all_cds_1.fasta  $input_dir/cow2_singletons_n_micro_cds.2bit -fine -q=rna -t=dna -out=blast8 $output_dir/cow_singletons2_1.blatout
-blat -noHead -minIdentity=90 -minScore=50 $blastdb/microbial_all_cds_2.fasta  $input_dir/cow2_singletons_n_micro_cds.2bit -fine -q=rna -t=dna -out=blast8 $output_dir/cow_singletons2_2.blatout
+blat -noHead -minIdentity=90 -minScore=50 $blastdb/microbial_all_cds_1.fasta  $output_dir/cow2_singletons_n_micro_cds.2bit -fine -q=rna -t=dna -out=blast8 $output_dir/cow_singletons2_1.blatout
+blat -noHead -minIdentity=90 -minScore=50 $blastdb/microbial_all_cds_2.fasta  $output_dir/cow2_singletons_n_micro_cds.2bit -fine -q=rna -t=dna -out=blast8 $output_dir/cow_singletons2_2.blatout
 cat $output_dir/cow_singletons2_1.blatout $output_dir/cow_singletons2_2.blatout > $output_dir/cow2_singletons_n_micro_cds.blatout
 
 cat $output_dir/cow1_singletons_n_micro_cds.blatout \
@@ -46,7 +46,7 @@ cat $map_reads/cow1_singletons_IDs_length.txt \
     > $output_dir/cow_singletons_IDs_length.txt
 perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_get_blast_fromfile_1tophit.pl \
     $output_dir/cow_singletons_n_micro_cds_sorted.blatout \
-    $output_dir/cow_singetons_IDs_length.txt \
+    $output_dir/cow_singletons_IDs_length.txt \
     $output_dir/cow_singletons_n_micro_cds_blat_IDs.txt \
     $output_dir/cow_singletons_n_micro_cds_blat_pairs.txt \
     $output_dir/cow_singletons_n_micro_cds_blat_hitsID.txt \
@@ -56,13 +56,13 @@ perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscr
 
 # cow1
 python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_reads_by_id.py \
-    --fasta $input_dir/cow2_singletons_n_micro_cds.fasta \
+    --fasta $output_dir/cow1_singletons_n_micro_cds.fasta \
     --id-file $output_dir/cow_singletons_n_micro_cds_blat_IDs.txt \
-    --included $output_dir/cow2_singletons_n_micro_cds_blat.fasta \
-    --excluded $output_dir/cow2_singletons_n_micro_cds_rest.fasta
+    --included $output_dir/cow1_singletons_n_micro_cds_blat.fasta \
+    --excluded $output_dir/cow1_singletons_n_micro_cds_rest.fasta
 # cow2
 python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_reads_by_id.py \
-    --fasta $input_dir/cow2_singletons_n_micro_cds.fasta \
+    --fasta $output_dir/cow2_singletons_n_micro_cds.fasta \
     --id-file $output_dir/cow_singletons_n_micro_cds_blat_IDs.txt \
     --included $output_dir/cow2_singletons_n_micro_cds_blat.fasta \
     --excluded $output_dir/cow2_singletons_n_micro_cds_rest.fasta

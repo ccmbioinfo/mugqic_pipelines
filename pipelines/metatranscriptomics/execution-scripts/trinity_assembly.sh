@@ -20,7 +20,13 @@ outdir=trinity_assembly
 rm -fr trinity_assembly
 mkdir trinity_assembly
 
-Trinity --seqType fq --left $indir/cow1_mRNA.fastq --right $indir/cow2_mRNA.fastq --CPU 8 --max_memory 10G --min_contig_length 75 --output ${my_WORKDIR}/${outdir} --no_version_check
+Trinity --seqType fq \
+    --no_version_check \
+    --left $indir/cow1_mRNA.fastq \
+    --right $indir/cow2_mRNA.fastq \
+    --CPU 8 --max_memory 10G \
+    --min_contig_length 75 \
+    --output ${my_WORKDIR}/${outdir}
 #Trinity --seqType fq --left $indir/cow1_mRNA.fastq --right $indir/cow2_mRNA.fastq --CPU 8 --max_memory 10G --min_contig_length 75 --output ${my_WORKDIR}/${outdir} --full_cleanup --no_version_check
 
 cp ${my_WORKDIR}/${outdir}/Trinity.fasta ${my_WORKDIR}/$outdir/cow_contigs.fasta

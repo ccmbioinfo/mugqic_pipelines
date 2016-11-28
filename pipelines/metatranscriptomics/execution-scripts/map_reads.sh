@@ -5,15 +5,21 @@ module load mugqic/bwa/0.7.12
 module load mugqic/samtools/1.3
 module load perl/5.20.1
 
-mrna_dir=add_duplicates
+input_dir=add_duplicates
 contigs_dir=index_contigs
 output_dir=map_reads
 mkdir $output_dir
 
-# TODO: fastq_intersection before bwa sampe?
-bwa aln -t 4 $contigs_dir/cow_contigs.fasta $mrna_dir/cow1_mRNA.fastq > $output_dir/cow1_trinity.sai
-bwa aln -t 4 $contigs_dir/cow_contigs.fasta $mrna_dir/cow2_mRNA.fastq > $output_dir/cow2_trinity.sai
-bwa sampe $contigs_dir/cow_contigs.fasta $output_dir/cow1_trinity.sai $output_dir/cow2_trinity.sai  $mrna_dir/cow1_mRNA.fastq $mrna_dir/cow2_mRNA.fastq > $output_dir/cow_trinity.sam
+# fastq_intersection.py
+python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/fastq_intersection.py \
+    --fastq1 $input_dir/cow1_mRNA.fastq \
+    --fastq2 $input_dir/cow2_mRNA.fastq \
+    --output1 $output_dir/cow1_mRNA_matching_ids.fastq \
+    --output2 $output_dir/cow2_mRNA_matching_ids.fastq
+
+bwa aln -t 4 $contigs_dir/cow_contigs.fasta $output_dir/cow1_mRNA_matching_ids.fastq > $output_dir/cow1_trinity.sai
+bwa aln -t 4 $contigs_dir/cow_contigs.fasta $output_dir/cow2_mRNA_matching_ids.fastq > $output_dir/cow2_trinity.sai
+bwa sampe $contigs_dir/cow_contigs.fasta $output_dir/cow1_trinity.sai $output_dir/cow2_trinity.sai  $output_dir/cow1_mRNA_matching_ids.fastq $output_dir/cow2_mRNA_matching_ids.fastq > $output_dir/cow_trinity.sam
 samtools view -bS $output_dir/cow_trinity.sam | samtools sort -n -o $output_dir/cow_trinity.bam
 samtools view $output_dir/cow_trinity.bam > $output_dir/cow_trinity.bwaout
 #samtools view -F 4 $OUTPUT_DIR/cow_trinity.bam > $OUTPUT_DIR/cow_trinity.bwaout
@@ -29,13 +35,13 @@ perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscr
 
 # cow1
 python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_reads_by_id.py \
-    --fastq $mrna_dir/cow1_mRNA.fastq \
+    --fastq $output_dir/cow1_mRNA_matching_ids.fastq \
     --id-file $output_dir/cow_trinity_bwa_IDs.txt \
     --included $output_dir/cow1_mRNA_mappedreads.fastq \
     --excluded $output_dir/cow1_singletons.fastq
 # cow2
 python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/split_reads_by_id.py \
-    --fastq $mrna_dir/cow2_mRNA.fastq \
+    --fastq $output_dir/cow2_mRNA_matching_ids.fastq \
     --id-file $output_dir/cow_trinity_bwa_IDs.txt \
     --included $output_dir/cow2_mRNA_mappedreads.fastq \
     --excluded $output_dir/cow2_singletons.fastq

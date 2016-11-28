@@ -602,7 +602,6 @@ pandoc --to=markdown \\
         jobs = []
 
         summaries = []
-        report_depend = []
         for sample in self.samples:
             summaries.append(os.path.join('miso', sample.name, 'summary', sample.name + '.miso_summary'))
 
@@ -611,8 +610,7 @@ pandoc --to=markdown \\
             control_sample = (contrast.controls[0]).name
             treatment_sample = (contrast.treatments[0]).name
             output_folder = os.path.join("miso", "comparisons", contrast.name)
-            output = os.path.join(output_folder, control_sample + "_vs_" + treatment_sample, "bayes-factors", control_sample + "_vs_" + ".miso_bf")
-            report_depend.append(output)
+            output = os.path.join(output_folder, control_sample + "_vs_" + treatment_sample, "bayes-factors", control_sample + "_vs_" + treatment_sample + ".miso_bf")
 
             job = miso_funcs.compare(
                 control_sample,
@@ -624,37 +622,14 @@ pandoc --to=markdown \\
             job.name = "miso_diff." + contrast.name
             jobs.append(job)
 
-###################################################################
-# miso report generation
-
-        report_file = os.path.join("report", "RNAseq_AS.miso_diff.md")
-
-        jobs.append(
-            Job(
-                report_depend,
-                [report_file],
-                [['bedtools', 'module_pandoc']],
-                command="""\                           
-mkdir -p report && \\
-pandoc --to=markdown \\
---template {report_template_dir}/{basename_report_file} \\
-{report_template_dir}/{basename_report_file} \\
-> {report_file}""".format(
-                    report_template_dir = self.report_template_dir,
-                    basename_report_file = os.path.basename(report_file),
-                    report_file = report_file,
-                    ),
-                report_files = [report_file],
-                name = "miso_report")
-            )
-
-###################################################################
-        
         return jobs
 
     def miso_plot(self):
 
         jobs = []
+
+        report_dependencies = []
+        event_plots = ''
 
         plot_type = config.param('miso_plot', 'plot_type', type='string', required=True)
 
@@ -701,12 +676,35 @@ pandoc --to=markdown \\
                 dependencies.append( os.path.join('miso', sample.name, 'summary', sample.name + '.miso_summary'))
             
             i = 0
+            
             for event_name in events_names:
             
                 i += 1
+                report_dependencies.append(os.path.join('miso', 'plots', event_name + '.pdf'))
                 job = miso_funcs.plot_event(dependencies, event_name)
                 job.name = 'miso_plot.plot_event.' + str(i)
                 jobs.append(job)
+
+################################# report generation
+
+        report_file = os.path.join("report", "RNAseq_AS.miso_plot.md")
+        report_template_dir = self.report_template_dir
+        basename_report_file = os.path.basename(report_file)
+
+        for contrast in self.contrasts:
+            control_sample = (contrast.controls[0]).name
+            treatment_sample = (contrast.treatments[0]).name
+            output_bf = os.path.join("miso", "comparisons", contrast.name, control_sample + "_vs_" + treatment_sample, "bayes-factors", control_sample + "_vs_" + treatment_sample + ".miso_bf")
+            report_dependencies.append(output_bf)
+
+        job = miso_funcs.report(
+            report_dependencies,
+            report_file,
+            report_template_dir,
+            basename_report_file
+            )
+
+        jobs.append(job)
 
         return jobs
 
@@ -766,48 +764,17 @@ pandoc --to=markdown \\
 
         species = config.param('vast_tools_align', 'species', type='string', required=True)
         full_inclusion = "vast_out/INCLUSION_LEVELS_FULL-" + species + str(num_samples) + ".tab"
-        report_depend = []
        
         for contrast in self.contrasts:
 
             control_sample = (contrast.controls[0]).name
             treatment_sample = (contrast.treatments[0]).name
             filtered_inclusion_table = os.path.join("vast_out", "INCLUSION-FILTERED-" + contrast.name + ".tab" )
-            report_depend.append(filtered_inclusion_table)
 
             job = vtools.differential_splicing(control_sample, treatment_sample, full_inclusion, filtered_inclusion_table)
 
             job.name = "vast_tools_diff." + contrast.name
             jobs.append(job)
-
-#####################################################################
-# report generation
-
-        report_file = os.path.join("report", "RNAseq_AS.vast_tools_diff.md")
-        
-        jobs.append(
-            Job(
-                report_depend + ['vast_out/plot_events.PSI_plots.pdf'],
-                [report_file],
-                [['pandoc', 'module_pandoc']],
-                command="""\
-mkdir -p report && \\
-cp {full_inclusion} report/INCLUSION_LEVELS_FULL.tab && \\
-cp vast_out/plot_events.PSI_plots.pdf report && \\
-pandoc --to=markdown \\
---template {report_template_dir}/{basename_report_file} \\
-{report_template_dir}/{basename_report_file} \\
-> {report_file}""".format(
-                    report_template_dir = self.report_template_dir,
-                    basename_report_file = os.path.basename(report_file),
-                    report_file = report_file,
-                    full_inclusion = full_inclusion
-                    ),
-                report_files=[report_file],
-                name="vast_tools_report")
-            )
-
-######################################################################
         
         return jobs
 
@@ -825,6 +792,21 @@ pandoc --to=markdown \\
 
         job = vtools.plots(full_inclusion, events_list)
         job.name = 'vast_tools_plot'
+        jobs.append(job)
+
+################### report gen
+
+        report_file = os.path.join('report', 'RNAseq_AS.vtools_plot.md')
+        report_template_dir = self.report_template_dir
+        basename_report_file = os.path.basename(report_file)
+
+        job = vtools.report(
+            report_file,
+            report_template_dir,
+            basename_report_file,
+            full_inclusion,
+            )
+        
         jobs.append(job)
 
         return jobs
@@ -862,10 +844,10 @@ pandoc --to=markdown \\
         gff = os.path.join('jctseq', 'jctseq.gff.gz')
         
         for contrast in self.contrasts:
-            folder = os.path.join('jctseq', contrast.name,)
+            folder = os.path.join('jctseq', contrast.name)
 
             job = jctseq.diff_prep(folder, contrast.name, gff)
-            job.name = "jctseq_diff_prep." + contrast.name
+            job.name = 'jctseq_diff_prep.' + contrast.name
             jobs.append(job)
 
         return jobs
@@ -877,21 +859,37 @@ pandoc --to=markdown \\
         raw_counts = []
         for sample in self.samples:
             raw_counts.append(os.path.join('jctseq', 'rawCts', sample.name, 'QC.QORTS_COMPLETED_OK'))
-        
+
+        report_dependencies = []
         for contrast in self.contrasts:
             
             jscs_file = os.path.join('jctseq', contrast.name, 'jscs1.r')
-            
+            report_dependencies.append(os.path.join('jctseq', contrast.name, 'plots'))
+
             job = jctseq.jscs_diff(
-                "jctseq/jctseq.gff.gz", 
-                os.path.join("jctseq", contrast.name, "plots"),
-                os.path.join("jctseq", contrast.name, "results"),
+                'jctseq/jctseq.gff.gz', 
+                os.path.join('jctseq', contrast.name, 'plots'),
+                os.path.join('jctseq', contrast.name, 'results'),
                 jscs_file,
                 raw_counts)
 
-            job.name = "jctseq_diff." + contrast.name
+            job.name = 'jctseq_diff.' + contrast.name
             jobs.append(job)
 
+###### report
+        report_file = os.path.join('report', 'RNAseq_AS.jctseq_diff.md')
+        report_template_dir = self.report_template_dir
+        basename_report_file = os.path.basename(report_file)
+
+        job = jctseq.report(
+            report_dependencies,
+            report_file,
+            report_template_dir,
+            basename_report_file
+            )
+        
+        jobs.append(job)
+        
         return jobs
 
     @property

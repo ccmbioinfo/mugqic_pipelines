@@ -88,3 +88,27 @@ vast-tools plot {other_options} vast_out/plot_events.tab""".format(
             other_options = config.param('vast_tools_plot', 'other_options', type='string', required=False)
             )
         )
+
+def report(report_file, report_template_dir, basename_report_file, full_inclusion):
+
+    return Job(
+        [full_inclusion, 'vast_out/plot_events.PSI_plots.pdf'],
+        [report_file],
+        [['pandoc', 'module_pandoc']],
+        command="""\
+mkdir -p report && \\
+cp {full_inclusion} report/INCLUSION_LEVELS_FULL.tab && \\
+cp vast_out/plot_events.PSI_plots.pdf report && \\
+pandoc --to=markdown \\
+--template {report_template_dir}/{basename_report_file} \\
+{report_template_dir}/{basename_report_file} \\
+> {report_file}""".format(
+            report_template_dir = report_template_dir,
+            basename_report_file = basename_report_file,
+            report_file = report_file,
+            full_inclusion = full_inclusion
+            ),
+        report_files = [report_file],
+        name = "vast_tools_report"
+        )
+

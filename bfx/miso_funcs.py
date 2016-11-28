@@ -148,9 +148,8 @@ def plot_settings(sample_names, bam_files):
         optional += 'bf_thresholds = ' + bf_thresholds + '\n'
 
     return Job(
-        ['.'],
-        ['miso/sashimi_plot_settings.txt'],
-        [['samtools', 'module_samtools']],
+        output_files=['miso/sashimi_plot_settings.txt'],
+        module_entries = [['samtools', 'module_samtools']],
         command="""\
 mkdir -p miso/plots && \\
 cp {bfx}/sashimi_plot_settings_temp.txt miso/sashimi_plot_settings.txt && \\
@@ -199,13 +198,52 @@ sashimi_plot --plot-bf-dist {bf_file} miso/sashimi_plot_settings.txt --output-di
 
 def plot_event(dependencies, event_name):
     
+    output_plot = os.path.join('miso', 'plots', event_name + '.pdf')
+
     return Job(
         dependencies + ['miso/indexed', 'miso/sashimi_plot_settings.txt'],
-        [event_name + '.pdf'],
+        [output_plot],
         [['samtools', 'module_samtools']],
         command="""\
 module load python/2.7.9 && \\
 sashimi_plot --plot-event "{event_name}" miso/indexed miso/sashimi_plot_settings.txt --output-dir miso/plots""".format(
-            event_name = event_name
+            event_name = event_name,
+            output_plot = output_plot
             )
+        )
+
+def report(dependencies, report_file, report_template_dir, basename_report_file):
+
+    plots = ''
+    events = ''
+    events_names = config.param('miso_plot', 'events_names', type='string', required=True).split()
+    for event_name in events_names:
+        event_plot = os.path.join('miso', 'plots', event_name + '.pdf')
+        
+        dependencies.append(event_plot)
+
+        plots += event_plot + ' '
+
+        events += event_name + '.pdf\n'
+
+    return Job(
+        dependencies,
+        [report_file],
+        [['pandoc', 'module_pandoc']],
+        command="""\
+mkdir -p report && \\
+cp {plots}report && \\
+pandoc --to=markdown \\
+--template {report_template_dir}/{basename_report_file} \\
+--variable events="{events}" \\
+{report_template_dir}/{basename_report_file} \\
+> {report_file}""".format(
+            report_template_dir = report_template_dir,
+            basename_report_file = basename_report_file,
+            report_file = report_file,
+            events = events,
+            plots = plots,
+            ),
+        report_files = [report_file],
+        name = "miso_plot_report"
         )

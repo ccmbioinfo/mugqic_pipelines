@@ -76,15 +76,20 @@ class Step(object):
         vmem_list = self.get_stat('vmem Used')
         pmem_list = self.get_stat('Memory Used')
         stat_general = [self.name, self.tasks, len(self.success), len(self.failure)]
-        stat_time = [str(self.max_time),
-                     str(timedelta(seconds=max(time_list))),
-                     str(timedelta(seconds=int(percentile(time_list, 75))) // 1)]
-        stat_vmem = [humansize(self.max_vmem),
-                     humansize(max(vmem_list)),
-                     humansize(int(percentile(vmem_list, 75)))]
-        stat_pmem = [humansize(self.max_mem),
-                     humansize(max(pmem_list)),
-                     humansize(int(percentile(pmem_list, 75)))]
+        if stat_general[2] > 0:
+            stat_time = [str(self.max_time),
+                         str(timedelta(seconds=max(time_list))),
+                         str(timedelta(seconds=int(percentile(time_list, 75))) // 1)]
+            stat_vmem = [humansize(self.max_vmem),
+                         humansize(max(vmem_list)),
+                         humansize(int(percentile(vmem_list, 75)))]
+            stat_pmem = [humansize(self.max_mem),
+                         humansize(max(pmem_list)),
+                         humansize(int(percentile(pmem_list, 75)))]
+        else:
+            stat_time = [str(timedelta()), str(timedelta()), str(timedelta())]
+            stat_vmem = [humansize(0), humansize(0), humansize(0)]
+            stat_pmem = [humansize(0), humansize(0), humansize(0)]
         stat_all = stat_general + stat_time + stat_vmem + stat_pmem
         return row.format(*stat_all)
 
@@ -254,8 +259,10 @@ Performance and Resource Statistics for Pipeline {pipeline_name}
         new_step = OrderedDict()
         for step in self.pipeline:
             step = step.strip()
-            if step in self.steps:  # Add only if we have data.
+            if step in self.steps:  # Check if we have any data
                 new_step[step] = self.steps[step]
+            else:
+                new_step[step] = Step(name=step)
         if new_step:
             self.steps = new_step
         else:

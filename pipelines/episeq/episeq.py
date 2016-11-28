@@ -352,11 +352,11 @@ class Episeq(common.Illumina):
                     if '--nucleotide_coverage' in user_options:
                         report_log += [output_basename + "_aligned_pe.nucleotide_stats.txt"]
                     if '-un' in user_options or '--unmapped' in user_options:
-                        out_files += [output_basename + "_unmapped_reads_1.fq.gz",
-                                      output_basename + "_unmapped_reads_2.fq.gz"]
+                        out_files += [output_basename + "_aligned_unmapped_reads_1.fq.gz",
+                                      output_basename + "_aligned_unmapped_reads_2.fq.gz"]
                     if '--ambiguous' in user_options:
-                        out_files += [output_basename + "_ambiguous_reads_1.fq.gz",
-                                      output_basename + "_ambiguous_reads_2.fq.gz"]
+                        out_files += [output_basename + "_aligned_ambiguous_reads_1.fq.gz",
+                                      output_basename + "_aligned_ambiguous_reads_2.fq.gz"]
                     if '--ambig_bam' in user_options:
                         out_files += [output_basename + '_aligned_pe.ambig.bam']
                 elif run_type == "SINGLE_END":

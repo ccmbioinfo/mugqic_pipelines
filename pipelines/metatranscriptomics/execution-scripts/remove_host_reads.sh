@@ -10,15 +10,15 @@ mkdir remove_host_reads
 #intersection-of-non-rnas.py
 COW_CDS=/hpf/largeprojects/ccmbio/nreinhardt/metatranscriptomics-test/reference-files/cow_cds.fa
 
-bwa aln -t 4 $COW_CDS remove_rrna/cow1_qual_unique_n_rRNA.fastq > remove_host_reads/cow1_host.sai
-bwa aln -t 4 $COW_CDS remove_rrna/cow2_qual_unique_n_rRNA.fastq > remove_host_reads/cow2_host.sai
-
 # Keep only reads in both cow1 and cow2
 python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/fastq_intersection.py \
     --fastq1 remove_rrna/cow1_qual_unique_n_rRNA.fastq \
     --fastq2 remove_rrna/cow2_qual_unique_n_rRNA.fastq \
     --output1 remove_host_reads/cow1_matching_ids.fastq \
     --output2 remove_host_reads/cow2_matching_ids.fastq
+
+bwa aln -t 4 $COW_CDS remove_rrna/cow1_qual_unique_n_rRNA.fastq > remove_host_reads/cow1_host.sai
+bwa aln -t 4 $COW_CDS remove_rrna/cow2_qual_unique_n_rRNA.fastq > remove_host_reads/cow2_host.sai
 
 bwa sampe $COW_CDS remove_host_reads/cow1_host.sai remove_host_reads/cow2_host.sai remove_host_reads/cow1_matching_ids.fastq remove_host_reads/cow2_matching_ids.fastq > remove_host_reads/cow_host.sam
 #bwa sampe cow_cds.fa cow1_host.sai cow2_host.sai cow1_qual_unique_n_rRNA.fastq cow2_qual_unique_n_rRNA.fastq > cow_host.sam

@@ -254,7 +254,8 @@ Performance and Resource Statistics for Pipeline {pipeline_name}
         new_step = OrderedDict()
         for step in self.pipeline:
             step = step.strip()
-            new_step[step] = self.steps[step]
+            if step in self.steps:  # Add only if we have data.
+                new_step[step] = self.steps[step]
         if new_step:
             self.steps = new_step
         else:

@@ -3,7 +3,7 @@
 #PBS -N run-all
 #PBS -l nodes=1:ppn=8
 #PBS -l gres=localhd:20
-#PBS -l vmem=90g
+#PBS -l vmem=50g
 #PBS -l walltime=72:00:00
 
 # Run all the steps

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
+module load mugqic-pipelines/2.2.0
 module load mugqic/bwa/0.7.12
 module load mugqic/samtools/1.3
-module load mugqic-pipelines/2.2.0
 module load perl/5.20.1
 
 mrna_dir=add_duplicates

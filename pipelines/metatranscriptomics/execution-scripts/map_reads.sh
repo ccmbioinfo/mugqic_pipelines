@@ -10,6 +10,7 @@ contigs_dir=index_contigs
 output_dir=map_reads
 mkdir $output_dir
 
+# TODO: fastq_intersection before bwa sampe?
 bwa aln -t 4 $contigs_dir/cow_contigs.fasta $mrna_dir/cow1_mRNA.fastq > $output_dir/cow1_trinity.sai
 bwa aln -t 4 $contigs_dir/cow_contigs.fasta $mrna_dir/cow2_mRNA.fastq > $output_dir/cow2_trinity.sai
 bwa sampe $contigs_dir/cow_contigs.fasta $output_dir/cow1_trinity.sai $output_dir/cow2_trinity.sai  $mrna_dir/cow1_mRNA.fastq $mrna_dir/cow2_mRNA.fastq > $output_dir/cow_trinity.sam

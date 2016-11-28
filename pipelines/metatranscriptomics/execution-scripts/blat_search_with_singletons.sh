@@ -45,6 +45,7 @@ perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscr
 cat $map_reads/cow1_singletons_IDs_length.txt \
     $map_reads/cow2_singletons_IDs_length.txt \
     > $output_dir/cow_singletons_IDs_length.txt
+# TODO bad division
 perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_get_blast_fromfile_1tophit.pl \
     $output_dir/cow_singletons_n_micro_cds_sorted.blatout \
     $output_dir/cow_singletons_IDs_length.txt \

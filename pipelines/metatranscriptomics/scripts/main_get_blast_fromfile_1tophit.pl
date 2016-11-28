@@ -75,6 +75,7 @@ while( my $line = <INPUT0> ) {
     }
 }
 close INPUT0;
+#print %reads;
 
 my %IDs;
 my %pairs;
@@ -121,12 +122,17 @@ while  (my $myline = <INPUT>) {
             $pairs{$mydbID} = join("\t", $mydbID, $hitgiID, $pident, $poverlap, $evalue, $max_score);
             $hits{$hitgiID} = 1;
         } else {
+#            print "=======================================================\n";
+#            print "$reads{$mydbID}\n";
+#            print "$read_type\n";
+#            print "=======================================================\n";
             if (not exists $reads{$mydbID}) {
                 $reads{$mydbID} = 100;
             }
             if ($map_type eq 'diamond') {
                 $poverlap = 100 * (3 * $line[3]) / $reads{$mydbID};
             } else {
+#                print "$poverlap\n$reads{$mydbID}\n";
                 $poverlap = 100 * $line[3] / $reads{$mydbID};
             }
             $poverlap = sprintf("%.2f", $poverlap);

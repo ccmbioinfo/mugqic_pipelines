@@ -7,6 +7,7 @@
 #PBS -joe /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/execution-scripts
 
 module load perl
+module load blastp/2.2.27
 
 blastdb=../reference-files
 map_reads=map_reads
@@ -18,6 +19,7 @@ diamond blastx -p 8 -d $blastdb/nr -q $input_dir/cow_contigs_n_micro_cds_rest.fa
 diamond view -a $output_dir/cow_contigs_nr.matches.daa -o $output_dir/cow_contigs_nr.diamondout -f tab
 
 # main_get_blast_fromfile_tophits.pl
+# TODO: pass in read_type, etc.
 perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_get_blast_fromfile_tophits.pl \
     $output_dir/cow_contigs_nr.diamondout \
     $map_reads/cow_contigs_IDs_length.txt \

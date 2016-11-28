@@ -59,9 +59,9 @@ class Step(object):
         :rtype: [any]
         """
         attr_vals = filter(None, [val.get(attr) for val in self.success + self.failure])
-        if re.search('^\d\d:\d\d:\d\d$', attr_vals[0]):
+        if attr_vals and re.search('^\d\d:\d\d:\d\d$', attr_vals[0]):
             attr_vals = [get_delta(val).total_seconds() for val in attr_vals]
-        elif re.search('^\d+\.\d+\s?[A-Z]|[a-z]i?b$', attr_vals[0]):
+        elif attr_vals and re.search('^\d+\.\d+\s?[A-Z]|[a-z]i?b$', attr_vals[0]):
             attr_vals = [get_bytes(val) for val in attr_vals]
         return attr_vals
 

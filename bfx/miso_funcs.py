@@ -16,9 +16,7 @@ from core.job import *
 
 def make_index(output_folder):
     return Job(
-        ['.'],
-        [output_folder],
-        [['bedtools', 'module_bedtools']],
+        output_files=[output_folder],
         command="""\
 module load python/2.7.9 && \\
 mkdir -p {output_folder} && \\
@@ -72,8 +70,8 @@ module load python/2.7.9 && \\
 samtools index {input_bam} && \\
 mkdir -p {output_folder_name} && \\
 unset mean sdev && \\
-mean=$(awk '{mean_com}' {insert_file}) ; \\
-sdev=$(awk '{sdev_com}' {insert_file}) ; \\
+mean=$(awk '{mean_com}' {insert_file}) ;\\
+sdev=$(awk '{sdev_com}' {insert_file}) ;\\
 miso --run {index_folder} {input_bam} --output-dir {output_folder_name} {other_options} --read-len {len_num} {p_end} $mean $sdev""".format(
             input_bam=input_bam,
             index_folder=index_folder,

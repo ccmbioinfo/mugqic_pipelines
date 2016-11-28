@@ -43,9 +43,7 @@ def make_gff(output_gff):
         strand = '--stranded'
 
     return Job(
-        ['.'],
-        [output_gff],
-        [['bedtools', 'module_bedtools']],
+        output_files=[output_gff],
         command="""\
 mkdir -p jctseq && \\
 module load java/1.6.0 && \\
@@ -65,7 +63,7 @@ def diff_prep(folder, contrast_name, gff):
         [os.path.join(folder, 'jscs1.r'), 'jctseq/jctseq.design'],
         [['bedtools', 'module_bedtools']],
         command="""\
-cp {design_file} jctseq/jctseq.design && \\
+cp {design_file} jctseq/jctseq.design ;\\
 mkdir -p {folder} && \\
 cp {bfx}/jscs1.r {folder} && \\
 echo 'contrast <- decoder${contrast_name} \nfolder <- "{folder}"' >> {folder}/jscs1.r""".format(
@@ -95,6 +93,34 @@ Rscript {jscs_file}""".format(
             output_results = output_results,
             jscs_file = jscs_file,
             raw_counts_list = raw_counts_list,
-            bfx = config.param('jctseq_diff_prep', 'bfx_folder', type='string', required=True)
+            bfx = config.param('DEFAULT', 'bfx_location', type='string', required=True)
             )
+        )
+
+def report(report_dependencies, report_file, report_template_dir, basename_report_file):
+
+    event_names = config.param('miso_plot', 'events_names', type='string', required=True).split()
+
+    events = ''
+    for event in event_names:
+        events += event + '.pdf\n'
+    
+    return Job(
+        report_dependencies,
+        [report_file],
+        [['pandoc', 'module_pandoc']],
+        command="""\
+mkdir -p report && \\
+pandoc --to=markdown \\
+--template {report_template_dir}/{basename_report_file} \\
+--variable events="{events}" \\
+{report_template_dir}/{basename_report_file} \\
+> {report_file}""".format(
+            report_template_dir = report_template_dir,
+            basename_report_file = basename_report_file,
+            report_file = report_file,
+            events = events
+            ),
+        report_files = [report_file],
+        name = "jctseq_diff_report"
         )

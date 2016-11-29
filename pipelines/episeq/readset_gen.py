@@ -54,33 +54,31 @@ def generate_readset(entries, readset_file, data_root):
         uniq_study = []
 
         for entry in entries:
+            # Directory structure: data/sample_name/sample_name*.{bam,fastq}
             basename = os.path.join(data_root, entry[1], entry[1])
-            found_bam = glob.glob(basename + '*.bam*')
-            found_files = glob.glob(basename + '*.fastq*')
             protocol = 'RRBS' if entry[4] == 'Bisulfite-Seq' and entry[5] == 'Reduced Representation' else 'WGBS'
 
-            try:
-                if found_bam:  # Prefer bam files
-                    bam_loc = os.path.abspath(found_bam[0])
-                    fastq1 = ''
+            # Search for input file
+            found_bam = glob.glob(basename + '*.bam*')
+            found_files = glob.glob(basename + '*.fastq*')
+
+            if found_bam:  # Prefer bam files
+                bam_loc = os.path.abspath(found_bam[0])
+                # Still print entry if missing bam/fastq file.
+                fastq1 = ''
+                fastq2 = ''
+            else:  # Handle up to 2 fastq files
+                if len(found_files) == 1:
+                    fastq1 = os.path.abspath(found_files[0])
                     fastq2 = ''
-                else:  # Handle up to 2 fastq files
-                    if len(found_files) == 0:
-                        raise IOError('No .fastq* files were found for run: ' + entry[1])
-                    elif len(found_files) == 1:
-                        fastq1 = os.path.abspath(found_files[0])
-                        fastq2 = ''
-                    else:  # Make sure I get the right order... just in case
-                        fastq1 = os.path.abspath(glob.glob(basename + '*_1.fastq*')[0])
-                        fastq2 = os.path.abspath(glob.glob(basename + '*_2.fastq*')[0])
-            except IOError:
-                print ('%s will not be included in this run because its files are missing.' % entry[1])
-                continue  # Don't write anything about missing samples
+                else:  # Make sure I get the right order... just in case
+                    fastq1 = os.path.abspath(glob.glob(basename + '*_1.fastq*')[0])
+                    fastq2 = os.path.abspath(glob.glob(basename + '*_2.fastq*')[0])
 
             writer.writerow({'Sample': entry[0], 'Readset': entry[1], 'Library': protocol,
                              'RunType': '{0}_END'.format(entry[2]), 'FASTQ1': fastq1,
                              'FASTQ2': fastq2, 'BAM': bam_loc})
-
+            # Generate a list of samples to help form the design file
             if entry[0] not in [run[0] for run in uniq_study]:
                 uniq_study.append([entry[0], entry[3]])
 

@@ -9,13 +9,36 @@ You should have filled out the readset, design and configuration (`*.ini`) file.
 
 Quick Start
 -----------
+1. Make a symbolic symlink to the episeq pipeline folder from your working directory. 
+    
+    `cp -sL <path-to-mugqic-pipelines>/pipelines/episeq .`
+    
+1. Either create a directory **or** symbolic symlink named `data` that contains your sample data to your working directory.
 
+1. Copy sample configuration files from the episeq folder to your working directory
+
+    `cp episeq/episeq.ini episeq/episeq.design episeq/episeq.readset episeq/generate-qsub.sh .`
+
+1. Using your prefered text editor, modify `./episeq.readset` and `./episeq.design`  to add your samples and define your case/control groups, respectively.
+    - If you have a manifest file with the following columns, you may instead use the `episeq/readset_gen.py` utility to generate personallized readset and design files.
+        - SRA_Sample_s
+        - Run_s
+        - LibraryLayout_s
+        - SRA_Study_s
+        - Assay_Type_s
+        - LibrarySelection_s
+    
+        `./episeq/readset_gen.py <manifest_file> <output_readset_file> <output_design_file> <root data directory>`
+        
+        **Note:** The data files should be organized as `<data_dir>/<sample_name>/<sample_name>*.{bam,fastq}`
+
+1. Run `./generate-qsub.sh` and check the `./debug.log` and `./qsub.sh` files for any errors.
+
+1. When everything is set, run `./qsub.sh` to start the pipeline.
 
 Usage
 -----
 ```
-#!text
-
 usage: episeq.py [-h] [--help] [-c CONFIG [CONFIG ...]] [-s STEPS]
                  [-o OUTPUT_DIR] [-j {pbs,batch}] [-f] [--report] [--clean]
                  [-l {debug,info,warning,error,critical}] [-d DESIGN]
@@ -137,7 +160,7 @@ This step combines all readsets together to form a single `.bam` file for each s
 | Blocks | [bismark_deduplicate](#8._bismark_deduplicate) <br/> [merged_nuc_stats](#7._merged_nuc_stats) |
 
 ### 7. merged_nuc_stats
-There isn't a dedicated merge script for the nucleotide coverage information, so we will have to rerun the analysis here to generate a new report file.
+There isn't a dedicated merge script for the nucleotide coverage information, so we have to rerun the analysis here to generate a new report file. This step is (again) for QC and troubleshooting purposes. Looking at the nucleotide coverage after all readsets are merged may reveal biases that are found in some readsets, but not others.
 
 | Job Attribute | Value |
 |:----------|:------|
@@ -169,8 +192,9 @@ One more calculation is needed because the bam file has been modified since the 
 ### 10. bismark_methylation_caller
 This step extracts the methylation call for every single cytosine analyzed from the Bismark result files.
 The following input files are accepted:
-    1.	Bismark result files from previous alignment step
-    2.	`BAM` files (unsorted) from readset file
+
+1.	Bismark result files from previous alignment step
+1.	`BAM` files (unsorted) from readset file
 
 | Job Attribute | Value |
 |:----------|:------|

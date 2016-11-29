@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl -w
 
 #my ($read_files, $db_type, $map_type, $read_type, $cutoff_type, $cutoff0, $cutoff1, $cutoff2, $cutoff3) = @ARGV;
-my ($infile, $lengthfile, $outfile1, $outfile2, $outfile3, $cutoff_type, $cutoff0, $cutoff1, $cutoff2, $cutoff3) = @ARGV;
+my ($infile, $lengthfile, $outfile1, $outfile2, $outfile3, $read_files, $db_type, $map_type, $read_type, $cutoff_type, $cutoff0, $cutoff1, $cutoff2, $cutoff3) = @ARGV;
 
 if ($cutoff_type == 0) {
     $cutoff0 = 0;

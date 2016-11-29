@@ -26,7 +26,7 @@ bwa sampe $COW_CDS $output_dir/cow1_host.sai $output_dir/cow2_host.sai $output_d
 
 # extract unmapped reads
 samtools view -bS $output_dir/cow_host.sam | samtools sort -n -o $output_dir/cow_host.bam
-samtools view $output_dir/cow_host.bam > $output_dir/cow_host.bwaout
+samtools view -F 4 $output_dir/cow_host.bam > $output_dir/cow_host.bwaout
 
 perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_read_samout.pl \
     $output_dir/cow_host.bwaout \

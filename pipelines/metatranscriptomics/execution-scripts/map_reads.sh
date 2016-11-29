@@ -21,8 +21,7 @@ bwa aln -t 4 $contigs_dir/cow_contigs.fasta $output_dir/cow1_mRNA_matching_ids.f
 bwa aln -t 4 $contigs_dir/cow_contigs.fasta $output_dir/cow2_mRNA_matching_ids.fastq > $output_dir/cow2_trinity.sai
 bwa sampe $contigs_dir/cow_contigs.fasta $output_dir/cow1_trinity.sai $output_dir/cow2_trinity.sai  $output_dir/cow1_mRNA_matching_ids.fastq $output_dir/cow2_mRNA_matching_ids.fastq > $output_dir/cow_trinity.sam
 samtools view -bS $output_dir/cow_trinity.sam | samtools sort -n -o $output_dir/cow_trinity.bam
-samtools view $output_dir/cow_trinity.bam > $output_dir/cow_trinity.bwaout
-#samtools view -F 4 $OUTPUT_DIR/cow_trinity.bam > $OUTPUT_DIR/cow_trinity.bwaout
+samtools view -F 4 $output_dir/cow_trinity.bam > $output_dir/cow_trinity.bwaout
 
 #perl main_read_samout.pl cow assembly bwa pairs
 #perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_read_samout.pl cow assembly bwa pairs

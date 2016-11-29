@@ -15,7 +15,8 @@ input_dir=blat_search_with_contigs
 output_dir=diamond_search_with_contigs
 mkdir $output_dir
 
-diamond blastx -p 8 -d $blastdb/nr -q $input_dir/cow_contigs_n_micro_cds_rest.fasta -a $output_dir/cow_contigs_nr.matches -t $output_dir -e 10 -k 10
+diamond blastx -p 8 -d $blastdb/nr.dmnd -q $input_dir/cow_contigs_n_micro_cds_rest.fasta -a $output_dir/cow_contigs_nr.matches -t $output_dir -e 10 -k 10
+#diamond blastx -p 8 -d $blastdb/nr -q $input_dir/cow_contigs_n_micro_cds_rest.fasta -a $output_dir/cow_contigs_nr.matches -t $output_dir -e 10 -k 10
 diamond view -a $output_dir/cow_contigs_nr.matches.daa -o $output_dir/cow_contigs_nr.diamondout -f tab
 
 # main_get_blast_fromfile_tophits.pl

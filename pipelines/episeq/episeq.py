@@ -437,7 +437,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                             command="""python {script_loc} -o {output} -n {name} {logs}""".format(
                                 # A custom made script that should always be in the episeq directory, but not sure
                                 # how to reference that directory. TODO: Find script automatically.
-                                script_loc=config.param('DEFAULT', 'extern_script'),
+                                script_loc=os.path.abspath(config.param('DEFAULT', 'extern_script')),
                                 output=output_report,
                                 name=sample.name,
                                 logs=' '.join(log_reports)),

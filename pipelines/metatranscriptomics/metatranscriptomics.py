@@ -2,7 +2,8 @@
 
 # Python Standard Modules
 import logging
-import os
+import os.path
+from os.path import join
 import sys
 
 # Append mugqic_pipelines directory to Python library path
@@ -28,33 +29,44 @@ class Metatranscriptomics(common.Illumina):
         input1 = input_dir + '/' + 'cow1.fastq'
         input2 = input_dir + '/' + 'cow2.fastq'
 
-        output_dir = 'filter_reads'
+        output_dir = 'format_reads'
         output1 = output_dir + '/' + 'cow1_new.fastq'
         output2 = output_dir + '/' + 'cow2_new.fastq'
 
-        return [Job(name='format_fastq_headers.cow',
-                    module_entries=[['DEFAULT', 'module_perl']],
-                    command='perl {script_path}/main_add_subID_reads_fastq.pl '
-                            '{input1} {output1} '
-                            '{input2} {output2}'.format(script_path=self.script_path,
-                                                        input1=input1,
-                                                        output1=output1,
-                                                        input2=input2,
-                                                        output2=output2))]
+        return [concat_jobs([Job(command='mkdir {}'.format(output_dir)),
+                             Job(name='format_fastq_headers',
+                                 module_entries=[['DEFAULT', 'module_perl']],
+                                 command='perl {script_path}/main_add_subID_reads_fastq.pl '
+                                         '{input1} {output1} '
+                                         '{input2} {output2}'.format(script_path=self.script_path,
+                                                                     input1=input1,
+                                                                     output1=output1,
+                                                                     input2=input2,
+                                                                     output2=output2))])]
 
     def trimmomatic(self):
-        return [concat_jobs([Job(command='mkdir -p ' + 'trim'),
-                             trimmomatic.trimmomatic('format_fastq_headers/cow1_new.fastq',
-                                                     'format_fastq_headers/cow2_new.fastq',
-                                                     'trim/cow1_qual_paired.fastq',
-                                                     'trim/cow1_qual_unpaired.fastq',
-                                                     'trim/cow2_qual_paired.fastq',
-                                                     'trim/cow2_qual_unpaired.fastq',
-                                                     None,
-                                                     None,
-                                                     adapter_file=config.param('trimmomatic', 'adapter_fasta'),
-                                                     trim_log='trim/cow.trim.log')],
-                            name='trimmomatic.cow')]
+        input_dir = 'format_reads'
+        input1 = join(input_dir, 'cow1_new.fastq')
+        input2 = join(input_dir, 'cow2_new.fastq')
+
+        output_dir = 'format_reads'
+        output_paired1 = join(output_dir, 'cow1_qual_paired.fastq')
+        output_unpaired1 = join(output_dir, 'cow1_qual_unpaired.fastq')
+        output_paired2 = join(output_dir, 'cow2_qual_paired.fastq')
+        output_unpaired2 = join(output_dir, 'cow2_qual_unpaired.fastq')
+
+        job = trimmomatic.trimmomatic(input1,
+                                        input2,
+                                        output_paired1,
+                                        output_unpaired1,
+                                        output_paired2,
+                                        output_unpaired2,
+                                        None,
+                                        None,
+                                        adapter_file=config.param('trimmomatic', 'adapter_fasta'),
+                                        trim_log=join(output_dir, 'cow.trim.log'))
+        job.name = 'trimmomatic.cow'
+        return job
 
     def flash(self):
         return [concat_jobs([Job(command='mkdir -p ' + 'flash'),

@@ -19,17 +19,28 @@ log = logging.getLogger(__name__)
 
 
 class Metatranscriptomics(common.Illumina):
-    # def __init__(self):
-    #     # Add pipeline specific arguments
-    #     # self._lastPGStep = {}
-    #     super(Metatranscriptomics, self).__init__()
+    # Location for pipeline scripts, to be used by all steps
+    # 'metatranscriptomics/scripts'
+    script_path = os.path.join(os.path.dirname(__file__), 'scripts')
 
     def format_fastq_headers(self):
+        input_dir = '../reference-files'
+        input1 = input_dir + '/' + 'cow1.fastq'
+        input2 = input_dir + '/' + 'cow2.fastq'
+
+        output_dir = 'filter_reads'
+        output1 = output_dir + '/' + 'cow1_new.fastq'
+        output2 = output_dir + '/' + 'cow2_new.fastq'
+
         return [Job(name='format_fastq_headers.cow',
                     module_entries=[['DEFAULT', 'module_perl']],
-                    command='perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_add_subID_reads_fastq.pl '
-                            '../reference-files/cow1.fastq format_fastq_headers/cow1_new.fastq '
-                            '../reference-files/cow2.fastq format_fastq_headers/cow2_new.fastq ')]
+                    command='perl {script_path}/main_add_subID_reads_fastq.pl '
+                            '{input1} {output1} '
+                            '{input2} {output2}'.format(script_path=self.script_path,
+                                                        input1=input1,
+                                                        output1=output1,
+                                                        input2=input2,
+                                                        output2=output2))]
 
     def trimmomatic(self):
         return [concat_jobs([Job(command='mkdir -p ' + 'trim'),

@@ -19,13 +19,41 @@ from bfx import flash
 log = logging.getLogger(__name__)
 
 
-# TODO: specify input/output files
 class Metatranscriptomics(common.Illumina):
+    """
+    Based off of the pipeline located here:
+    http://bioinformatics-ca.github.io/analysis_of_metagenomic_data_module6_lab_2016/
+
+    There are 4 phases to this pipeline so far:
+    * format_reads
+        Format read headers,
+        trim reads,
+        merge reads together
+    * filter_reads
+        Remove duplicates (temporarily),
+        remove rRNA,
+        remove reads from host
+    * contig_assembly
+        Assemble reads into larger contigs,
+        map the reads to these contigs
+    * search
+        Search known microbial sequences using both contigs and singleton reads,
+        try bwa, blat, and diamond
+    * Further
+    Each phase is associated with its own directory
+    Within each phase directory, each sample/readset will have its own directory
+    """
+
     # Location for pipeline scripts, to be used by all steps
     # 'metatranscriptomics/scripts'
     script_path = os.path.join(os.path.dirname(__file__), 'scripts')
 
     def format_fastq_headers(self):
+        """
+        Mark the headers of the fastq files with /1 or /2 to differentiate the paired-end reads
+
+        Call 'main_add_subID_reads_fastq.pl'
+        """
         jobs = []
 
         output_prefix = 'format_reads'
@@ -56,16 +84,28 @@ class Metatranscriptomics(common.Illumina):
         input_prefix = 'format_reads'
         output_prefix = 'format_reads'
 
-        for readset in self.readsets:
-            input_dir = join(input_prefix, readset.name)
-            input1 = join(input_dir, readset.name + '.1.formatted.fastq')
-            input2 = join(input_dir, readset.name + '.2.formatted.fastq')
+        def get_inputs(readset):
+            """
+            :return: 2 fastq filenames for paired-end reads
+            """
+            return join(input_prefix, readset.name), \
+                   join(input_dir, readset.name + '.1.formatted.fastq'), \
+                   join(input_dir, readset.name + '.2.formatted.fastq')
 
-            output_dir = join(output_prefix, readset.name)
-            output_paired1 = join(output_dir, readset.name + '.1.qual_paired.fastq')
-            output_unpaired1 = join(output_dir, readset.name + '.1.qual_unpaired.fastq')
-            output_paired2 = join(output_dir, readset.name + '.2.qual_paired.fastq')
-            output_unpaired2 = join(output_dir, readset.name + '.2.qual_unpaired.fastq')
+        def get_outputs(readset):
+            """
+            :return: output directory name,
+                     4 fastq filenames
+            """
+            return join(output_prefix, readset.name), \
+                   join(output_dir, readset.name + '.1.qual_paired.fastq'), \
+                   join(output_dir, readset.name + '.1.qual_unpaired.fastq'), \
+                   join(output_dir, readset.name + '.2.qual_paired.fastq'), \
+                   join(output_dir, readset.name + '.2.qual_unpaired.fastq')
+
+        for readset in self.readsets:
+            input_dir, input1, input2 = get_inputs(readset)
+            output_dir, output_paired1, output_unpaired1, output_paired2, output_unpaired2 = get_outputs(readset)
 
             job = trimmomatic.trimmomatic(input1,
                                           input2,
@@ -83,44 +123,64 @@ class Metatranscriptomics(common.Illumina):
         return jobs
 
     def merge_overlapping_reads(self):
+        """
+        Reads from the paired-end fastqs are merged together.
+
+        The merged reads are added to the first paired-end fastq
+        """
         jobs = []
 
         input_prefix = 'format_reads'
         output_prefix = 'format_reads'
 
         def get_inputs(readset):
+            """
+            :return: 2 fastq filenames for paired-end reads
+            """
             input_dir = join(input_prefix, readset.name)
             return join(input_dir, readset.name + '.1.qual_paired.fastq'), \
                    join(input_dir, readset.name + '.2.qual_paired.fastq')
 
         def get_flash_params(readset):
-            flash_output_prefix = readset.name
-            flash_output_dir = join(output_prefix, readset.name)
-            return flash_output_dir, \
-                   flash_output_prefix
+            """
+            :return: flash's output directory and output prefix
+            """
+            return readset.name, join(output_prefix, readset.name)
 
         def get_flash_outputs(output_dir, flash_output_prefix):
+            """
+            Get the filenames that flash will output
+
+            Flash will output 3 files, one for both fastqs, and one for the merged reads
+            :return: 2 uncombined fastq files + merged reads fastq file
+            """
             return join(output_dir, flash_output_prefix + '.notCombined_1.fastq'), \
                    join(output_dir, flash_output_prefix + '.notCombined_2.fastq'), \
                    join(output_dir, flash_output_prefix + '.extendedFrags.fastq')
 
         def get_outputs(readset):
+            """
+            :return: 2 output filenames
+            """
             output_dir = join(output_prefix, readset.name)
             return join(output_dir, readset.name + '1.qual_all.fastq'), \
                    join(output_dir, readset.name + '1.qual_all.fastq')
 
         for readset in self.readsets:
+            # Get the filenames
             input1, input2 = get_inputs(readset)
             flash_output_dir, flash_output_prefix = get_flash_params(readset)
             flash1, flash2, flash_merged = get_flash_outputs(flash_output_dir, flash_output_prefix)
             output1, output2 = get_outputs(readset)
 
+            # Create jobs
             flash_job = flash.merge_overlapping_reads(input1, input2, flash_output_dir, flash_output_prefix)
-
+            # Put the merged reads into fastq1
             fastq1_job = Job(command='cat {combined1} {merged} > {output1}'.format(combined1=flash1,
                                                                                    merged=flash_merged,
                                                                                    output1=output1)),
-            fastq2_job = Job(command='cp {combined2} {output2}'.format(combined2=flash2,
+            # Rename fastq2 to be consistent with fastq1
+            fastq2_job = Job(command='mv {combined2} {output2}'.format(combined2=flash2,
                                                                        output2=output2))
             jobs.append(concat_jobs([flash_job, fastq1_job, fastq2_job]))
 

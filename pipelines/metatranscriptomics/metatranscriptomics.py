@@ -31,10 +31,12 @@ class Metatranscriptomics(common.Illumina):
         output_dir = 'format_reads'
 
         for readset in self.readsets:
-            output1 = join(output_dir, 'cow1_new.fastq')
-            output2 = join(output_dir, 'cow2_new.fastq')
+            output1 = join(output_dir, readset.name + '.1.formatted.fastq')
+            output2 = join(output_dir, readset.name + '.2.formatted.fastq')
 
             jobs.append(Job(name='format_fastq_headers.' + readset.name,
+                            input_files=[readset.fastq1, readset.fastq2],
+                            output_files=[output1, output2],
                             module_entries=[['DEFAULT', 'module_perl']],
                             command='perl {script_path}/main_add_subID_reads_fastq.pl '
                                     '{input1} {output1} '
@@ -47,28 +49,34 @@ class Metatranscriptomics(common.Illumina):
         return [Job(command='mkdir {}'.format(output_dir))].extend(jobs)
 
     def trimmomatic(self):
+        jobs = []
+
         input_dir = 'format_reads'
-        input1 = join(input_dir, 'cow1_new.fastq')
-        input2 = join(input_dir, 'cow2_new.fastq')
-
         output_dir = 'format_reads'
-        output_paired1 = join(output_dir, 'cow1_qual_paired.fastq')
-        output_unpaired1 = join(output_dir, 'cow1_qual_unpaired.fastq')
-        output_paired2 = join(output_dir, 'cow2_qual_paired.fastq')
-        output_unpaired2 = join(output_dir, 'cow2_qual_unpaired.fastq')
 
-        job = trimmomatic.trimmomatic(input1,
-                                      input2,
-                                      output_paired1,
-                                      output_unpaired1,
-                                      output_paired2,
-                                      output_unpaired2,
-                                      None,
-                                      None,
-                                      adapter_file=config.param('trimmomatic', 'adapter_fasta'),
-                                      trim_log=join(output_dir, 'cow.trim.log'))
-        job.name = 'trimmomatic.cow'
-        return job
+        for readset in self.readsets:
+            input1 = join(input_dir, readset.name + '.1.formatted.fastq')
+            input2 = join(input_dir, readset.name + '.2.formatted.fastq')
+
+            output_paired1 = join(output_dir, readset.name + '.1.qual_paired.fastq')
+            output_unpaired1 = join(output_dir, readset.name + '.1.qual_unpaired.fastq')
+            output_paired2 = join(output_dir, readset.name + '.2.qual_paired.fastq')
+            output_unpaired2 = join(output_dir, readset.name + '.2.qual_unpaired.fastq')
+
+            job = trimmomatic.trimmomatic(input1,
+                                          input2,
+                                          output_paired1,
+                                          output_unpaired1,
+                                          output_paired2,
+                                          output_unpaired2,
+                                          None,
+                                          None,
+                                          adapter_file=config.param('trimmomatic', 'adapter_fasta'),
+                                          trim_log=join(output_dir, readset.namem + '.trim.log'))
+            job.name = 'trimmomatic.' + readset.name
+            jobs.append(job)
+
+        return jobs
 
     def flash(self):
         input = dict()

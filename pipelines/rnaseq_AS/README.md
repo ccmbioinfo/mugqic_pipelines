@@ -1,7 +1,9 @@
-############# AS Pipeline
+RNAseq_AS Pipeline
+================
 
 The Alternative Splicing (AS) pipeline is based on the standard MUGQIC RNA-SEQ pipeline.
-It uses RNA-SEQ to align reads and then uses Cufflinks, Vast Tools, MISO and JunctionSeq to perform differential analysis.
+It uses RNA-SEQ to align reads and then uses Cufflinks, [Vast Tools](https://github.com/vastgroup/vast-tools), 
+[MISO](http://genes.mit.edu/burgelab/miso/) and [JunctionSeq](https://github.com/hartleys/JunctionSeq) to perform differential analysis.
 
 The RNAseq_AS pipeline requires a design file which will be used to define group comparison
 in the differential analyses. The design file format is described
@@ -177,7 +179,8 @@ This step is only needed if you are running MISO.
 
 13- miso_paired_end
 ------------
-Computes insert length distribution and its statistics for the next step. This step is only needed for paired end reads, and will run if library_type=paired in the DEFAULT secttion of the config file. This step will be skipped if library_type=single.
+Computes insert length distribution and its statistics for the next step. This step is only needed for paired end reads, 
+and will run if library_type=paired in the DEFAULT secttion of the config file. This step will be skipped if library_type=single.
 
 This step is only needed if you are running MISO.
 
@@ -195,13 +198,14 @@ This step is only needed if you are running MISO.
 
 16- miso_diff
 ------------
-Computes Bayes factor to determine how likely the exon or isoform is differentially expressed between samples. This step uses the compare_miso function.
+Computes Bayes factor to determine how likely the exon or isoform is differentially expressed between samples. 
+This step uses the compare_miso function.
 
 This step is only needed if you are running MISO.
 
 17- miso_plot
 ------------
-Uses Sashimi Plot to plot the results from MISO.
+Uses [Sashimi Plot](http://miso.readthedocs.io/en/fastmiso/sashimi.html) to plot the results from MISO.
 
 This step is only needed if you are running MISO.
 
@@ -237,7 +241,8 @@ This step is only needed if you are running Vast Tools.
 
 23- jctseq_raw_counts
 ------------
-Uses QoRTs to calculate gene-level and splice-junction-level counts. This step will run in single-end mode if library_type=single in the DEFAULT section of the config file.
+Uses [QoRTs](http://hartleys.github.io/QoRTs/index.html) to calculate gene-level and splice-junction-level counts. 
+This step will run in single-end mode if library_type=single in the DEFAULT section of the config file.
 
 This step is only needed if you are running JunctionSeq.
 

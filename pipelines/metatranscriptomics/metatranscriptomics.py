@@ -26,24 +26,25 @@ class Metatranscriptomics(common.Illumina):
     script_path = os.path.join(os.path.dirname(__file__), 'scripts')
 
     def format_fastq_headers(self):
-        input_dir = '../reference-files'
-        input1 = input_dir + '/' + 'cow1.fastq'
-        input2 = input_dir + '/' + 'cow2.fastq'
+        jobs = []
 
         output_dir = 'format_reads'
-        output1 = output_dir + '/' + 'cow1_new.fastq'
-        output2 = output_dir + '/' + 'cow2_new.fastq'
 
-        return [concat_jobs([Job(command='mkdir {}'.format(output_dir)),
-                             Job(name='format_fastq_headers',
-                                 module_entries=[['DEFAULT', 'module_perl']],
-                                 command='perl {script_path}/main_add_subID_reads_fastq.pl '
-                                         '{input1} {output1} '
-                                         '{input2} {output2}'.format(script_path=self.script_path,
-                                                                     input1=input1,
-                                                                     output1=output1,
-                                                                     input2=input2,
-                                                                     output2=output2))])]
+        for readset in self.readsets:
+            output1 = join(output_dir, 'cow1_new.fastq')
+            output2 = join(output_dir, 'cow2_new.fastq')
+
+            jobs.append(Job(name='format_fastq_headers.' + readset.name,
+                            module_entries=[['DEFAULT', 'module_perl']],
+                            command='perl {script_path}/main_add_subID_reads_fastq.pl '
+                                    '{input1} {output1} '
+                                    '{input2} {output2}'.format(script_path=self.script_path,
+                                                                input1=readset.fastq1,
+                                                                output1=output1,
+                                                                input2=readset.fastq2,
+                                                                output2=output2)))
+
+        return [Job(command='mkdir {}'.format(output_dir))].extend(jobs)
 
     def trimmomatic(self):
         input_dir = 'format_reads'

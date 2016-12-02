@@ -75,7 +75,7 @@ class Metatranscriptomics(common.Illumina):
                                                                              output1=output1,
                                                                              input2=readset.fastq2,
                                                                              output2=output2))],
-                                    name='format_fastq_headers.' + readset.name, ))
+                                    name='format_fastq_headers.' + readset.name))
 
         return jobs
 
@@ -89,7 +89,8 @@ class Metatranscriptomics(common.Illumina):
             """
             :return: 2 fastq filenames for paired-end reads
             """
-            return join(input_prefix, readset.name), \
+            input_dir = join(input_prefix, readset.name)
+            return input_dir, \
                    join(input_dir, readset.name + '.1.formatted.fastq'), \
                    join(input_dir, readset.name + '.2.formatted.fastq')
 
@@ -98,7 +99,8 @@ class Metatranscriptomics(common.Illumina):
             :return: output directory name,
                      4 fastq filenames
             """
-            return join(output_prefix, readset.name), \
+            output_dir = join(output_prefix, readset.name)
+            return output_dir, \
                    join(output_dir, readset.name + '.1.qual_paired.fastq'), \
                    join(output_dir, readset.name + '.1.qual_unpaired.fastq'), \
                    join(output_dir, readset.name + '.2.qual_paired.fastq'), \
@@ -117,7 +119,7 @@ class Metatranscriptomics(common.Illumina):
                                           None,
                                           None,
                                           adapter_file=config.param('trimmomatic', 'adapter_fasta'),
-                                          trim_log=join(output_prefix, readset.namem + '.trim.log'))
+                                          trim_log=join(output_prefix, readset.name + '.trim.log'))
             job.name = 'trimmomatic.' + readset.name
             jobs.append(job)
 
@@ -180,7 +182,7 @@ class Metatranscriptomics(common.Illumina):
             fastq1_job = Job(input_files=[flash1, flash_merged],
                              output_files=[output1],
                              command='cat {flash1} {merged} > {output1}'.format(flash1=flash1, merged=flash_merged,
-                                                                                output1=output1)),
+                                                                                output1=output1))
             # Rename fastq2 to be consistent with fastq1
             fastq2_job = Job(input_files=[flash2],
                              output_files=[output2],

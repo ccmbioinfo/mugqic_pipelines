@@ -23,7 +23,9 @@ The RNAseq_AS pipeline has the same usage requirements as the RNAseq pipeline. E
 To run the pipeline, follow these steps:
 
 1) Create a folder to hold your files.
+
 2) Create a setup script in your folder (eg. setupenv.sh) and call "source setupenv.sh" in the command line.
+
 setupenv.sh should look like this:
 setupenv.sh
 ----- 
@@ -35,6 +37,7 @@ module load mugqic-pipelines/2.2.0
 export PYTHONPATH=/path-to-your-folder/:$PYTHONPATH
 ```
 3) Create the readset, design and config files as specified on the MUGQIC page.
+
 4) Create and run a generate-qsub file. Here is an example generate-qsub.sh:
 generate-qsub.sh
 ----- 
@@ -55,6 +58,7 @@ chmod +x qsub.sh
 
 ```
 Check your debug.log and qsub.sh file for errors. Most errors are likely due to an incorrect setting in your configuration file.
+
 5) Run your qsub.sh file. (ie. enter "./qsub.sh" in the command line)
 
 Report Generation
@@ -86,6 +90,7 @@ Example
 chmod +x qsub.sh
 ```
 2) Run the “generate-qsub.sh” command once more, with the report parameter added.
+
 3) Run your generated qsub.sh script.
 
 Usage

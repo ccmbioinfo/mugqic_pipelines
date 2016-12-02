@@ -246,8 +246,8 @@ class Metatranscriptomics(common.Illumina):
             for i in (1, 2):
                 input_fasta = join(input_dir, '{name}.{i}.qual_all.fasta'.format(name=readset.name, i=i))
 
-                output_fasta = join(output_dir, '{name}.{i}.qual_all_unique.fasta'.format(name=readset.name, i=i))
-                output_uc = join(output_dir, '{name}.{i}.qual_all_unique.uc'.format(name=readset.name, i=i))
+                output_fasta = join(output_dir, '{name}.{i}.usearch_out.fasta'.format(name=readset.name, i=i))
+                output_uc = join(output_dir, '{name}.{i}.usearch_out.uc'.format(name=readset.name, i=i))
 
                 job_name = 'cluster_duplicates.{name}.{i}'.format(name=readset.name, i=i)
 
@@ -256,22 +256,26 @@ class Metatranscriptomics(common.Illumina):
         return jobs
 
     def remove_duplicates(self):
-        return [
-            Job(input_files=['remove_duplicates/cow1_qual_all.fasta',
-                             'remove_duplicates/cow2_qual_all.fasta'],
-                output_files=['remove_duplicates/cow1_qual_all_unique.fasta',
-                              'remove_duplicates/cow1_qual_all_unique.uc',
-                              'remove_duplicates/cow2_qual_all_unique.fasta',
-                              'remove_duplicates/cow2_qual_all_unique.uc'],
-                module_entries=[
-                    ['remove_duplicates', 'module_usearch']
-                ],
-                command='''\
-usearch --derep_fullseq --cluster remove_duplicates/cow1_qual_all.fasta --seedsout remove_duplicates/cow1_qual_all_unique.fasta --sizeout -uc remove_duplicates/cow1_qual_all_unique.uc
-usearch --derep_fullseq --cluster remove_duplicates/cow2_qual_all.fasta --seedsout remove_duplicates/cow2_qual_all_unique.fasta --sizeout -uc remove_duplicates/cow2_qual_all_unique.uc
-/hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_get_derepli_IDs.py''',
-                name='remove_duplicates.cow')
-        ]
+        jobs = []
+
+        for readset in self.readsets:
+            for i in (1, 2):
+                input_fastq = join('format_reads', readset.name, '{name}.{i}.qual_all.fastq'.format(name=readset.name, i=i))
+                input_unique_fasta = join('filter_reads', readset.name, '{name}.{i}.usearch_out.fasta'.format(name=readset.name, i=i))
+                input_uc = join('filter_reads', readset.name, '{name}.{i}.usearch_out.uc'.format(name=readset.name, i=i))
+
+                output_ids = join('filter_reads', readset.name, '{name}.{i}.cluster_sizes.json')
+                output_fastq = join('filter_reads', readset.name, '{name}.{i}.unique.fastq')
+                output_fasta = join('filter_reads', readset.name, '{name}.{i}.unique.fasta')
+
+                job_name = 'remove_duplicates.{name}.{i}'.format(name=readset.name, i=i)
+
+                jobs.append(Job(name=job_name,
+                                input_files=[input_fastq, input_unique_fasta, input_uc],
+                                output_files=[output_ids, output_fastq, output_fasta],
+                                command='python {script_path}/remove_duplicates.py'.format(script_path=self.script_path)))
+
+        return jobs
 
     def remove_abundant_rrna(self):
         return [
@@ -312,7 +316,7 @@ usearch --derep_fullseq --cluster remove_duplicates/cow2_qual_all.fasta --seedso
         return [
             self.format_fastq_headers,
             self.trimmomatic,
-            self.merge_overlapping_reads, #3
+            self.merge_overlapping_reads,  # 3
             self.fastq_to_fasta,
             self.cluster_duplicates,
             self.remove_duplicates,

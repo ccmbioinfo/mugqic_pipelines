@@ -16,6 +16,80 @@ results are included in the report. The report includes also the main references
 and methods used during the analysis, together with the full list of parameters that have been passed 
 to the pipeline main script.
 
+Running RNAseq_AS Pipeline
+-----
+
+The RNAseq_AS pipeline has the same usage requirements as the RNAseq pipeline. Example setupenv.sh and generate-qsub.sh scripts can be found in mugqic_pipelines/examples/rnaseq. 
+
+To run the pipeline, follow these steps:
+
+1- Create a folder to hold your files.
+2- Create a setup script in your folder (eg. setupenv.sh) and call "source setupenv.sh" in the command line.
+setupenv.sh should look like this:
+setupenv.sh
+----- 
+```
+#!text
+#!/bin/bash
+# Set up the environment for GenAP
+module load mugqic-pipelines/2.2.0
+export PYTHONPATH=/path-to-your-folder/:$PYTHONPATH
+```
+3- Create the readset, design and config files as specified on the MUGQIC page.
+4- Create and run a generate-qsub file. Here is an example generate-qsub.sh:
+generate-qsub.sh
+----- 
+```
+#!text
+#!/bin/bash
+
+/path-to-mugqic-code/pipelines/rnaseq_AS/RNAseq_AS.py \
+ -s 1-23 \
+ -o /path-to-your-folder/output \
+ -j pbs \
+ -l debug \
+ -d rnaseq_AS.design \
+ -r rnaseq_AS.readset \
+ -c RNAseq_AS.ini 1> qsub.sh 2> debug.log
+
+chmod +x qsub.sh
+
+```
+Check your debug.log and qsub.sh file for errors. Most errors are likely due to an incorrect setting in your configuration file.
+5- Run your qsub.sh file. (ie. enter "./qsub.sh" in the command line)
+
+Report Generation
+-----
+
+As the pipeline is running, it automatically creates the report in parts (based on the step). However, a further step must be taken to combine the segments into one report.
+
+At any time during the pipeline processing, you can run the same pipeline command and add the option --report for the compilation of all the reports already created into a single HTML document (output/report/index.html).
+
+To create the report, follow these steps:
+
+1- Modify your generate-qsub.sh and add the --report parameter.
+Example
+-----
+```
+#!text
+#!/bin/bash
+
+/path-to-mugqic-code/pipelines/rnaseq_AS/RNAseq_AS.py \
+ -s 1-26 \
+ -o /path-to-your-folder/output \
+ -j pbs \
+ -l debug \
+ -d rnaseq_AS.design \
+ -r rnaseq_AS.readset \
+ -c RNAseq_AS.ini \
+ --report 1> qsub.sh 2> debug.log
+
+chmod +x qsub.sh
+```
+
+2- Run the “generate-qsub.sh” command once more, with the report parameter added.
+3- Run your generated qsub.sh script.
+
 Usage
 -----
 ```

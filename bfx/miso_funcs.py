@@ -14,15 +14,15 @@ import os
 from core.config import *
 from core.job import *
 
-def make_index(output_folder):
+def make_index(output_folder, gff):
     return Job(
         output_files=[output_folder],
         command="""\
 module load python/2.7.9 && \\
 mkdir -p {output_folder} && \\
-index_gff --index {gff_ref_file} {output_folder}""".format(
+index_gff --index {gff} {output_folder}""".format(
             output_folder=output_folder,
-            gff_ref_file = config.param('miso_index', 'input_gff_file', type='filepath', required=True)
+            gff = gff
             )
         )
 
@@ -37,11 +37,11 @@ def paired_end(bam, sample_name):
         ],
         command="""\
 module load python/2.7.9 && \\
-pe_utils --compute-insert-len {bam} {gff} --output-dir miso/{sample_name}/insert-dist/ {other_options}""".format(
+pe_utils --compute-insert-len {bam} {gff} --output-dir miso/{sample_name}/insert-dist/ --min-exon-size {min_exon_size} {other_options}""".format(
             bam = bam,
             sample_name = sample_name,
-            gff = config.param('miso_index', 'input_gff_file', type='filepath',
- required=True),
+            min_exon_size = config.param('miso_paired_end', 'min_exon_size', type='string', required=True),
+            gff = config.param('miso_paired_end', 'input_gff_file', type='filepath', required=True),
             other_options = config.param('miso_paired_end', 'other_options', type='string', required=False)
             )
         )
@@ -91,7 +91,6 @@ def summary(summarize_dir, summary):
     return Job(
         [summarize_dir],
         [summary],
-        [['bedtools', 'module_bedtools']],
         command="""\
 module load python/2.7.9 && \\
 summarize_miso --summarize-samples {summarize_dir} {summarize_dir} {other_options}""".format(
@@ -106,7 +105,6 @@ def compare(sample_one, sample_two, output_directory, output, summaries_list):
     return Job(
         summaries_list,
         [output],
-        [['bedtools', 'module_bedtools']],
         command="""\
 module load python/2.7.9 && \\
 compare_miso --compare-samples miso/{sample_one} miso/{sample_two} {output_directory} {other_options}""".format(
@@ -201,7 +199,7 @@ def plot_event(dependencies, event_name):
     output_plot = os.path.join('miso', 'plots', event_name + '.pdf')
 
     return Job(
-        dependencies + ['miso/indexed', 'miso/sashimi_plot_settings.txt'],
+        dependencies + ['miso/indexed_SE', 'miso/sashimi_plot_settings.txt'],
         [output_plot],
         [['samtools', 'module_samtools']],
         command="""\

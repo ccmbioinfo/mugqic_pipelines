@@ -536,12 +536,18 @@ pandoc --to=markdown \\
 
         """
         jobs = []
-        indexed_folder = "miso/indexed"
+        
+        gffs = ['A3SS.hg19.gff3','A5SS.hg19.gff3','MXE.hg19.gff3','RI.hg19.gff3','SE.hg19.gff3']
 
-        job = miso_funcs.make_index(indexed_folder)
-        job.name = "miso_index"
+        for gff in gffs:
+            
+            indexed_folder = 'miso/indexed_' + gff.split('.')[0]
+            input_gff_file = os.path.join('/hpf/projects/brudno/vincent/data/hg19', gff)
 
-        jobs.append(job)
+            job = miso_funcs.make_index(indexed_folder, input_gff_file)
+            job.name = "miso_index." + gff.split('.')[0]
+
+            jobs.append(job)
 
         return jobs
 
@@ -572,16 +578,19 @@ pandoc --to=markdown \\
 
         jobs = []
 
-        indexed_folder = "miso/indexed"
-
         for sample in self.samples:
-            alignment_file_name = os.path.join("alignment", sample.name, sample.name + ".sorted.bam")
-            bam_header = alignment_file_name + ".bai"
-            output_folder_name = os.path.join("miso", sample.name)
 
-            job = miso_funcs.compute_psi(alignment_file_name, indexed_folder, bam_header, output_folder_name, sample.name)
-            job.name = "miso_psi." + sample.name
-            jobs.append(job)
+            gffs = ['A3SS','A5SS','MXE','RI','SE']
+            for gff in gffs:
+
+                indexed_folder = 'miso/indexed_' + gff
+                alignment_file_name = os.path.join("alignment", sample.name, sample.name + ".sorted.bam")
+                bam_header = alignment_file_name + ".bai"
+                output_folder_name = os.path.join("miso", sample.name, gff)
+
+                job = miso_funcs.compute_psi(alignment_file_name, indexed_folder, bam_header, output_folder_name, sample.name)
+                job.name = 'miso_psi.' + sample.name + '.' + gff
+                jobs.append(job)
 
         return jobs
 
@@ -590,11 +599,15 @@ pandoc --to=markdown \\
         jobs = []
 
         for sample in self.samples:
-            summary_folder_prefix = os.path.join("miso", sample.name)
 
-            job = miso_funcs.summary(summary_folder_prefix, os.path.join(summary_folder_prefix, "summary", sample.name + ".miso_summary"))
-            job.name = "miso_summarize." + sample.name
-            jobs.append(job)
+            gffs = ['A3SS','A5SS','MXE','RI','SE']
+            for gff in gffs:
+
+                summary_folder_prefix = os.path.join("miso", sample.name, gff)
+
+                job = miso_funcs.summary(summary_folder_prefix, os.path.join(summary_folder_prefix, "summary", sample.name + ".miso_summary"))
+                job.name = "miso_summarize." + sample.name + '.' + gff
+                jobs.append(job)
 
         return jobs
 
@@ -603,7 +616,11 @@ pandoc --to=markdown \\
 
         summaries = []
         for sample in self.samples:
-            summaries.append(os.path.join('miso', sample.name, 'summary', sample.name + '.miso_summary'))
+
+            gffs = ['A3SS','A5SS','MXE','RI','SE']
+            for gff in gffs:
+
+                summaries.append(os.path.join('miso', sample.name, gff, 'summary', sample.name + '.miso_summary'))
 
         for contrast in self.contrasts:
 
@@ -673,7 +690,10 @@ pandoc --to=markdown \\
 
             dependencies = []
             for sample in self.samples:
-                dependencies.append( os.path.join('miso', sample.name, 'summary', sample.name + '.miso_summary'))
+                
+                gffs = ['A3SS','A5SS','MXE','RI','SE']
+                for gff in gffs:
+                    dependencies.append( os.path.join('miso', sample.name, gff, 'summary', sample.name + '.miso_summary'))
             
             i = 0
             

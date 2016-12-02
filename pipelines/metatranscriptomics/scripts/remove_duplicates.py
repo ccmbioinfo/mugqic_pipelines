@@ -1,15 +1,10 @@
 #!/usr/bin/env python
 """
-Input:
-Original fastq          - *.{1,2}.qual_all.fastq
-Only unique reads       - *.{1,2}.qual_all_unique.fasta
-UC file of unique reads - *.{1,2}.qual_all_unique.uc
+Remove duplicates from a fastq file
 
-Output:
-ID to # of duplicates                    - *.{1,2}.qual_all_unique_IDs.txt
-De-duplicated fastq                      - *.{1,2}.qual_all_unique.fastq
-De-duplicated fasta (with corrected IDs) - *.{1,2}.qual_all_unique.fasta
+Record the IDs and the number of duplicates in a *.json file
 """
+import json
 import re
 from argparse import ArgumentParser
 
@@ -98,18 +93,19 @@ def assign_cluster_size(unique_reads, uc_file, unique_fasta):
         read.cluster_size = cluster_id_to_size[fastq_id_to_cluster_id[read.id]]
 
 
-def write_ids(reads, id_file):
+def write_id_to_cluster_size(reads, id_file):
     """
-    Write to id_file:
-    <ID><TAB><number of duplicates>
-
-    :param reads: iterable of reads
-    :param id_file: *.IDs.txt
+    Write a table in json containing fastq ID and number of duplicates
+    Eg:
+    {"rows": [
+        {"id": "SRR1", "num_duplicates": 3}
+        {"id": "SRR23", "num_duplicates": 1}
+    ]}
     """
-    # Write the ID file as <ID><TAB><number of duplicates>
-    with open(id_file, 'w+') as f:
-        for read in reads:
-            f.write('{id}\t{cluster_size}\n'.format(id=read.id, cluster_size=read.cluster_size))
+    id_to_cluster_size = {'rows':
+                              [{'id': read.id, 'num_duplicates': read.cluster_size} for read in reads]
+                          }
+    json.dump(id_to_cluster_size, id_file)
 
 
 def write_unique_reads(reads, file, format):
@@ -132,7 +128,7 @@ unique_reads = get_unique_reads(args.original_fastq, args.unique_uc)
 assign_cluster_size(unique_reads, args.unique_uc, args.unique_fasta)
 
 # Keep track of how many duplicates there are of each read
-write_ids(unique_reads, args.output_ids)
+write_id_to_cluster_size(unique_reads, args.output_ids)
 
 # Write out a *.fasta and *.fastq file containing only the unique reads
 write_unique_reads(unique_reads, args.unique_fastq, 'fastq')

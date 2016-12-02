@@ -193,6 +193,16 @@ class Metatranscriptomics(common.Illumina):
         return jobs
 
     def fastq_to_fasta(self):
+        """
+        Convert both fastq files to fastas
+
+        Input:
+        format_reads/*{1,2}.qual_all.fastq
+        Output:
+        filter_reads/*{1,2}.qual_all.fasta
+
+        Required since our usearch/5.2.236 only takes fastas as input
+        """
         jobs = []
 
         input_prefix = 'format_reads'
@@ -202,6 +212,7 @@ class Metatranscriptomics(common.Illumina):
             input_dir = join(input_prefix, readset.name)
             output_dir = join(output_prefix, readset.name)
 
+            # For both fastq files (paired-end reads)
             for i in (1, 2):
                 input_fastq = join(input_dir, readset.name + '.{i}.qual_all.fastq'.format(i=i))
                 output_fasta = join(output_dir, readset.name + '.{i}.qual_all.fasta'.format(i=i))
@@ -212,6 +223,16 @@ class Metatranscriptomics(common.Illumina):
         return jobs
 
     def cluster_duplicates(self):
+        """
+        Cluster duplicate reads together
+
+        Input:
+        filter_reads/*.{1,2}.qual_all.fasta
+
+        Output:
+        filter_reads/*.{1,2}.qual_all_unique.fasta
+                     *.{1,2}.qual_all_unique.uc         - contains the fasta IDs and cluster IDs
+        """
         jobs = []
 
         input_prefix = 'filter_reads'
@@ -221,11 +242,15 @@ class Metatranscriptomics(common.Illumina):
             input_dir = join(input_prefix, readset.name)
             output_dir = join(output_prefix, readset.name)
 
+            # For both paired-end reads
             for i in (1, 2):
                 input_fasta = join(input_dir, '{name}.{i}.qual_all.fasta'.format(name=readset.name, i=i))
+
                 output_fasta = join(output_dir, '{name}.{i}.qual_all_unique.fasta'.format(name=readset.name, i=i))
                 output_uc = join(output_dir, '{name}.{i}.qual_all_unique.uc'.format(name=readset.name, i=i))
+
                 job_name = 'cluster_duplicates.{name}.{i}'.format(name=readset.name, i=i)
+
                 jobs.append(usearch.cluster_duplicates(input_fasta, output_fasta, output_uc, name=job_name))
 
         return jobs

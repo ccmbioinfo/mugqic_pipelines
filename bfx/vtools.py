@@ -11,7 +11,6 @@ def make_fastq(input_bam, output_fastq):
     return Job(
         [input_bam],
         [output_fastq],
-        [['bedtools', 'module_bedtools']],
         command="""\
 module load tophat && \\
 bam2fastx --fastq -M -o {output_fastq} -N {input_bam}""".format(
@@ -25,7 +24,6 @@ def alignment(input_fastq, align_output):
     return Job(
         [input_fastq],
         [align_output],
-        [['bedtools', 'module_bedtools']],
         command="""\
 module load vast-tools && \\
 mkdir -p vast_out && \\
@@ -41,7 +39,6 @@ def comb(dependency_list, inclusion_table):
     return Job(
         dependency_list,
         [inclusion_table],
-        [['bedtools', 'module_bedtools']],
         command="""\
 module load vast-tools && \\
 vast-tools combine -o vast_out {other_options} -sp {species}""".format(
@@ -53,16 +50,24 @@ vast-tools combine -o vast_out {other_options} -sp {species}""".format(
         )
 
 
-def differential_splicing(sample_one, sample_two, input_table, inclusion_table):
+def differential_splicing(control_samples_names, treatment_samples_names, input_table, inclusion_table):
+
+    controls = ''
+    for sample in control_samples_names:
+        controls += sample + ','
+
+    treatments = ''
+    for sample in treatment_samples_names:
+        treatments += sample + ','
+
     return Job(
         [input_table],
         [inclusion_table],
-        [['bedtools', 'module_bedtools']],
         command="""\
 module load vast-tools && \\
-vast-tools diff -a {sample_one} -b {sample_two} -o vast_out {other_options} > {inclusion_table}""".format(
-            sample_one = sample_one,
-            sample_two = sample_two,
+vast-tools diff -a {controls} -b {treatments} -o vast_out {other_options} > {inclusion_table}""".format(
+            controls = controls[:-1],
+            treatments = treatments[:-1],
             input_table = input_table,
             other_options = config.param('vast_tools_diff', 'other_options', type='string', required=False),
             inclusion_table = inclusion_table,            
@@ -78,7 +83,6 @@ def plots(inclusion_table, events_list):
     return Job(
         [inclusion_table],
         ['vast_out/plot_events.tab', 'vast_out/plot_events.PSI_plots.pdf'],
-        [['bedtools', 'module_bedtools']],
         command="""\
 module load vast-tools && \\
 awk '{search}' {inclusion_table} > vast_out/plot_events.tab && \\

@@ -787,11 +787,17 @@ pandoc --to=markdown \\
        
         for contrast in self.contrasts:
 
-            control_sample = (contrast.controls[0]).name
-            treatment_sample = (contrast.treatments[0]).name
+            control_samples_names = []
+            for control in contrast.controls:
+                control_samples_names.append(control.name)
+
+            treatment_samples_names = []
+            for treatment in contrast.treatments:
+                treatment_samples_names.append(treatment.name)
+
             filtered_inclusion_table = os.path.join("vast_out", "INCLUSION-FILTERED-" + contrast.name + ".tab" )
 
-            job = vtools.differential_splicing(control_sample, treatment_sample, full_inclusion, filtered_inclusion_table)
+            job = vtools.differential_splicing(control_samples_names, treatment_samples_names, full_inclusion, filtered_inclusion_table)
 
             job.name = "vast_tools_diff." + contrast.name
             jobs.append(job)

@@ -28,7 +28,7 @@ To run the pipeline, follow these steps:
 
 setupenv.sh should look like this:
 setupenv.sh
------ 
+--- 
 ```
 #!text
 #!/bin/bash
@@ -40,7 +40,7 @@ export PYTHONPATH=/path-to-your-folder/:$PYTHONPATH
 
 4) Create and run a generate-qsub file. Here is an example generate-qsub.sh:
 generate-qsub.sh
------ 
+--- 
 ```
 #!text
 #!/bin/bash
@@ -72,7 +72,7 @@ To create the report, follow these steps:
 
 1) Modify your generate-qsub.sh and add the --report parameter.
 Example
------
+---
 ```
 #!text
 #!/bin/bash

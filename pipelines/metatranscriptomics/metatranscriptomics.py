@@ -16,6 +16,7 @@ from pipelines import common
 from bfx import trimmomatic
 from bfx import flash
 from bfx import seqtk
+from bfx import usearch
 
 log = logging.getLogger(__name__)
 
@@ -199,16 +200,33 @@ class Metatranscriptomics(common.Illumina):
 
         for readset in self.readsets:
             input_dir = join(input_prefix, readset.name)
-            fastq1 = join(input_dir, readset.name + '.1.qual_all.fastq')
-            fastq2 = join(input_dir, readset.name + '.2.qual_all.fastq')
-
             output_dir = join(output_prefix, readset.name)
-            fasta1 = join(output_dir, readset.name + '.1.qual_all.fasta')
-            fasta2 = join(output_dir, readset.name + '.2.qual_all.fasta')
 
-            jobs.append(concat_jobs([seqtk.fastq_to_fasta(fastq1, fasta1),
-                                     seqtk.fastq_to_fasta(fastq2, fasta2)],
-                                    name='fastq_to_fasta.' + readset.name))
+            for i in (1, 2):
+                input_fastq = join(input_dir, readset.name + '.{i}.qual_all.fastq'.format(i=i))
+                output_fasta = join(output_dir, readset.name + '.{i}.qual_all.fasta'.format(i=i))
+                job_name = 'fastq_to_fasta.{name}.{i}'.format(name=readset.name, i=i)
+
+                jobs.append(seqtk.fastq_to_fasta(input_fastq, output_fasta, name=job_name))
+
+        return jobs
+
+    def cluster_duplicates(self):
+        jobs = []
+
+        input_prefix = 'filter_reads'
+        output_prefix = 'filter_reads'
+
+        for readset in self.readsets:
+            input_dir = join(input_prefix, readset.name)
+            output_dir = join(output_prefix, readset.name)
+
+            for i in (1, 2):
+                input_fasta = join(input_dir, '{name}.{i}.qual_all.fasta'.format(name=readset.name, i=i))
+                output_fasta = join(output_dir, '{name}.{i}.qual_all_unique.fasta'.format(name=readset.name, i=i))
+                output_uc = join(output_dir, '{name}.{i}.qual_all_unique.uc'.format(name=readset.name, i=i))
+                job_name = 'cluster_duplicates.{name}.{i}'.format(name=readset.name, i=i)
+                jobs.append(usearch.cluster_duplicates(input_fasta, output_fasta, output_uc, name=job_name))
 
         return jobs
 
@@ -269,9 +287,10 @@ usearch --derep_fullseq --cluster remove_duplicates/cow2_qual_all.fasta --seedso
         return [
             self.format_fastq_headers,
             self.trimmomatic,
-            self.merge_overlapping_reads,
+            self.merge_overlapping_reads, #3
             self.fastq_to_fasta,
-            self.remove_duplicates,  # 5
+            self.cluster_duplicates,
+            self.remove_duplicates,
             self.remove_abundant_rrna,
         ]
 

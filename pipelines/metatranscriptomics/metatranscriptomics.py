@@ -15,6 +15,7 @@ from core.job import Job, concat_jobs
 from pipelines import common
 from bfx import trimmomatic
 from bfx import flash
+from bfx import seqtk
 
 log = logging.getLogger(__name__)
 
@@ -64,8 +65,7 @@ class Metatranscriptomics(common.Illumina):
             output2 = join(output_dir, readset.name + '.2.formatted.fastq')
 
             jobs.append(concat_jobs([Job(command='mkdir {}'.format(output_dir)),
-                                     Job(name='format_fastq_headers.' + readset.name,
-                                         input_files=[readset.fastq1, readset.fastq2],
+                                     Job(input_files=[readset.fastq1, readset.fastq2],
                                          output_files=[output1, output2],
                                          module_entries=[['DEFAULT', 'module_perl']],
                                          command='perl {script_path}/main_add_subID_reads_fastq.pl '
@@ -74,7 +74,8 @@ class Metatranscriptomics(common.Illumina):
                                                                              input1=readset.fastq1,
                                                                              output1=output1,
                                                                              input2=readset.fastq2,
-                                                                             output2=output2))]))
+                                                                             output2=output2))],
+                                    name='format_fastq_headers.' + readset.name, ))
 
         return jobs
 
@@ -163,8 +164,8 @@ class Metatranscriptomics(common.Illumina):
             :return: 2 output filenames
             """
             output_dir = join(output_prefix, readset.name)
-            return join(output_dir, readset.name + '1.qual_all.fastq'), \
-                   join(output_dir, readset.name + '1.qual_all.fastq')
+            return join(output_dir, readset.name + '.1.qual_all.fastq'), \
+                   join(output_dir, readset.name + '.2.qual_all.fastq')
 
         for readset in self.readsets:
             # Get the filenames
@@ -176,30 +177,38 @@ class Metatranscriptomics(common.Illumina):
             # Create jobs
             flash_job = flash.merge_overlapping_reads(input1, input2, flash_output_dir, flash_output_prefix)
             # Put the merged reads into fastq1
-            fastq1_job = Job(command='cat {combined1} {merged} > {output1}'.format(combined1=flash1,
-                                                                                   merged=flash_merged,
-                                                                                   output1=output1)),
+            fastq1_job = Job(input_files=[flash1, flash_merged],
+                             output_files=[output1],
+                             command='cat {flash1} {merged} > {output1}'.format(flash1=flash1, merged=flash_merged,
+                                                                                output1=output1)),
             # Rename fastq2 to be consistent with fastq1
-            fastq2_job = Job(command='mv {combined2} {output2}'.format(combined2=flash2,
-                                                                       output2=output2))
-            jobs.append(concat_jobs([flash_job, fastq1_job, fastq2_job]))
+            fastq2_job = Job(input_files=[flash2],
+                             output_files=[output2],
+                             command='mv {flash2} {output2}'.format(flash2=flash2, output2=output2))
+            jobs.append(concat_jobs([flash_job, fastq1_job, fastq2_job], name='flash.' + readset.name))
 
         return jobs
 
     def fastq_to_fasta(self):
-        return [concat_jobs([Job(command='mkdir -p remove_duplicates'),
-                             Job(input_files=['flash/cow1_qual_all.fastq',
-                                              'flash/cow2_qual_all.fastq'],
-                                 output_files=['remove_duplicates/cow1_qual_all.fasta',
-                                               'remove_duplicates/cow2_qual_all.fasta'],
-                                 module_entries=[
-                                     ['fastq_to_fasta', 'module_seqtk'],
-                                     ['fastq_to_fasta', 'module_perl']
-                                 ],
-                                 command='''\
-seqtk seq -a flash/cow1_qual_all.fastq > remove_duplicates/cow1_qual_all.fasta
-seqtk seq -a flash/cow2_qual_all.fastq > remove_duplicates/cow2_qual_all.fasta''')],
-                            name='fastq_to_fasta.cow')]
+        jobs = []
+
+        input_prefix = 'format_reads'
+        output_prefix = 'filter_reads'
+
+        for readset in self.readsets:
+            input_dir = join(input_prefix, readset.name)
+            fastq1 = join(input_dir, readset.name + '.1.qual_all.fastq')
+            fastq2 = join(input_dir, readset.name + '.2.qual_all.fastq')
+
+            output_dir = join(output_prefix, readset.name)
+            fasta1 = join(output_dir, readset.name + '.1.qual_all.fasta')
+            fasta2 = join(output_dir, readset.name + '.2.qual_all.fasta')
+
+            jobs.append(concat_jobs([seqtk.fastq_to_fasta(fastq1, fasta1),
+                                     seqtk.fastq_to_fasta(fastq2, fasta2)],
+                                    name='fastq_to_fasta.' + readset.name))
+
+        return jobs
 
     def remove_duplicates(self):
         return [

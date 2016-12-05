@@ -5,6 +5,7 @@ All analysis parameters are described in this [configuration file](config.ini).
 ## References
 <span />
 
+[Bismark]: http://www.bioinformatics.babraham.ac.uk/projects/bismark/
 [BLASR]: https://github.com/PacificBiosciences/blasr
 [BLAST]: http://www.ncbi.nlm.nih.gov/books/NBK52640/
 [BWA]: http://bio-bwa.sourceforge.net/
@@ -15,6 +16,7 @@ All analysis parameters are described in this [configuration file](config.ini).
 [Cuffnorm]: http://cole-trapnell-lab.github.io/cufflinks/cuffnorm/
 [DESeq]: http://bioconductor.org/packages/release/bioc/html/DESeq.html
 [edgeR]: http://bioconductor.org/packages/release/bioc/html/edgeR.html
+[FastQC]: http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
 [GATK]: https://www.broadinstitute.org/gatk/
 [goseq]: http://www.bioconductor.org/packages/release/bioc/html/goseq.html
 [HGAP]: https://github.com/PacificBiosciences/Bioinformatics-Training/wiki/HGAP
@@ -29,12 +31,34 @@ All analysis parameters are described in this [configuration file](config.ini).
 [SnpEff]: http://snpeff.sourceforge.net/
 [SnpSift]: http://snpeff.sourceforge.net/SnpSift.html
 [STAR]: https://github.com/alexdobin/STAR
+[Trim Galore!]: http://www.bioinformatics.babraham.ac.uk/projects/trim_galore/
 [Trimmomatic]: http://www.usadellab.org/cms/index.php?page=trimmomatic
 [Trinity]: https://trinityrnaseq.github.io/
 [UCSC]: http://genome.ucsc.edu/
 
 ---
 references:
+- link-citations: True
+
+- id: bismark
+  title: 'Bismark: a flexible aligner and methylation caller for Bisulfite-Seq applications'
+  author:
+    - family: Krueger
+      given: Felix
+    - family: Andrews
+      given: Simon
+  container-title: Bioinformatics
+  volume: 27
+  issue: 11
+  page: 1571–1572
+  issued:
+    year: 2011
+    month: 6
+    day: 1
+  DOI: 10.1093/bioinformatics/btr167
+  URL: 'https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3102221/'
+  type: article-journal
+
 - id: blasr
   title: 'Mapping single molecule sequencing reads using basic local alignment with successive refinement (BLASR): application and theory'
   author:
@@ -238,6 +262,18 @@ references:
   type: article-journal
   issued:
     year: 2010
+
+- id: fastqc
+  title: 'Babraham Bioinformatics - FastQC A Quality Control tool for High Throughput Sequence Data'
+  container-title: Babraham Bioinformatics
+  author:
+    - family: Andrews
+      given: Simon
+  issued:
+    year: 2016
+  type: Website
+  URL: http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
+  
 
 - id: gatk
   title: 'A framework for variation discovery and genotyping using next-generation DNA sequencing data'
@@ -536,6 +572,17 @@ references:
   type: article-journal
   issued:
     year: 2012
+
+- id: trim_galore
+  title: 'Babraham Bioinformatics - FastQC'
+  type: Website
+  URL: 'http://www.bioinformatics.babraham.ac.uk/projects/trim_galore/'
+  container-title: Babraham Bioinformatics
+  author:
+    - family: Krueger
+      given: Felix
+  issued:
+    year: 2016
 
 - id: trimmomatic
   title: 'Trimmomatic: a flexible trimmer for Illumina sequence data'

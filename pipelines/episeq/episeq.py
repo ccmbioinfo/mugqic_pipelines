@@ -84,18 +84,24 @@ one BAM file per readset without explicitly doing so. After this, readsets are c
 """
 
 # Python Standard Modules
+import argparse
+import collections
+import logging
 import os
+import re
 import sys
 
 # Append mugqic_pipelines directory to Python library path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0])))))
 
 # MUGQIC Modules
+from core.config import *
+from core.job import *
 from core.pipeline import *
-from bfx.readset import *
 from bfx.design import *
-
+from bfx.readset import *
 from pipelines import common
+import utils
 
 log = logging.getLogger(__name__)
 

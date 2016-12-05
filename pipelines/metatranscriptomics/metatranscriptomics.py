@@ -11,7 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 # MUGQIC Modules
 from core.config import config
-from core.job import Job, concat_jobs
+from core.job import Job, concat_jobs, mkdir
 from pipelines import common
 from bfx import trimmomatic
 from bfx import flash
@@ -65,7 +65,8 @@ class Metatranscriptomics(common.Illumina):
             output1 = join(output_dir, readset.name + '.1.formatted.fastq')
             output2 = join(output_dir, readset.name + '.2.formatted.fastq')
 
-            jobs.append(concat_jobs([Job(command='mkdir {}'.format(output_dir)),
+            jobs.append(concat_jobs([mkdir(output1),
+                                     mkdir(output2),
                                      Job(input_files=[readset.fastq1, readset.fastq2],
                                          output_files=[output1, output2],
                                          module_entries=[['DEFAULT', 'module_perl']],

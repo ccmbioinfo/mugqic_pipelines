@@ -259,15 +259,23 @@ class Metatranscriptomics(common.Illumina):
     def remove_duplicates(self):
         jobs = []
 
-        for readset in self.readsets:
-            for i in (1, 2):
-                input_fastq = join('format_reads', readset.name, '{name}.{i}.qual_all.fastq'.format(name=readset.name, i=i))
-                input_unique_fasta = join('filter_reads', readset.name, '{name}.{i}.usearch_out.fasta'.format(name=readset.name, i=i))
-                input_uc = join('filter_reads', readset.name, '{name}.{i}.usearch_out.uc'.format(name=readset.name, i=i))
+        input_original_prefix = 'format_reads'
+        input_unique_prefix = 'filter_reads'
+        output_prefix = 'filter_reads'
 
-                output_ids = join('filter_reads', readset.name, '{name}.{i}.cluster_sizes.json'.format(name=readset.name, i=i))
-                output_fastq = join('filter_reads', readset.name, '{name}.{i}.unique.fastq'.format(name=readset.name, i=i))
-                output_fasta = join('filter_reads', readset.name, '{name}.{i}.unique.fasta'.format(name=readset.name, i=i))
+        for readset in self.readsets:
+            input_original_dir = join(input_original_prefix, readset.name)
+            input_unique_dir = join(input_unique_prefix, readset.name)
+            output_dir = join(output_prefix, readset.name)
+
+            for i in (1, 2):
+                input_fastq = join(input_original_dir, '{name}.{i}.qual_all.fastq'.format(name=readset.name, i=i))
+                input_unique_fasta = join(input_unique_dir, '{name}.{i}.usearch_out.fasta'.format(name=readset.name, i=i))
+                input_uc = join(input_unique_dir, '{name}.{i}.usearch_out.uc'.format(name=readset.name, i=i))
+
+                output_ids = join(output_dir, '{name}.{i}.cluster_sizes.json'.format(name=readset.name, i=i))
+                output_fastq = join(output_dir, '{name}.{i}.unique.fastq'.format(name=readset.name, i=i))
+                output_fasta = join(output_dir, '{name}.{i}.unique.fasta'.format(name=readset.name, i=i))
 
                 job_name = 'remove_duplicates.{name}.{i}'.format(name=readset.name, i=i)
 

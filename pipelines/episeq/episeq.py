@@ -434,7 +434,7 @@ flock -x ".{table_hold}.lock" -c "echo -e {entry} >> {table_hold}" && \\
 mkdir -p {data_loc} && \\
 cp -f {output_file} {data_loc} && \\
 for i in {individual_page}; do
-    sed -r 's/^([^0-9S][a-z ].+):\s+(.+)/|\\1|\\2|/g' ${i} | sed 's/\t/|/g' | awk '{script}' > "$i.md";
+    sed -r 's%^([^0-9S][a-z ].+):(\s+.+)%|\\1|\\2|%g' $i | sed 's/\t/|/g' | awk '{script}' > "$i.md"
 done
 table=$(cat {table_hold}) && \\
 pandoc \\
@@ -605,11 +605,11 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                     completion="$(date +%Y-%m-%d %H:%M:%S)")
                 command = """\
 # Mutual exclusion with other jobs
-flock -x ".{table_hold}.lock" -c "echo -e {entry} >> {table_hold}" && \\
+flock -x .{table_hold}.lock -c "echo -e {entry} >> {table_hold}" && \\
 mkdir -p {data_dir} && \\
 cp -f {reports} {data_dir} && \
 for i in {logs}; do
-    sed -r 's/:\s+/|/g' ${i} | egrep -v "^Option" | egrep -v "^=+$" | awk '{script}' > ${i}.md;
+    sed -r 's/:\s+/|/g' $i | egrep -v "^Option" | egrep -v "^=+$" | awk '{script}' > $i".md";
 done
 table=$(cat {table_hold}) && \\
 pandoc \\
@@ -1244,6 +1244,7 @@ zip {zip_file} {dmrs_file}
             command='bam2nuc --dir ' + output_dir + ' --genome_folder bismark_prepare_genome ' + in_bam,
             name='bam2nuc.' + sample_name)
         return coverage_calc
+
 
 if __name__ == '__main__':
     Episeq()

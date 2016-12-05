@@ -311,3 +311,9 @@ def pipe_jobs(jobs, name=""):
     job.command = " | \\\n".join([job_item.orig_command for job_item in jobs])
 
     return job
+
+
+# Create a job that creates the directory needed for output_file
+def mkdir(output_file):
+    return Job(name='mkdir.{}'.format(output_file),
+               command='mkdir -p {dir}'.format(dir=os.path.dirname(output_file)))

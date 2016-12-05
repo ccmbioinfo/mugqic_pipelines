@@ -931,7 +931,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
         report_data = 'report/data/bismark_html_report_generator'
         template_string_file = 'bismark_summary_report/' + \
                                datetime.datetime.now().strftime('%Y_%m_%d') + "_template_var_strings.txt"
-        fill_in_entry = '| {sample} | {report} | {submission} | {completion} |'
+        fill_in_entry = '| {sample} | {report} | {methyl_calls} | {submission} | {completion} |'
 
         jobs = []
         module_list = [['bismark_html_report_generator', 'module_samtools'],
@@ -977,9 +977,11 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                           nt=' --nucleotide_report ' + report_list[4] if report_list[4] else ''))
 
             # Report Creation
+            zip_file = os.path.join(report_data, sample.name + '_methyl.zip')
             report_entry = fill_in_entry.format(
                 sample=sample.name,
                 report='[View HTML](' + os.path.join(report_data, os.path.basename(html_report)) + ')',
+                methyl_calls='[Download Raw Data](' + zip_file + ')',
                 submission=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 completion="$(date +%Y-%m-%d %H:%M:%S)")
             command = """\
@@ -987,6 +989,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
             flock -x ".{table_hold}.lock" -c "echo -e {entry} >> {table_hold}" && \\
             mkdir -p {data_dir} && \\
             cp -f {report} {data_dir} && \\
+            zip {zip_file} {methyl_calls} && \\
             table=$(cat {table_hold}) && \\
             pandoc \\
             {report_template_dir}/{basename_report_file} \\
@@ -998,12 +1001,16 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                 table_hold=template_string_file,
                 entry=report_entry,
                 data_dir=report_data,
+                methyl_calls='methyl_calls/' + sample.name + '/' + sample.name + '.merged.deduplicated.*',
+                zip_file=zip_file,
                 report=html_report,
                 report_template_dir=self.report_template_dir,
                 basename_report_file=os.path.basename(report_file),
                 report_file=report_file
             )
-            report_job = Job(output_files=[report_file] + [html_report],
+            report_job = Job(output_files=[report_file,
+                                           os.path.join(report_data, os.path.basename(html_report)),
+                                           zip_file],
                              report_files=[report_file],
                              module_entries=[['bismark_html_report_generator', 'module_pandoc']],
                              command=command)
@@ -1081,6 +1088,7 @@ result <- result[abs(result["Avg Delta Beta"]) > {delta_beta_threshold}]
 write.csv(result, file="{dmps_file}", quote=FALSE, row.names=FALSE)
 
 EOF
+zip {zip_file} {dmps_file}
                 """.format(
                     directory=os.path.dirname(dmps_file),
                     samples=tuple(cov_files),
@@ -1093,7 +1101,8 @@ EOF
                     pvalue=config.param("differential_methylated_pos", "pvalue", type="float"),
                     delta_beta_threshold=config.param("differential_methylated_pos", "delta_beta_threshold",
                                                       type="float"),
-                    dmps_file=dmps_file
+                    dmps_file=dmps_file,
+                    zip_file='report/data/differential_methylated_positions.zip'
                 ),
                 name="differential_methylated_pos." + contrast.name)
 
@@ -1165,6 +1174,8 @@ dmrs <- na.omit(dmrs)
 write.csv(dmrs\$table, "{dmrs_file}", quote=FALSE, row.names=FALSE)
 
 EOF
+
+zip {zip_file} {dmrs_file}
                 """.format(
                     directory=os.path.dirname(dmrs_file),
                     samples=tuple(cov_files),
@@ -1175,7 +1186,8 @@ EOF
                     delta_beta_threshold=config.param("differential_methylated_regions", "delta_beta_threshold",
                                                       type="float"),
                     permutations=config.param("differential_methylated_regions", "permutations", type="int"),
-                    dmrs_file=dmrs_file
+                    dmrs_file=dmrs_file,
+                    zip_file='report/data/differential_methylated_regions.zip'
                 ),
                 name="differential_methylated_regions." + contrast.name)
 

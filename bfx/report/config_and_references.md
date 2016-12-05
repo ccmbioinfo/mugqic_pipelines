@@ -5,9 +5,11 @@ All analysis parameters are described in this [configuration file](config.ini).
 ## References
 <span />
 
+[BiSeq]: http://bioconductor.org/packages/release/bioc/html/BiSeq.html
 [Bismark]: http://www.bioinformatics.babraham.ac.uk/projects/bismark/
 [BLASR]: https://github.com/PacificBiosciences/blasr
 [BLAST]: http://www.ncbi.nlm.nih.gov/books/NBK52640/
+[Bumphunter]: http://bioconductor.org/packages/release/bioc/html/bumphunter.html
 [BWA]: http://bio-bwa.sourceforge.net/
 [Celera Assembler]: http://wgs-assembler.sourceforge.net/
 [Cuffdiff]: http://cole-trapnell-lab.github.io/cufflinks/cuffdiff/
@@ -24,6 +26,7 @@ All analysis parameters are described in this [configuration file](config.ini).
 [HTSeq]: http://www-huber.embl.de/users/anders/HTSeq/doc/overview.html
 [IGV]: https://www.broadinstitute.org/igv/
 [MACS]: https://github.com/taoliu/MACS
+[Minfi]: http://bioconductor.org/packages/release/bioc/html/minfi.html
 [PacBio]: http://www.pacificbiosciences.com/news_and_events/publications/
 [Picard]: http://broadinstitute.github.io/picard/
 [RSEM]: http://deweylab.biostat.wisc.edu/rsem/
@@ -39,6 +42,19 @@ All analysis parameters are described in this [configuration file](config.ini).
 ---
 references:
 - link-citations: True
+
+- id: biseq
+  type: webpage
+  title: 'BiSeq: Processing and analyzing bisulfite sequencing data'
+  author:
+    - family: Hebestreit
+      given: Katja
+    - family: Klein
+      given: Hans-Ulrich
+  URL: http://bioconductor.org/packages/release/bioc/html/BiSeq.html
+  version: 1.14.0
+  issued:
+    year: 2015
 
 - id: bismark
   title: 'Bismark: a flexible aligner and methylation caller for Bisulfite-Seq applications'
@@ -74,6 +90,31 @@ references:
   type: article-journal
   issued:
     year: 2012
+
+- id: bumphunter
+  title: 'Bump hunting to identify differentially methylated regions in epigenetic epidemiology studies'
+  author:
+    - family: Jaffe
+      given: A.E.
+    - family: Murakami
+      given: P.
+    - family: Lee
+      given: H.
+    - family: Leek
+      given: J.T.
+    - family: Feinberg
+      given: A.P.
+    - family: Irizarry
+      given: R.A.
+  issued:
+    year: 2012
+  container-title: International journal of epidemiology
+  volume: 41
+  issue: 1
+  pages: 200-209
+  URL: http://bioconductor.org/packages/release/bioc/html/bumphunter.html
+  DOI: 10.1093/ije/dyr238
+  type: article-journal
 
 - id: bwa
   title: 'Fast and accurate long-read alignment with Burrows–Wheeler transform'
@@ -414,6 +455,33 @@ references:
   type: article-journal
   issued:
     year: 2008
+
+- id: minfi
+  title: 'Minfi: A flexible and comprehensive Bioconductor package for the analysis of Infinium DNA Methylation microarrays'
+  author:
+    - family: Aryee
+      given: M.J.
+    - family: Jaffe
+      given: A.E.
+    - family: Corrada-Bravo
+      given: H.
+    - family: Ladd-Acosta
+      given: C.
+    - family: Feinberg
+      given: A.P.
+    - family: Hansen
+      given: K.D.
+    - family: Irizarry
+      given: R.A.
+  container-title: Bioinformatics
+  issued:
+    year: 2014
+  volume: 30
+  issue: 10
+  pages: 1363-1369
+  URL: http://bioconductor.org/packages/release/bioc/html/minfi.html
+  DOI: 10.1093/bioinformatics/btu049
+  type: article-journal
 
 - id: quantifying_rnaseq
   title: 'Mapping and quantifying mammalian transcriptomes by RNA-Seq'

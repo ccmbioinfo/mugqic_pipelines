@@ -1102,7 +1102,7 @@ zip {zip_file} {dmps_file}
                     delta_beta_threshold=config.param("differential_methylated_pos", "delta_beta_threshold",
                                                       type="float"),
                     dmps_file=dmps_file,
-                    zip_file='report/data/differential_methylated_positions.zip'
+                    zip_file='report/data/differential_methylated_pos.zip'
                 ),
                 name="differential_methylated_pos." + contrast.name)
 

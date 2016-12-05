@@ -264,9 +264,9 @@ class Metatranscriptomics(common.Illumina):
                 input_unique_fasta = join('filter_reads', readset.name, '{name}.{i}.usearch_out.fasta'.format(name=readset.name, i=i))
                 input_uc = join('filter_reads', readset.name, '{name}.{i}.usearch_out.uc'.format(name=readset.name, i=i))
 
-                output_ids = join('filter_reads', readset.name, '{name}.{i}.cluster_sizes.json')
-                output_fastq = join('filter_reads', readset.name, '{name}.{i}.unique.fastq')
-                output_fasta = join('filter_reads', readset.name, '{name}.{i}.unique.fasta')
+                output_ids = join('filter_reads', readset.name, '{name}.{i}.cluster_sizes.json'.format(name=readset.name, i=i))
+                output_fastq = join('filter_reads', readset.name, '{name}.{i}.unique.fastq'.format(name=readset.name, i=i))
+                output_fasta = join('filter_reads', readset.name, '{name}.{i}.unique.fasta'.format(name=readset.name, i=i))
 
                 job_name = 'remove_duplicates.{name}.{i}'.format(name=readset.name, i=i)
 
@@ -319,7 +319,7 @@ class Metatranscriptomics(common.Illumina):
             self.merge_overlapping_reads,  # 3
             self.fastq_to_fasta,
             self.cluster_duplicates,
-            self.remove_duplicates,
+            self.remove_duplicates, #6
             self.remove_abundant_rrna,
         ]
 

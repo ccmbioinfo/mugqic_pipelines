@@ -253,7 +253,7 @@ pandoc \\
                     report_file=report_file)
                 update_template = Job(
                     output_files=[os.path.join(report_data, os.path.basename(out_log)) for out_log in output],
-                    module_entries=['pre_qc_check', 'module_pandoc'],
+                    module_entries=[['pre_qc_check', 'module_pandoc']],
                     command=command,
                     report_files=[report_file])
                 # Add to list of jobs

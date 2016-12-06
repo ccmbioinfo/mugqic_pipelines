@@ -121,7 +121,7 @@ class Metatranscriptomics(common.Illumina):
                                           None,
                                           None,
                                           adapter_file=config.param('trimmomatic', 'adapter_fasta'),
-                                          trim_log=join(output_prefix, readset.name + '.trim.log'))
+                                          trim_log=join(output_prefix, readset.name, readset.name + '.trim.log'))
             job.name = 'trimmomatic.' + readset.name
             jobs.append(job)
 
@@ -150,7 +150,7 @@ class Metatranscriptomics(common.Illumina):
             """
             :return: flash's output directory and output prefix
             """
-            return readset.name, join(output_prefix, readset.name)
+            return join(output_prefix, readset.name), readset.name
 
         def get_flash_outputs(output_dir, flash_output_prefix):
             """

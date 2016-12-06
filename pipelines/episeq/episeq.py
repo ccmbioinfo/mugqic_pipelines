@@ -261,7 +261,6 @@ pandoc \\
                                         name='pre_qc_check.' + readset.name))
         return jobs
 
-    @property
     def trim_galore(self):
         """
         This step trims raw FASTQ files for quality control using Trim Galore!
@@ -1203,29 +1202,6 @@ zip {zip_file} {dmrs_file}
 
         return jobs
 
-    @property
-    def steps(self):
-        """
-        These are the steps to the pipeline and are listed in the order that should be processed
-
-        :return: list
-        """
-        return [
-            self.bismark_prepare_genome,
-            self.pre_qc_check,
-            self.trim_galore,
-            self.bismark_align,
-            self.merge_bismark_alignment_report,
-            self.picard_merge_sam_files,
-            self.merged_nuc_stats,
-            self.bismark_deduplicate,
-            self.calc_dedup_nucleotide_coverage,
-            self.bismark_methylation_caller,
-            self.bismark_html_report_generator,
-            self.differential_methylated_pos,
-            self.differential_methylated_regions
-        ]
-
     @staticmethod
     def __bam2nuc__(output_dir, sample_name, suffix, in_bam):
         """
@@ -1252,6 +1228,29 @@ zip {zip_file} {dmrs_file}
             command='bam2nuc --dir ' + output_dir + ' --genome_folder bismark_prepare_genome ' + in_bam,
             name='bam2nuc.' + sample_name)
         return coverage_calc
+
+    @property
+    def steps(self):
+        """
+        These are the steps to the pipeline and are listed in the order that should be processed
+
+        :return: list
+        """
+        return [
+            self.bismark_prepare_genome,
+            self.pre_qc_check,
+            self.trim_galore,
+            self.bismark_align,
+            self.merge_bismark_alignment_report,
+            self.picard_merge_sam_files,
+            self.merged_nuc_stats,
+            self.bismark_deduplicate,
+            self.calc_dedup_nucleotide_coverage,
+            self.bismark_methylation_caller,
+            self.bismark_html_report_generator,
+            self.differential_methylated_pos,
+            self.differential_methylated_regions
+        ]
 
 
 if __name__ == '__main__':

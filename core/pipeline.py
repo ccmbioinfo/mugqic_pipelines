@@ -304,7 +304,7 @@ Steps:
 # Exit immediately on error
 set -eu -o pipefail
 
-module load {module_pandoc}
+module load {module_mugqic} {module_pandoc}
 cd {output_dir}
 mkdir -p report
 cp -r \\
@@ -329,6 +329,7 @@ pandoc \\
   {report_files} \\
   report/config_and_references.md \\
   --output report/index.html""".format(
+                module_mugqic=config.param('DEFAULT', 'module_mugqic'),
                 module_pandoc=config.param('report', 'module_pandoc'),
                 output_dir=output_dir,
                 config_file=config.filepath,

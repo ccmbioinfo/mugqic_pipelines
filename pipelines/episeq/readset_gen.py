@@ -2,7 +2,7 @@
 """
 Info goes here
 """
-
+import argparse
 import csv
 import glob
 import os
@@ -29,7 +29,7 @@ def parse_manifest(manifest_file):
     return entries
 
 
-def generate_readset(entries, readset_file='./episeq.readset', data_root='.'):
+def generate_readset(entries, readset_file, data_root):
     # type: (list, str) -> list
     """
     Writes the readset file, while attempting to find the required fastq/bam files for every run.
@@ -47,46 +47,45 @@ def generate_readset(entries, readset_file='./episeq.readset', data_root='.'):
     """
     with open(readset_file, 'w') as readsets:
         fieldnames = ['Sample', 'Readset', 'Library', 'RunType', 'FASTQ1', 'FASTQ2', 'BAM']
-        writer = csv.DictWriter(readsets, fieldnames=fieldnames, delimiter='\t', quoting=csv.QUOTE_NONE)
+        writer = csv.DictWriter(readsets, fieldnames=fieldnames, delimiter='\t', quoting=csv.QUOTE_NONE, lineterminator='\n')
         # writer.writeheader()
         readsets.write('\t'.join(fieldnames) + '\n')
         bam_loc = ''
         uniq_study = []
 
         for entry in entries:
+            # Directory structure: data/sample_name/sample_name*.{bam,fastq}
             basename = os.path.join(data_root, entry[1], entry[1])
-            found_bam = glob.glob(basename + '*.bam*')
-            found_files = glob.glob(basename + '*.fastq*')
             protocol = 'RRBS' if entry[4] == 'Bisulfite-Seq' and entry[5] == 'Reduced Representation' else 'WGBS'
 
-            try:
-                if found_bam:  # Prefer bam files
-                    bam_loc = os.path.abspath(found_bam[0])
-                    fastq1 = ''
+            # Search for input file
+            found_bam = glob.glob(basename + '*.bam*')
+            found_files = glob.glob(basename + '*.fastq*')
+
+            if found_bam:  # Prefer bam files
+                bam_loc = os.path.abspath(found_bam[0])
+                # Still print entry if missing bam/fastq file.
+                fastq1 = ''
+                fastq2 = ''
+            else:  # Handle up to 2 fastq files
+                if len(found_files) == 1:
+                    fastq1 = os.path.abspath(found_files[0])
                     fastq2 = ''
-                else:  # Handle up to 2 fastq files
-                    if len(found_files) == 0:
-                        raise IOError('No .fastq* files were found for run: ' + entry[1])
-                    elif len(found_files) == 1:
-                        fastq1 = os.path.abspath(found_files[0])
-                        fastq2 = ''
-                    else:  # Make sure I get the right order... just in case
-                        fastq1 = os.path.abspath(glob.glob(basename + '*_1.fastq*')[0])
-                        fastq2 = os.path.abspath(glob.glob(basename + '*_2.fastq*')[0])
-            except IOError:
-                print ('%s will not be included in this run because its files are missing.' % entry[1])
-                continue  # Don't write anything about missing samples
+                else:  # Make sure I get the right order... just in case
+                    fastq1 = os.path.abspath(glob.glob(basename + '*_1.fastq*')[0])
+                    fastq2 = os.path.abspath(glob.glob(basename + '*_2.fastq*')[0])
 
-            writer.writerow({'Sample': entry[0], 'Readset': entry[1], 'Library': protocol, 'RunType': entry[2] + "_END",
-                             'FASTQ1': fastq1, 'FASTQ2': fastq2, 'BAM': bam_loc})
-
+            writer.writerow({'Sample': entry[0], 'Readset': entry[1], 'Library': protocol,
+                             'RunType': '{0}_END'.format(entry[2]), 'FASTQ1': fastq1,
+                             'FASTQ2': fastq2, 'BAM': bam_loc})
+            # Generate a list of samples to help form the design file
             if entry[0] not in [run[0] for run in uniq_study]:
                 uniq_study.append([entry[0], entry[3]])
 
     return uniq_study
 
 
-def generate_design(study_group, design_file='./episet.design'):
+def generate_design(study_group, design_file):
     """
     This function creates/overwrite a design file as an input for the pipeline. It uses information
     from generate_readset() to determine what samples are remaining in the list. Since every
@@ -102,8 +101,8 @@ def generate_design(study_group, design_file='./episet.design'):
     """
     with open(design_file, 'w') as design:
         fieldnames = ['Sample', 'Contrast']
-        writer = csv.DictWriter(design, fieldnames=fieldnames, restval=0,
-                                delimiter='\t', quoting=csv.QUOTE_NONE)
+        writer = csv.DictWriter(design, fieldnames=fieldnames, restval=0, delimiter='\t',
+                                quoting=csv.QUOTE_NONE, lineterminator='\n')
         # writer.writeheader()
         design.write('\t'.join(fieldnames) + '\n')
 
@@ -120,6 +119,25 @@ if __name__ == '__main__':
     :arg 3: (Optional) The output path for the design file. Default : ./episeq.design
     :arg 4: (Optional) The path to the root data directory, where the seq files are stored. Default: '.'
     """
-    data = parse_manifest(sys.argv[1])
-    study = generate_readset(data, sys.argv[2], sys.argv[4])
-    generate_design(study, sys.argv[3])
+    parser = argparse.ArgumentParser(description='')
+    parser.add_argument('-r', '--readset_out', action='store',
+                        default='./episeq.readset', type=str,
+                        required=False, metavar='file', dest='readset_out',
+                        help='The output path for the readset file.')
+    parser.add_argument('-d', '--design_out', action='store',
+                        default='./episeq.design', type=str,
+                        required=False, metavar='file', dest='design_out',
+                        help='The output path for the design file.')
+    parser.add_argument('--data', action='store', default='./', type=str,
+                        required=False, metavar='directory', dest='data_dir',
+                        help="""The path to the root data directory, where the seq files are
+                        stored.""")
+    parser.add_argument('in_file', action='store', type=str,
+                        metavar='sample_table',
+                        help="""A filepath to the SraRunTable.txt or some other similar
+                             format.""")
+    args = parser.parse_args()
+    generate_design(generate_readset(parse_manifest(args.in_file),
+                                     args.readset_out,
+                                     args.data_dir),
+                    args.design_out)

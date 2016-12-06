@@ -18,6 +18,8 @@ to the pipeline main script.
 Running RNAseq_AS Pipeline
 -----
 
+Refer to the MUGQIC, Vast Tools, MISO and JunctionSeq documentation pages for information on how to install each tool.
+
 The RNAseq_AS pipeline has the same usage requirements as the RNAseq pipeline. Example setupenv.sh and generate-qsub.sh scripts can be found in `mugqic_pipelines/examples/rnaseq`. 
 
 To run the pipeline, follow these steps:

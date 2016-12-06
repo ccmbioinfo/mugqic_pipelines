@@ -383,7 +383,7 @@ BEGIN {table=0;}
                     if run_qc:
                         logs += [input1_logs[1]] + [input2_logs[1]]  # FastQC html
                         logs += [input1_logs[2]] + [input2_logs[2]]  # FastQC zip
-                        output_files = [input1_logs[3]] + [input2_logs[3]]
+                    output_files = [input1_logs[3]] + [input2_logs[3]]
                 else:
                     if report_out:
                         logs += [input1_logs[0]]

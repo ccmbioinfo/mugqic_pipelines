@@ -29,6 +29,7 @@ import argparse
 import collections
 import datetime
 import hashlib
+import inspect
 import logging
 import os
 import re
@@ -168,7 +169,8 @@ Steps:
 
     @property
     def report_template_dir(self):
-        return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(Pipeline.__file__))), "bfx", "report")
+        return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(inspect.getsourcefile(Pipeline)))), "bfx",
+                            "report")
 
     @property
     def scheduler(self):

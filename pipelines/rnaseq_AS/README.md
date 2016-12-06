@@ -32,7 +32,6 @@ setupenv.sh should look like this:
 setupenv.sh
 --- 
 ```
-#!text
 #!/bin/bash
 # Set up the environment for GenAP
 module load mugqic-pipelines/2.2.0
@@ -44,7 +43,6 @@ export PYTHONPATH=/path-to-your-folder/:$PYTHONPATH
 generate-qsub.sh
 --- 
 ```
-#!text
 #!/bin/bash
 
 /path-to-mugqic-code/pipelines/rnaseq_AS/RNAseq_AS.py \
@@ -76,7 +74,6 @@ To create the report, follow these steps:
 Example
 ---
 ```
-#!text
 #!/bin/bash
 
 /path-to-mugqic-code/pipelines/rnaseq_AS/RNAseq_AS.py \
@@ -98,8 +95,6 @@ chmod +x qsub.sh
 Usage
 -----
 ```
-#!text
-
 usage: RNAseq_AS.py [-h] [--help] [-c CONFIG [CONFIG ...]] [-s STEPS]
                  [-o OUTPUT_DIR] [-j {pbs,batch}] [-f] [--report] [--clean]
                  [-l {debug,info,warning,error,critical}] [-d DESIGN]

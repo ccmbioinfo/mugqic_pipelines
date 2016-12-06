@@ -107,7 +107,7 @@ def write_id_to_cluster_size(reads, id_file):
                           }
 
     with open(id_file, 'w+') as f:
-        json.dump(id_to_cluster_size, f)
+        json.dump(id_to_cluster_size, f, indent=4)
 
 
 def write_unique_reads(reads, file, format):

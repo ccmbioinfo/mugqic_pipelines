@@ -47,7 +47,7 @@ def get_cluster_id_to_size(fasta):
     def get_size(line):
         return re.search('size=(\d+)', line).group(1)
 
-    return {get_id(line): get_size(line) for line in open(fasta)}
+    return {get_id(line): get_size(line) for line in open(fasta) if line.startswith('>')}
 
 
 def get_fastq_id_to_cluster_id(uc_file):

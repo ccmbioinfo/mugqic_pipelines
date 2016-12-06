@@ -279,7 +279,7 @@ pandoc \\
         report_file = 'report/EpiSeq.trim_galore.md'
         report_data = 'report/data/trim_galore'
         template_string_file = 'trimmed/' + datetime.datetime.now().strftime('%Y_%m_%d') + "_template_var_strings.txt"
-        fill_in_entry = '| {sample} | {readset} | {trim1_view} {trim1_download} {trim2_view} {trim2_download) | ' \
+        fill_in_entry = '| {sample} | {readset} | {trim1_view} {trim1_download} {trim2_view} {trim2_download} | ' \
                         '{qc1_view} {qc1_download} {qc2_view} {qc2_download} | {submission} | {completion} |'
         # Awk script to parse trim reports view easy viewing
         # It will read the start of each line to determine if it is something that we want to keep, or discard.

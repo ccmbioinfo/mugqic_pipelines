@@ -225,7 +225,7 @@ class Episeq(common.Illumina):
                     fq1_report=os.path.join(report_data, id_name[0]),
                     fq1_download=os.path.join(report_data, id_name[0] + '.zip'),
                     fq2_report=os.path.join(report_data, id_name[1]) if len(id_name) == 2 else '',
-                    fq2_download=os.path.join(report_data, id_name[1] + '.zip') if len(id_name) ==2 else '',
+                    fq2_download=os.path.join(report_data, id_name[1] + '.zip') if len(id_name) == 2 else '',
                     submission=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                     completion="$(date +%Y-%m-%d %H:%M:%S)"
                 )
@@ -352,14 +352,20 @@ BEGIN {table=0;}
                 input_files = filter(None, [readset.fastq1, readset.fastq2])
                 file_basename = [os.path.join(trim_directory, os.path.basename(in_file).split('.')[0])
                                  for in_file in input_files]
-                input1_logs = [trim_directory + '/' + os.path.basename(readset.fastq1) + '_trimming_report.txt',
-                               file_basename[0] + "_val_1_fastqc.html", file_basename[0] + "_val_1_fastqc.zip",
-                               file_basename[0] + "_val_1.fq.gz"]
-                input2_logs = []
+
+                # List all possible outputs
                 if len(input_files) == 2:
+                    input1_logs = [trim_directory + '/' + os.path.basename(readset.fastq1) + '_trimming_report.txt',
+                                   file_basename[0] + "_val_1_fastqc.html", file_basename[0] + "_val_1_fastqc.zip",
+                                   file_basename[0] + "_val_1.fq.gz"]
                     input2_logs = [trim_directory + '/' + os.path.basename(readset.fastq2) + '_trimming_report.txt',
                                    file_basename[1] + "_val_2_fastqc.html", file_basename[1] + "_val_2_fastqc.zip",
                                    file_basename[1] + "_val_2.fq.gz"]
+                else:
+                    input1_logs = [trim_directory + '/' + os.path.basename(readset.fastq1) + '_trimming_report.txt',
+                                   file_basename[0] + "_trimmed_fastqc.html", file_basename[0] + "_trimmed_fastqc.zip",
+                                   file_basename[0] + "_trimmed.fq.gz"]
+                    input2_logs = []
 
                 # Parse custom options that may affect output (ex. Running FastQC or suppressing reports)
                 add_options = config.param('trim_galore', 'other_options').split()
@@ -372,11 +378,11 @@ BEGIN {table=0;}
                 if run_type == "PAIRED_END":
                     if not readset.fastq2:
                         raise ValueError("Expecting paired reads be named as follows file1_1.fq file1_2.fq.")
-                    if report_out:
-                        logs += [input1_logs[0]] + [input2_logs[0]]  # Trim report
-                    if run_qc:
-                        logs += [input1_logs[1]] + [input2_logs[1]]  # FastQC html
-                        logs += [input1_logs[2]] + [input2_logs[2]]  # FastQC zip
+                if report_out:
+                    logs += [input1_logs[0]] + [input2_logs[0]]  # Trim report
+                if run_qc:
+                    logs += [input1_logs[1]] + [input2_logs[1]]  # FastQC html
+                    logs += [input1_logs[2]] + [input2_logs[2]]  # FastQC zip
                     output_files = [input1_logs[3]] + [input2_logs[3]]
                 else:
                     if report_out:
@@ -436,20 +442,20 @@ BEGIN {table=0;}
                 new_logs = [os.path.join(report_data, os.path.basename(out_log)) for out_log in
                             filter(None, input1_logs + input2_logs)]
                 command = """\
-# Mutual exclusion with other jobs
-flock -x ".{table_hold}.lock" -c "echo -e {entry} >> {table_hold}" && \\
-mkdir -p {data_loc} && \\
-cp -f {output_file} {data_loc} && \\
-for i in {individual_page}; do
-    sed -r 's%^([^0-9S][a-z ].+):(\s+.+)%|\\1|\\2|%g' $i | sed 's/\t/|/g' | awk '{script}' > "$i.md"
-done
-table=$(cat {table_hold}) && \\
-pandoc \\
-{report_template_dir}/{basename_report_file} \\
-    --template {report_template_dir}/{basename_report_file} \\
-    --variable data_table="$table" \\
-    --to markdown \\
-> {report_file}""".format(
+    # Mutual exclusion with other jobs
+    flock -x ".{table_hold}.lock" -c "echo -e {entry} >> {table_hold}" && \\
+    mkdir -p {data_loc} && \\
+    cp -f {output_file} {data_loc} && \\
+    for i in {individual_page}; do
+        sed -r 's%^([^0-9S][a-z ].+):(\s+.+)%|\\1|\\2|%g' $i | sed 's/\t/|/g' | awk '{script}' > "$i.md"
+    done
+    table=$(cat {table_hold}) && \\
+    pandoc \\
+    {report_template_dir}/{basename_report_file} \\
+        --template {report_template_dir}/{basename_report_file} \\
+        --variable data_table="$table" \\
+        --to markdown \\
+    > {report_file}""".format(
                     entry=entry,
                     report_template_dir=self.report_template_dir,
                     basename_report_file=os.path.basename(report_file),
@@ -465,7 +471,7 @@ pandoc \\
                     module_entries=[['trim_galore', 'module_pandoc']],
                     report_files=[report_file])
                 jobs.append(concat_jobs([mkdir_job, trim_job, report_job], name='trim_galore.' + readset.name))
-        return jobs
+            return jobs
 
     def bismark_align(self):
         """

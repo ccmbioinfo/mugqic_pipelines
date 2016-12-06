@@ -252,18 +252,33 @@ This step is only needed if you are running cufflinks.
 ------------
 Creates an index of gff annotations for MISO. The user must set the location of the gff file they wish to use in the config file.
 
+Important Config Settings:
+1. `input_gff_directory` is the full path to the directory containing the gffs to be indexed for miso_psi.
+2. `gff_assembly` is the assembly in the gff name (ie. "hg19" or "mm9")
+3. `input_gff_prefixes` is a space separated list with the prefixes to the gff files. (ie. "A3SS A5SS MXE RI SE")
+This step will combine `{input_gff_directory}/{input_gff_prefix}.{gff_assembly}.gff3` and index each prefix. Note: It will automatically determine whether to use .gff3 or .nochr.gff.
+
 This step is only needed if you are running MISO.
 
 13- miso_paired_end
 ------------
-Computes insert length distribution and its statistics for the next step. This step is only needed for paired end reads, 
-and will run if library_type=paired in the DEFAULT secttion of the config file. This step will be skipped if library_type=single.
+Computes insert length distribution and its statistics for the next step by running `pe_utils --compute-insert-len`. This step is only needed for paired end reads, 
+and will run if `library_type=paired` in the `DEFAULT` section of the config file. This step will be skipped if `library_type=single`.
+
+Important Config Settings:
+1. `input_gff_file` is the full path to the gff to be used for this step.
+2. `min_exon_size` sets the minimum required length for exons.
+3. `other_options` can be any other options for `pe_utils --compute-insert-len`.
 
 This step is only needed if you are running MISO.
 
 14- miso_psi
 ------------
 Estimates the expression level of a set of annotated isoforms or events by calculating PSI values.
+This function will automatically calculate read length and whether to run in paired end mode.
+
+Important Config Settings:
+1. `other_options` can be any other options for `miso --run`.
 
 This step is only needed if you are running MISO.
 
@@ -271,18 +286,27 @@ This step is only needed if you are running MISO.
 ------------
 Summarizes the output from the previous step and provides confidence intervals for the PSI values. 
 
+Important Config Settings:
+1. `other_options` can be any other options for `summarize_miso --summarize-samples`.
+
 This step is only needed if you are running MISO.
 
 16- miso_diff
 ------------
 Computes Bayes factor to determine how likely the exon or isoform is differentially expressed between samples. 
-This step uses the compare_miso function.
+This step uses the compare_miso function. Note: `compare_miso --compare-samples` can only compare 2 samples at a time. If more than one control or treatment is set for a contrast, MISO will compare the first control and treament samples.
+
+Important Config Settings:
+1. `other_options` can be any other options for `compare_miso --compare-samples`.
 
 This step is only needed if you are running MISO.
 
 17- miso_plot
 ------------
 Uses [Sashimi Plot](http://miso.readthedocs.io/en/fastmiso/sashimi.html) to plot the results from MISO.
+
+Important Config Settings:
+1. `bfx_location` in the `DEFAULT` section must be the full path to the bfx folder.
 
 This step is only needed if you are running MISO.
 
@@ -296,17 +320,27 @@ This step is only needed if you are running Vast Tools.
 ------------
 Outputs the alignment data in a suitable format for Vast Tools usage and computes PSI values.
 
+Important Config Settings:
+1. `species` must be "Hsa" (human), "Mmu" (mouse) or "Gga" (chicken)
+2. `other_options` can be any other options for `vast-tools align`.
+
 This step is only needed if you are running Vast Tools.
 
 20- vast_tools_combine
 ------------
 Combines the data from each sample into one table.
 
+Important Config Settings:
+1. `other_options` can be any other options for `vast-tools combine`.
+
 This step is only needed if you are running Vast Tools.
 
 21- vast_tools_diff
 ------------
-Uses the vast-tools diff function to determine how likely an exon is differentially expressed between samples
+Uses the `vast-tools diff` function to determine how likely an exon is differentially expressed between samples.
+
+Important Config Settings:
+1. `other_options` can be any other options for `vast-tools diff`.
 
 This step is only needed if you are running Vast Tools.
 
@@ -314,29 +348,47 @@ This step is only needed if you are running Vast Tools.
 ------------
 Plots the results from Vast Tools.
 
+Important Config Settings:
+1. `significant_events` should be the Vast Tools ID (ie "HsaEX0000000") of each event to be plotted separated by a space.
+2. `other_options` can be any other options for `vast-tools plot`.
+
 This step is only needed if you are running Vast Tools.
 
 23- jctseq_raw_counts
 ------------
 Uses [QoRTs](http://hartleys.github.io/QoRTs/index.html) to calculate gene-level and splice-junction-level counts. 
-This step will run in single-end mode if library_type=single in the DEFAULT section of the config file.
+This step will run in single-end mode if `library_type=single` in the `DEFAULT` section of the config file.
+
+Important Config Settings:
+1. `QoRTs_other_options` can be any other options for `java -jar QoRTs.jar QC`.
+2. `bfx_location` in the `DEFAULT` section must be the full path to the bfx folder.
 
 This step is only needed if you are running JunctionSeq.
 
 24- jctseq_make_gff
 ------------
-Uses QoRTs to generate an annotation file used by JunctionSeq. It uses the gtf specified in the DEFAULT section to create the gff file. This step will run in single-end mode if library_type=single in the DEFAULT section of the config file.
+Uses QoRTs to generate an annotation file used by JunctionSeq. It uses the gtf specified in the `DEFAULT` section to create the gff file. This step will run in single-end mode if `library_type=single` in the `DEFAULT` section of the config file.
+
+Important Config Settings:
+1. `bfx_location` in the `DEFAULT` section must	be the full path to the	bfx folder.
 
 This step is only needed if you are running JunctionSeq.
 
 25- jctseq_diff_prep
 ------------
-Prepares the data for the next step. Note that the full path to the design file must be given in the config file under the jctseq_diff_prep section.
+Prepares the data for the next step.
+
+Important Config Settings:
+1. `design_file` is the absolute path to the design file.
+2. `bfx_location` in the `DEFAULT` section must	be the full path to the	bfx folder.
 
 This step is only needed if you are running JunctionSeq.
 
 26- jctseq_diff
 ------------
 Tests for differential usage of exons and splice junctions. It will also plot the results of JunctionSeq.
+
+Important Config Settings:
+1. `bfx_location` in the `DEFAULT` section must be the full path to the bfx folder.
 
 This step is only needed if you are running JunctionSeq.

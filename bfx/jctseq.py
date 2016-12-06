@@ -19,7 +19,6 @@ def raw_counts(input_bam, output_dir):
     return Job(
         [input_bam],
         [os.path.join(output_dir, 'QC.QORTS_COMPLETED_OK')],
-        [['bedtools', 'module_bedtools']],
         command="""\
 mkdir -p {output_dir} && \\
 module load java/1.6.0 && \\
@@ -61,7 +60,6 @@ def diff_prep(folder, contrast_name, gff):
     return Job(
         [gff],
         [os.path.join(folder, 'jscs1.r'), 'jctseq/jctseq.design'],
-        [['bedtools', 'module_bedtools']],
         command="""\
 cp {design_file} jctseq/jctseq.design ;\\
 mkdir -p {folder} && \\
@@ -80,7 +78,6 @@ def jscs_diff(input_gff, output_plots, output_results, jscs_file, raw_counts_lis
     return Job(
         raw_counts_list + [input_gff, jscs_file],
         [output_plots, output_results],
-        [['bedtools', 'module_bedtools']],
         command="""\
 mkdir -p {output_plots} && \\
 mkdir -p {output_results} && \\

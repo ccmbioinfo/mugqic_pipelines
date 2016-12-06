@@ -14,14 +14,22 @@ import os
 from core.config import *
 from core.job import *
 
-def make_index(output_folder, gff):
+def make_index(output_folder, gff, input_bam):
+
+    var_set = '{print ".nochr"}'
+
     return Job(
-        output_files=[output_folder],
+        [input_bam],
+        [output_folder],
+        [['samtools', 'module_samtools']],
         command="""\
 module load python/2.7.9 && \\
 mkdir -p {output_folder} && \\
-index_gff --index {gff} {output_folder}""".format(
-            output_folder=output_folder,
+chr=$(samtools view  {input_bam} | head -n1 | awk '$3 !~ /^chr/ {var_set}') && \\
+index_gff --index {gff}$chr.gff3 {output_folder}""".format(
+            output_folder = output_folder,
+            input_bam = input_bam,
+            var_set = var_set,
             gff = gff
             )
         )
@@ -53,6 +61,7 @@ def compute_psi(input_bam, index_folder, output_header, output_folder_name, samp
     depend = []
     mean_com = 'BEGIN { FS=",";} /mean/ {print substr($1,7);}'
     sdev_com = 'BEGIN { FS=",";} /mean/ {print substr($2,6);}'
+    len_com = '{print length($10)}'
  
     if config.param('DEFAULT', 'library_type', type='string', required=True) == 'paired':
         depend = [insert_file]
@@ -69,10 +78,11 @@ def compute_psi(input_bam, index_folder, output_header, output_folder_name, samp
 module load python/2.7.9 && \\
 samtools index {input_bam} && \\
 mkdir -p {output_folder_name} && \\
-unset mean sdev && \\
+unset mean sdev len && \\
 mean=$(awk '{mean_com}' {insert_file}) ;\\
 sdev=$(awk '{sdev_com}' {insert_file}) ;\\
-miso --run {index_folder} {input_bam} --output-dir {output_folder_name} {other_options} --read-len {len_num} {p_end} $mean $sdev""".format(
+len=$(samtools view {input_bam} | head -n1 | awk '{len_com}') && \\
+miso --run {index_folder} {input_bam} --output-dir {output_folder_name} {other_options} --read-len $len {p_end} $mean $sdev""".format(
             input_bam=input_bam,
             index_folder=index_folder,
             output_header=output_header,
@@ -80,9 +90,9 @@ miso --run {index_folder} {input_bam} --output-dir {output_folder_name} {other_o
             p_end = p_end,
             mean_com = mean_com,
             sdev_com = sdev_com,
+            len_com = len_com,
             insert_file = insert_file,
             other_options = config.param('miso_psi', 'other_options', type='string', required=False),
-            len_num = config.param('miso_psi', 'read_length', type='int', required=True)
             )
         )
 

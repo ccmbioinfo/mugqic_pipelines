@@ -27,7 +27,7 @@ def alignment(input_fastq, align_output):
         command="""\
 module load vast-tools && \\
 mkdir -p vast_out && \\
-vast-tools align {input_fastq} --output vast_out {other_options} -sp {species}""".format(
+vast-tools align {input_fastq} --output vast_out {other_options} --expr -sp {species}""".format(
             input_fastq = input_fastq,
             align_output = align_output,
             other_options = config.param('vast_tools_align', 'other_options', type='string', required=False),

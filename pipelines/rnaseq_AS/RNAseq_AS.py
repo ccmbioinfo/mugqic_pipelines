@@ -536,15 +536,24 @@ pandoc --to=markdown \\
 
         """
         jobs = []
-        
-        gffs = ['A3SS.hg19.gff3','A5SS.hg19.gff3','MXE.hg19.gff3','RI.hg19.gff3','SE.hg19.gff3']
 
+        gff_assembly = config.param('miso_index', 'gff_assembly', type='string', required=True)
+        input_gff_prefixes = config.param('miso_index', 'input_gff_prefixes', type='string', required=True).split()
+
+        sample = self.samples[0]
+        input_bam = os.path.join('alignment', sample.name, sample.name + '.sorted.bam')
+
+        gffs = []
+        for prefix in input_gff_prefixes:
+            gffs.append(prefix + '.' + gff_assembly)
+    
         for gff in gffs:
             
             indexed_folder = 'miso/indexed_' + gff.split('.')[0]
-            input_gff_file = os.path.join('/hpf/projects/brudno/vincent/data/hg19', gff)
+            input_gff_directory = config.param('miso_index', 'input_gff_directory', type='string', required=True)
+            input_gff_file = os.path.join(input_gff_directory, gff)
 
-            job = miso_funcs.make_index(indexed_folder, input_gff_file)
+            job = miso_funcs.make_index(indexed_folder, input_gff_file, input_bam)
             job.name = "miso_index." + gff.split('.')[0]
 
             jobs.append(job)

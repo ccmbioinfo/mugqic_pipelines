@@ -124,7 +124,7 @@ def write_unique_reads(reads, file, format):
 args = parse_args()
 
 # Get the unique reads and determine how many there are in each cluster
-unique_reads = get_unique_reads(args.original_fastq, args.unique_uc)
+unique_reads = get_unique_reads(args.input_fastq, args.unique_uc)
 assign_cluster_size(unique_reads, args.unique_uc, args.unique_fasta)
 
 # Keep track of how many duplicates there are of each read

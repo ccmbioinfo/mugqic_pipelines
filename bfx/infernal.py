@@ -5,7 +5,7 @@ from core.config import config
 from core.job import Job
 
 
-def cmscan(rfam_path, query, tblout, log_path, name='cmscan'):
+def cmscan(rfam_path, query, tblout, log_path, name=None):
     return Job(name=name,
                input_files=[rfam_path, query],
                output_files=[tblout, log_path],

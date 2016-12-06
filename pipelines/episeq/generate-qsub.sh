@@ -2,9 +2,7 @@
 
 # Setup environment to run MUGQIC pipelines
 module load mugqic-pipelines/2.2.0
-
-# Setup path variable for python. Modify these paths to point the
-export PYTHONPATH=/hpf/projects/brudno/lmichael/test2/:$PYTHONPATH
+export PYTHONPATH=$MUGQIC_PIPELINES_HOME:$PYTHONPATH
 
 ./episeq/episeq.py \
  -s 1-13 \

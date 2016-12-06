@@ -17,6 +17,7 @@ from bfx import trimmomatic
 from bfx import flash
 from bfx import seqtk
 from bfx import usearch
+from bfx import infernal
 
 log = logging.getLogger(__name__)
 
@@ -188,7 +189,7 @@ class Metatranscriptomics(common.Illumina):
             # Rename fastq2 to be consistent with fastq1
             fastq2_job = Job(input_files=[flash2],
                              output_files=[output2],
-                             command='mv {flash2} {output2}'.format(flash2=flash2, output2=output2))
+                             command='cp {flash2} {output2}'.format(flash2=flash2, output2=output2))
             jobs.append(concat_jobs([flash_job, fastq1_job, fastq2_job], name='flash.' + readset.name))
 
         return jobs
@@ -270,7 +271,8 @@ class Metatranscriptomics(common.Illumina):
 
             for i in (1, 2):
                 input_fastq = join(input_original_dir, '{name}.{i}.qual_all.fastq'.format(name=readset.name, i=i))
-                input_unique_fasta = join(input_unique_dir, '{name}.{i}.usearch_out.fasta'.format(name=readset.name, i=i))
+                input_unique_fasta = join(input_unique_dir,
+                                          '{name}.{i}.usearch_out.fasta'.format(name=readset.name, i=i))
                 input_uc = join(input_unique_dir, '{name}.{i}.usearch_out.uc'.format(name=readset.name, i=i))
 
                 output_ids = join(output_dir, '{name}.{i}.cluster_sizes.json'.format(name=readset.name, i=i))
@@ -282,43 +284,42 @@ class Metatranscriptomics(common.Illumina):
                 jobs.append(Job(name=job_name,
                                 input_files=[input_fastq, input_unique_fasta, input_uc],
                                 output_files=[output_ids, output_fastq, output_fasta],
-                                command='python {script_path}/remove_duplicates.py'.format(script_path=self.script_path)))
+                                command='python {script_path}/remove_duplicates.py '
+                                        '--input-fastq {input_fastq} '
+                                        '--unique-fasta {input_unique_fasta} '
+                                        '--unique-uc {input_uc} '
+                                        '--output-ids {output_ids} '
+                                        '--output-fastq {output_fastq} '
+                                        '--output-fasta {output_fasta}'.format(script_path=self.script_path,
+                                                                               input_fastq=input_fastq,
+                                                                               input_unique_fasta=input_unique_fasta,
+                                                                               input_uc=input_uc,
+                                                                               output_ids=output_ids,
+                                                                               output_fastq=output_fastq,
+                                                                               output_fasta=output_fasta)))
 
-        return jobs
+            return jobs
 
     def remove_abundant_rrna(self):
-        return [
-            concat_jobs([
-                Job(command='mkdir -p remove_abundant_rrna'),
-                Job(input_files=['remove_duplicates/cow1_qual_all_unique.fasta'],
-                    output_files=['remove_abundant_rrna/cow1_rRNA.log',
-                                  'remove_abundant_rrna/cow1_rRNa.infernalout'],
-                    module_entries=[
-                        ['remove_abundant_rrna', 'module_infernal'],
-                        ['remove_abundant_rrna', 'module_perl']
-                    ],
-                    command='cmscan -o remove_abundant_rrna/cow1_rRNA.log '
-                            '--tblout remove_abundant_rrna/cow1_rRNA.infernalout '
-                            '--noali --notextw --rfam -E 0.001 '
-                            '{rfam} '
-                            'remove_duplicates/cow1_qual_all_unique.fasta'.format(
-                        rfam=config.param('remove_abundant_rrna', 'rfam_location'))),
-                Job(input_files=['remove_duplicates/cow2_qual_all_unique.fasta'],
-                    output_files=['remove_abundant_rrna/cow2_rRNA.log',
-                                  'remove_abundant_rrna/cow2_rRNa.infernalout'],
-                    module_entries=[
-                        ['remove_abundant_rrna', 'module_infernal'],
-                        ['remove_abundant_rrna', 'module_perl']
-                    ],
-                    command='cmscan -o remove_abundant_rrna/cow2_rRNA.log '
-                            '--tblout remove_abundant_rrna/cow2_rRNA.infernalout '
-                            '--noali --notextw --rfam -E 0.001 '
-                            '{rfam} '
-                            'remove_duplicates/cow2_qual_all_unique.fasta'.format(
-                        rfam=config.param('remove_abundant_rrna', 'rfam_location')))
-            ], name='remove_abundant_rrna.cow'
-            )
-        ]
+        jobs = []
+
+        input_prefix = 'filter_reads'
+        output_prefix = 'filter_reads'
+
+        for readset in self.readsets:
+            input_dir = join(input_prefix, readset.name)
+            output_dir = join(output_prefix, readset.name)
+
+            for i in (1, 2):
+                jobs.append(infernal.cmscan(rfam_path=config.param('cmscan', 'rfam_location'),
+                                            query=join(input_dir,
+                                                       '{name}.{i}.unique.fasta'.format(name=readset.name, i=i)),
+                                            tblout=join(output_dir,
+                                                        '{name}.{i}.infernalout'.format(name=readset.name, i=i)),
+                                            log_path=join(output_dir,
+                                                          '{name}.{i}.rRNA.log'.format(name=readset.name, i=i))))
+
+        return jobs
 
     @property
     def steps(self):
@@ -328,10 +329,9 @@ class Metatranscriptomics(common.Illumina):
             self.merge_overlapping_reads,  # 3
             self.fastq_to_fasta,
             self.cluster_duplicates,
-            self.remove_duplicates, #6
+            self.remove_duplicates,  # 6
             self.remove_abundant_rrna,
         ]
-
 
 if __name__ == '__main__':
     Metatranscriptomics()

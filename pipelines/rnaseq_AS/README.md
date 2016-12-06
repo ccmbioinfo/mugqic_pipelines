@@ -18,7 +18,7 @@ to the pipeline main script.
 Running RNAseq_AS Pipeline
 -----
 
-The RNAseq_AS pipeline has the same usage requirements as the RNAseq pipeline. Example setupenv.sh and generate-qsub.sh scripts can be found in mugqic_pipelines/examples/rnaseq. 
+The RNAseq_AS pipeline has the same usage requirements as the RNAseq pipeline. Example setupenv.sh and generate-qsub.sh scripts can be found in `mugqic_pipelines/examples/rnaseq`. 
 
 To run the pipeline, follow these steps:
 

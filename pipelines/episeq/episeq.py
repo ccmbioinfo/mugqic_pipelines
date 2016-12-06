@@ -246,7 +246,7 @@ pandoc \\
                     entry=report_body,
                     report_template_dir=self.report_template_dir,
                     basename_report_file=os.path.basename(report_file),
-                    output_file=" ".join([os.path.join(report_data, os.path.basename(out_log)) for out_log in output]),
+                    output_file=" ".join(out_log),
                     data_loc=report_data,
                     table_hold=template_var_hold,
                     report_file=report_file)

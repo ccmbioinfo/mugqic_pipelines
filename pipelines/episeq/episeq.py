@@ -252,7 +252,8 @@ pandoc \\
                     table_hold=template_var_hold,
                     report_file=report_file)
                 update_template = Job(
-                    output_files=[os.path.join(report_data, os.path.basename(out_log)) for out_log in output],
+                    output_files=[os.path.join(report_data, os.path.basename(out_log))
+                                  for out_log in output] + [report_file],
                     module_entries=[['pre_qc_check', 'module_pandoc']],
                     command=command,
                     report_files=[report_file])
@@ -1063,7 +1064,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                 continue
             job = Job(
                 cov_files,
-                [dmps_file],
+                [dmps_file, 'report/data/differential_methylated_pos.zip'],
                 [
                     ["differential_methylated_pos", "module_R"],
                     ["differential_methylated_pos", "module_mugqic_R_packages"]
@@ -1148,7 +1149,7 @@ zip {zip_file} {dmps_file}
 
             job = Job(
                 cov_files,
-                [dmrs_file],
+                [dmrs_file, 'report/data/differential_methylated_regions.zip'],
                 [
                     ["differential_methylated_regions", "module_R"],
                     ["differential_methylated_regions", "module_mugqic_R_packages"]

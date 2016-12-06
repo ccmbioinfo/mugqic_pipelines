@@ -224,8 +224,8 @@ class Episeq(common.Illumina):
                     readset=readset.name,
                     fq1_report=os.path.join(report_data, id_name[0]),
                     fq1_download=os.path.join(report_data, id_name[0] + '.zip'),
-                    fq2_report=os.path.join(report_data, id_name[1]) if id_name[1] else '',
-                    fq2_download=os.path.join(report_data, id_name[1] + '.zip') if id_name[1] else '',
+                    fq2_report=os.path.join(report_data, id_name[1]) if len(id_name) == 2 else '',
+                    fq2_download=os.path.join(report_data, id_name[1] + '.zip') if len(id_name) ==2 else '',
                     submission=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                     completion="$(date +%Y-%m-%d %H:%M:%S)"
                 )

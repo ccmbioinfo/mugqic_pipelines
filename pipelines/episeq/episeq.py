@@ -98,8 +98,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from core.config import *
 from core.job import *
 from core.pipeline import *
-from bfx.design import *
 from bfx.readset import *
+from bfx.design import *
+
+from bfx import rmarkdown
 from pipelines import common
 import utils
 

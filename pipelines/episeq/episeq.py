@@ -373,16 +373,16 @@ BEGIN {table=0;}
                     if not readset.fastq2:
                         raise ValueError("Expecting paired reads be named as follows file1_1.fq file1_2.fq.")
                     if report_out:
-                        logs += input1_logs[0] + input2_logs[0]  # Trim report
+                        logs += [input1_logs[0]] + [input2_logs[0]]  # Trim report
                     if run_qc:
-                        logs += input1_logs[1] + input2_logs[1]  # FastQC html
-                        logs += input1_logs[2] + input2_logs[2]  # FastQC zip
-                    output_files = input1_logs[3] + input2_logs[3]
+                        logs += [input1_logs[1]] + [input2_logs[1]]  # FastQC html
+                        logs += [input1_logs[2]] + [input2_logs[2]]  # FastQC zip
+                    output_files = [input1_logs[3]] + [input2_logs[3]]
                 else:
                     if report_out:
-                        logs += input1_logs[0]
+                        logs += [input1_logs[0]]
                     if run_qc:
-                        logs += input1_logs[1] + input1_logs[2]
+                        logs += [input1_logs[1]] + [input1_logs[2]]
                     output_files = [input1_logs[3]]
 
                 # Define jobs

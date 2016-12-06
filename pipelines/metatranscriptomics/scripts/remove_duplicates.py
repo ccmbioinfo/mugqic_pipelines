@@ -105,7 +105,9 @@ def write_id_to_cluster_size(reads, id_file):
     id_to_cluster_size = {'rows':
                               [{'id': read.id, 'num_duplicates': read.cluster_size} for read in reads]
                           }
-    json.dump(id_to_cluster_size, id_file)
+
+    with open(id_file, 'w+') as f:
+        json.dump(id_to_cluster_size, f)
 
 
 def write_unique_reads(reads, file, format):
@@ -131,5 +133,5 @@ assign_cluster_size(unique_reads, args.unique_uc, args.unique_fasta)
 write_id_to_cluster_size(unique_reads, args.output_ids)
 
 # Write out a *.fasta and *.fastq file containing only the unique reads
-write_unique_reads(unique_reads, args.unique_fastq, 'fastq')
-write_unique_reads(unique_reads, args.unique_fasta, 'fasta')
+write_unique_reads(unique_reads, args.output_fastq, 'fastq')
+write_unique_reads(unique_reads, args.output_fasta, 'fasta')

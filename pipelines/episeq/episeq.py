@@ -471,7 +471,7 @@ BEGIN {table=0;}
                     module_entries=[['trim_galore', 'module_pandoc']],
                     report_files=[report_file])
                 jobs.append(concat_jobs([mkdir_job, trim_job, report_job], name='trim_galore.' + readset.name))
-            return jobs
+        return jobs
 
     def bismark_align(self):
         """

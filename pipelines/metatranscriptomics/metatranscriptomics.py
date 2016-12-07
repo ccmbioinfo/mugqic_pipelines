@@ -345,7 +345,7 @@ class Metatranscriptomics(common.Illumina):
 
         return jobs
 
-    def remove_rrna(self):
+    def identify_rrna(self):
         """
         Remove the reads identified as rRNA
 
@@ -369,12 +369,12 @@ class Metatranscriptomics(common.Illumina):
                 # Output files
                 output_ids = join(output_dir, '{name}.{i}.rrna_ids.json')
 
-                jobs.append(Job(name='{step}.{readset}.{i}'.format(step=self.remove_rrna.__name__,
+                jobs.append(Job(name='{step}.{readset}.{i}'.format(step=self.identify_rrna.__name__,
                                                                    readset=readset.name,
                                                                    i=i),
                                 input_files=[infernalout, read_description],
                                 output_files=[output_ids],
-                                command='python {script_path}/remove_rrna.py '
+                                command='python {script_path}/identify_rrna.py '
                                         '--read_description {read_description} '
                                         '--infernalout {infernalout} '
                                         '--apply_cutoff '
@@ -389,6 +389,38 @@ class Metatranscriptomics(common.Illumina):
 
         return jobs
 
+    def remove_rrna(self):
+        jobs = []
+
+        input_prefix = 'filter_reads'
+        output_prefix = 'filter_reads'
+
+        for readset in self.readsets:
+            input_dir = join(input_prefix, readset.name)
+            output_dir = join(output_prefix, readset.name)
+
+            for i in (1, 2):
+                rrna_ids = join(input_dir, '{name}.{i}.rrna_ids.json'.format(name=readset.name, i=i))
+                in_fastq = join(input_dir, '{name}.{i}.unique.fastq'.format(name=readset.name, i=i))
+
+                out_rrna = join(input_dir, '{name}.{i}.rrna.fastq')
+                out_not_rrna = join(input_dir, '{name}.{i}.not_rrna.fastq')
+
+                jobs.append(Job(name='{step}.{readset}'.format(step=self.remove_rrna.__name__, readset=readset.name),
+                                input_files=[rrna_ids, in_fastq],
+                                output_files=[out_rrna, out_not_rrna],
+                                command='python {script_path}/partition_reads_by_id.py '
+                                        '--fastq {in_fastq} '
+                                        '--id-file {rrna_ids} '
+                                        '--included {out_rrna} '
+                                        '--excluded {out_not_rrna}'.format(script_path=self.script_path,
+                                                                           in_fastq=in_fastq,
+                                                                           rrna_ids=rrna_ids,
+                                                                           out_rrna=out_rrna,
+                                                                           out_not_rrna=out_not_rrna)))
+
+        return jobs
+
     @property
     def steps(self):
         return [
@@ -399,6 +431,7 @@ class Metatranscriptomics(common.Illumina):
             self.cluster_duplicates,
             self.remove_duplicates,  # 6
             self.cmscan,
+            self.identify_rrna,
             self.remove_rrna
         ]
 

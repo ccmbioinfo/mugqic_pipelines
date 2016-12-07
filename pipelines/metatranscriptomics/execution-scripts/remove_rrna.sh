@@ -32,7 +32,8 @@ python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatrans
 #python /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_get_sequence_length.py
 #perl main_get_sequence_length.pl cow rRNA
 
-perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_get_infernal_fromfile_1tophit.pl cow pairs 1 0.001 90
+perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_get_infernal_fromfile_1tophit.pl \
+    cow pairs 1 0.001 90
 #perl main_get_infernal_fromfile_1tophit.pl cow pairs 1 0.001 90
 
 # cow1

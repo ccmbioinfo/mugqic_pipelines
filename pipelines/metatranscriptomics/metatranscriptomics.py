@@ -269,7 +269,7 @@ class Metatranscriptomics(common.Illumina):
         Output:
         filter_reads/*{1,2}.unique.fastq            - de-duplicated fastq
         filter_reads/*{1,2}.unique.fasta            - de-duplicated fasta
-        filter_reads/*{1,2}.cluster_sizes.json      - stores the number of duplicates for each read
+        filter_reads/*{1,2}.ids.json      - stores the number of duplicates and length of each read
         """
         jobs = []
 
@@ -288,7 +288,7 @@ class Metatranscriptomics(common.Illumina):
                                                                                                   i=i))
                 input_uc = join(input_unique_dir, '{name}.{i}.usearch_out.uc'.format(name=readset.name, i=i))
 
-                output_ids = join(output_dir, '{name}.{i}.cluster_sizes.json'.format(name=readset.name, i=i))
+                output_ids = join(output_dir, '{name}.{i}.ids.json'.format(name=readset.name, i=i))
                 output_fastq = join(output_dir, '{name}.{i}.unique.fastq'.format(name=readset.name, i=i))
                 output_fasta = join(output_dir, '{name}.{i}.unique.fasta'.format(name=readset.name, i=i))
 
@@ -346,6 +346,12 @@ class Metatranscriptomics(common.Illumina):
         return jobs
 
     # def remove_rrna(self):
+    #     """
+    #     Remove the reads identified as rRNA
+    #
+    #     NOTE: main_get_sequence_length.pl is being skipped since its output files (
+    #
+    #     """
     #     jobs = []
     #
     #     input_prefix = 'filter_reads'
@@ -356,13 +362,7 @@ class Metatranscriptomics(common.Illumina):
     #         output_dir = join(output_prefix, readset.name)
     #
     #         for i in (1, 2):
-    #             jobs.append(Job(name='{step}.{name}'.format(step=self.remove_rrna.__name__, name=readset.name),
-    #                         command='python {script_path}/main_get_sequence_length.py '
-    #                                 '--fasta {unique_fasta} '
-    #                                 '--id-file {unique_ids} '
-    #                                 '--output {output_ids}'.format(script_path=self.script_path,
-    #                                                                unique_fasta=join(input_dir, '{name}.{i}'.format(name=readset.name, i=i)),
-    #                                                                unique_ids))
+    #             jobs.append(Job(name='{step}.{name}'.format(step=self.remove_rrna.__name__, name=readset.name)))
 
     @property
     def steps(self):
@@ -375,6 +375,7 @@ class Metatranscriptomics(common.Illumina):
             self.remove_duplicates,  # 6
             self.cmscan,
         ]
+
 
 if __name__ == '__main__':
     Metatranscriptomics()

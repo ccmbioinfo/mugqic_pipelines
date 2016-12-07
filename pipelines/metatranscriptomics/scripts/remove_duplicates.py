@@ -2,7 +2,7 @@
 """
 Remove duplicates from a fastq file
 
-Record the IDs and the number of duplicates in a *.json file
+Record the IDs, cluster size, and the length of each sequence in a *.json file
 """
 import json
 import re
@@ -103,7 +103,7 @@ def write_id_to_cluster_size(reads, id_file):
     ]}
     """
     id_to_cluster_size = {'rows':
-                              [{'id': read.id, 'num_duplicates': read.cluster_size} for read in reads]
+                              [{'id': read.id, 'num_duplicates': read.cluster_size, 'length': len(read.seq)} for read in reads]
                           }
 
     with open(id_file, 'w+') as f:

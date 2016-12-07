@@ -439,27 +439,27 @@ BEGIN {table=0;}
                                              submission=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                              completion="$(date \"+%Y-%m-%d %H:%M:%S\")")
                 new_logs = [os.path.join(report_data, os.path.basename(out_log)) for out_log in
-                            filter(None, input1_logs + input2_logs)]
+                            filter(None, input1_logs[0] + input2_logs[0])]
                 command = """\
-    # Mutual exclusion with other jobs
-    flock -x "{table_hold}.lock" -c "echo \\"{entry}\\" >> {table_hold}" && \\
-    mkdir -p {data_loc} && \\
-    cp -f {output_file} {data_loc} && \\
-    for i in {individual_page}; do
-        sed -r 's%^([^0-9S][a-z ].+):(\s+.+)%|\\1|\\2|%g' $i | sed 's/\t/|/g' | awk '{script}' > "$i.md"
-    done
-    table=$(cat {table_hold}) && \\
-    pandoc \\
-    {report_template_dir}/{basename_report_file} \\
-        --template {report_template_dir}/{basename_report_file} \\
-        --variable data_table="$table" \\
-        --to markdown \\
-    > {report_file}""".format(
+# Mutual exclusion with other jobs
+flock -x "{table_hold}.lock" -c "echo \\"{entry}\\" >> {table_hold}" && \\
+mkdir -p {data_loc} && \\
+cp -f {output_file} {data_loc} && \\
+for i in {individual_page}; do
+    sed -r 's%^([^0-9S][a-z ].+):(\s+.+)%|\\1|\\2|%g' $i | sed 's/\t/|/g' | awk '{script}' > "$i.md" && \\
+done
+table=$(cat {table_hold}) && \\
+pandoc \\
+{report_template_dir}/{basename_report_file} \\
+    --template {report_template_dir}/{basename_report_file} \\
+    --variable data_table="$table" \\
+    --to markdown \\
+> {report_file}""".format(
                     entry=entry,
                     report_template_dir=self.report_template_dir,
                     basename_report_file=os.path.basename(report_file),
                     output_file=" ".join(logs),
-                    individual_page=new_logs,
+                    individual_page=" ".join(new_logs),
                     data_loc=report_data,
                     table_hold=template_string_file,
                     script=output_parser,
@@ -619,9 +619,9 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
 # Mutual exclusion with other jobs
 flock -x {table_hold}.lock -c "echo \\"{entry}\\" >> {table_hold}" && \\
 mkdir -p {data_dir} && \\
-cp -f {reports} {data_dir} && \
+cp -f {reports} {data_dir} && \\
 for i in {logs}; do
-    sed -r 's/:\s+/|/g' $i | egrep -v "^Option" | egrep -v "^=+$" | awk '{script}' > $i".md";
+    sed -r 's/:\s+/|/g' $i | egrep -v "^Option" | egrep -v "^=+$" | awk '{script}' > $i".md" && \\
 done
 table=$(cat {table_hold}) && \\
 pandoc \\

@@ -227,7 +227,7 @@ class Episeq(common.Illumina):
                     fq2_report=os.path.join(report_data, id_name[1]) if len(id_name) == 2 else '',
                     fq2_download=os.path.join(report_data, id_name[1] + '.zip') if len(id_name) == 2 else '',
                     submission=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                    completion="$(date \"+%Y-%m-%d %H:%M:%S)\""
+                    completion="$(date \"+%Y-%m-%d %H:%M:%S\")"
                 )
 
                 # Code to fill in template.
@@ -437,7 +437,7 @@ BEGIN {table=0;}
                                                                        os.path.basename(input2_logs[2])) + ')'
                                              if input2_logs else '',
                                              submission=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                                             completion="$(date \"+%Y-%m-%d %H:%M:%S)\"")
+                                             completion="$(date \"+%Y-%m-%d %H:%M:%S\")")
                 new_logs = [os.path.join(report_data, os.path.basename(out_log)) for out_log in
                             filter(None, input1_logs + input2_logs)]
                 command = """\
@@ -614,7 +614,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                         a=os.path.join(report_data, report_log[1] + '.md'),
                         b="(" + os.path.join(report_data, report_log[1]) + ")" if report_log[1] else "N/A"),
                     submission=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                    completion="$(date \"+%Y-%m-%d %H:%M:%S)\"")
+                    completion="$(date \"+%Y-%m-%d %H:%M:%S\")")
                 command = """\
 # Mutual exclusion with other jobs
 flock -x {table_hold}.lock -c "echo \"{entry}\" >> {table_hold}" && \\
@@ -995,7 +995,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                 report='[View HTML](' + os.path.join(report_data, os.path.basename(html_report)) + ')',
                 methyl_calls='[Download Raw Data](' + zip_file + ')',
                 submission=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                completion="$(date \"+%Y-%m-%d %H:%M:%S)\"")
+                completion="$(date \"+%Y-%m-%d %H:%M:%S\")")
             command = """\
             # Mutual exclusion with other jobs
             flock -x "{table_hold}.lock" -c "echo \"{entry}\" >> {table_hold}" && \\

@@ -363,8 +363,8 @@ class Metatranscriptomics(common.Illumina):
 
             for i in (1, 2):
                 # Input files
-                infernalout = join(input_dir, '{name}.{i}.infernalout'.format(name=readset.name, i=i)),
-                read_description = join(input_dir, '{name}.{i}.read_description.json'.format(name=readset.name, i=i)),
+                infernalout = join(input_dir, '{name}.{i}.infernalout'.format(name=readset.name, i=i))
+                read_description = join(input_dir, '{name}.{i}.read_description.json'.format(name=readset.name, i=i))
 
                 # Output files
                 output_ids = join(output_dir, '{name}.{i}.rrna_ids.json')
@@ -384,7 +384,7 @@ class Metatranscriptomics(common.Illumina):
                                                                         read_description=read_description,
                                                                         infernalout=infernalout,
                                                                         max_evalue=0.001,
-                                                                        min_min_percent_identity=90,
+                                                                        min_percent_identity=90,
                                                                         output_ids=output_ids)))
 
         return jobs
@@ -403,8 +403,8 @@ class Metatranscriptomics(common.Illumina):
                 rrna_ids = join(input_dir, '{name}.{i}.rrna_ids.json'.format(name=readset.name, i=i))
                 in_fastq = join(input_dir, '{name}.{i}.unique.fastq'.format(name=readset.name, i=i))
 
-                out_rrna = join(input_dir, '{name}.{i}.rrna.fastq')
-                out_not_rrna = join(input_dir, '{name}.{i}.not_rrna.fastq')
+                out_rrna = join(output_dir, '{name}.{i}.rrna.fastq')
+                out_not_rrna = join(output_dir, '{name}.{i}.not_rrna.fastq')
 
                 jobs.append(Job(name='{step}.{readset}'.format(step=self.remove_rrna.__name__, readset=readset.name),
                                 input_files=[rrna_ids, in_fastq],
@@ -430,7 +430,7 @@ class Metatranscriptomics(common.Illumina):
             self.fastq_to_fasta,
             self.cluster_duplicates,
             self.remove_duplicates,  # 6
-            self.cmscan,
+            self.cmscan, # 7
             self.identify_rrna,
             self.remove_rrna
         ]

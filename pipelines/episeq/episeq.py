@@ -233,7 +233,7 @@ class Episeq(common.Illumina):
                 # Code to fill in template.
                 command = """\
 # Mutual exclusion with other jobs
-flock -x "{table_hold}.lock" -c "echo \"{entry}\" >> {table_hold}" && \\
+flock -x "{table_hold}.lock" -c "echo \\"{entry}\\" >> {table_hold}" && \\
 mkdir -p {data_loc} && \\
 cp -f {output_file} {data_loc} && \\
 table=$(cat {table_hold}) && \\
@@ -442,7 +442,7 @@ BEGIN {table=0;}
                             filter(None, input1_logs + input2_logs)]
                 command = """\
     # Mutual exclusion with other jobs
-    flock -x "{table_hold}.lock" -c "echo \"{entry}\" >> {table_hold}" && \\
+    flock -x "{table_hold}.lock" -c "echo \\"{entry}\\" >> {table_hold}" && \\
     mkdir -p {data_loc} && \\
     cp -f {output_file} {data_loc} && \\
     for i in {individual_page}; do
@@ -617,7 +617,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                     completion="$(date \"+%Y-%m-%d %H:%M:%S\")")
                 command = """\
 # Mutual exclusion with other jobs
-flock -x {table_hold}.lock -c "echo \"{entry}\" >> {table_hold}" && \\
+flock -x {table_hold}.lock -c "echo \\"{entry}\\" >> {table_hold}" && \\
 mkdir -p {data_dir} && \\
 cp -f {reports} {data_dir} && \
 for i in {logs}; do
@@ -998,7 +998,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                 completion="$(date \"+%Y-%m-%d %H:%M:%S\")")
             command = """\
             # Mutual exclusion with other jobs
-            flock -x "{table_hold}.lock" -c "echo \"{entry}\" >> {table_hold}" && \\
+            flock -x "{table_hold}.lock" -c "echo \\"{entry}\\" >> {table_hold}" && \\
             mkdir -p {data_dir} && \\
             cp -f {report} {data_dir} && \\
             zip {zip_file} {methyl_calls} && \\

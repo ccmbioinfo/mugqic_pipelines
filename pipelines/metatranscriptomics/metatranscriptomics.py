@@ -301,7 +301,7 @@ class Metatranscriptomics(common.Illumina):
                                         '--input-fastq {input_fastq} '
                                         '--unique-fasta {input_unique_fasta} '
                                         '--unique-uc {input_uc} '
-                                        '--output-ids {read_description} '
+                                        '--output-read-description {read_description} '
                                         '--output-fastq {output_fastq} '
                                         '--output-fasta {output_fasta}'.format(script_path=self.script_path,
                                                                                input_fastq=input_fastq,
@@ -367,7 +367,7 @@ class Metatranscriptomics(common.Illumina):
                 read_description = join(input_dir, '{name}.{i}.read_description.json'.format(name=readset.name, i=i))
 
                 # Output files
-                output_ids = join(output_dir, '{name}.{i}.rrna_ids.json')
+                output_ids = join(output_dir, '{name}.{i}.rrna_ids.json'.format(name=readset.name, i=i))
 
                 jobs.append(Job(name='{step}.{readset}.{i}'.format(step=self.identify_rrna.__name__,
                                                                    readset=readset.name,
@@ -430,9 +430,9 @@ class Metatranscriptomics(common.Illumina):
             self.fastq_to_fasta,
             self.cluster_duplicates,
             self.remove_duplicates,  # 6
-            self.cmscan, # 7
+            self.cmscan,
             self.identify_rrna,
-            self.remove_rrna
+            self.remove_rrna #9
         ]
 
 

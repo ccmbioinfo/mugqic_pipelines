@@ -369,7 +369,7 @@ BEGIN {table=0;}
 
                 # Parse custom options that may affect output (ex. Running FastQC or suppressing reports)
                 add_options = config.param('trim_galore', 'other_options').split()
-                run_qc = not ('--fastqc_args' in add_options or '--fastqc' in add_options)
+                run_qc = '--fastqc_args' in add_options or '--fastqc' in add_options
                 report_out = '--no_report_file' not in add_options
 
                 # Trim Galore has no built in option to change the filenames of the output

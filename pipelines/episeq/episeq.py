@@ -374,27 +374,29 @@ BEGIN {table=0;}
 
                 # Trim Galore has no built in option to change the filenames of the output
                 # Below are the default output names when running in paired or single mode
-                logs = list()
+                output_reports = list()
                 if run_type == "PAIRED_END":
                     if not readset.fastq2:
                         raise ValueError("Expecting paired reads be named as follows file1_1.fq file1_2.fq.")
                     if report_out:
-                        logs += [input1_logs[0]] + [input2_logs[0]]  # Trim report
+                        output_reports += [input1_logs[0]] + [input2_logs[0]]  # Trim report
+                        key_report = output_reports
                     if run_qc:
-                        logs += [input1_logs[1]] + [input2_logs[1]]  # FastQC html
-                        logs += [input1_logs[2]] + [input2_logs[2]]  # FastQC zip
+                        output_reports += [input1_logs[1]] + [input2_logs[1]]  # FastQC html
+                        output_reports += [input1_logs[2]] + [input2_logs[2]]  # FastQC zip
                     output_files = [input1_logs[3]] + [input2_logs[3]]
                 else:
                     if report_out:
-                        logs += [input1_logs[0]]
+                        output_reports += [input1_logs[0]]
+                        key_report = output_reports
                     if run_qc:
-                        logs += [input1_logs[1]] + [input1_logs[2]]
+                        output_reports += [input1_logs[1]] + [input1_logs[2]]
                     output_files = [input1_logs[3]]
 
                 # Define jobs
                 mkdir_job = Job(command="mkdir -p " + trim_directory)
                 trim_job = Job(input_files=input_files,
-                               output_files=logs + output_files,
+                               output_files=output_reports + output_files,
                                module_entries=[['trim_galore', 'module_fastqc'],
                                                ['trim_galore', 'module_java'],
                                                ['trim_galore', 'module_trim_galore'],
@@ -438,8 +440,6 @@ BEGIN {table=0;}
                                              if input2_logs else '',
                                              submission=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                              completion="$(date \"+%Y-%m-%d %H:%M:%S\")")
-                new_logs = [os.path.join(report_data, os.path.basename(out_log)) for out_log in
-                            filter(None, input1_logs[0] + input2_logs[0])]
                 command = """\
 # Mutual exclusion with other jobs
 flock -x "{table_hold}.lock" -c "echo \\"{entry}\\" >> {table_hold}" && \\
@@ -458,14 +458,14 @@ pandoc \\
                     entry=entry,
                     report_template_dir=self.report_template_dir,
                     basename_report_file=os.path.basename(report_file),
-                    output_file=" ".join(logs),
-                    individual_page=" ".join(new_logs),
+                    output_file=" ".join(output_reports),
+                    individual_page=" ".join(key_report),
                     data_loc=report_data,
                     table_hold=template_string_file,
                     script=output_parser,
                     report_file=report_file)
                 report_job = Job(
-                    output_files=[report_file] + new_logs,
+                    output_files=[report_file] + key_report,
                     command=command,
                     module_entries=[['trim_galore', 'module_pandoc']],
                     report_files=[report_file])

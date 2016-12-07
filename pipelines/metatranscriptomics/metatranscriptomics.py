@@ -269,7 +269,7 @@ class Metatranscriptomics(common.Illumina):
         Output:
         filter_reads/*{1,2}.unique.fastq            - de-duplicated fastq
         filter_reads/*{1,2}.unique.fasta            - de-duplicated fasta
-        filter_reads/*{1,2}.ids.json      - stores the number of duplicates and length of each read
+        filter_reads/*{1,2}.read_description.json      - stores the number of duplicates and length of each read
         """
         jobs = []
 
@@ -288,7 +288,7 @@ class Metatranscriptomics(common.Illumina):
                                                                                                   i=i))
                 input_uc = join(input_unique_dir, '{name}.{i}.usearch_out.uc'.format(name=readset.name, i=i))
 
-                output_ids = join(output_dir, '{name}.{i}.ids.json'.format(name=readset.name, i=i))
+                read_description = join(output_dir, '{name}.{i}.read_description.json'.format(name=readset.name, i=i))
                 output_fastq = join(output_dir, '{name}.{i}.unique.fastq'.format(name=readset.name, i=i))
                 output_fasta = join(output_dir, '{name}.{i}.unique.fasta'.format(name=readset.name, i=i))
 
@@ -296,18 +296,18 @@ class Metatranscriptomics(common.Illumina):
 
                 jobs.append(Job(name=job_name,
                                 input_files=[input_fastq, input_unique_fasta, input_uc],
-                                output_files=[output_ids, output_fastq, output_fasta],
+                                output_files=[read_description, output_fastq, output_fasta],
                                 command='python {script_path}/remove_duplicates.py '
                                         '--input-fastq {input_fastq} '
                                         '--unique-fasta {input_unique_fasta} '
                                         '--unique-uc {input_uc} '
-                                        '--output-ids {output_ids} '
+                                        '--output-ids {read_description} '
                                         '--output-fastq {output_fastq} '
                                         '--output-fasta {output_fasta}'.format(script_path=self.script_path,
                                                                                input_fastq=input_fastq,
                                                                                input_unique_fasta=input_unique_fasta,
                                                                                input_uc=input_uc,
-                                                                               output_ids=output_ids,
+                                                                               read_description=read_description,
                                                                                output_fastq=output_fastq,
                                                                                output_fasta=output_fasta)))
 
@@ -345,24 +345,49 @@ class Metatranscriptomics(common.Illumina):
 
         return jobs
 
-    # def remove_rrna(self):
-    #     """
-    #     Remove the reads identified as rRNA
-    #
-    #     NOTE: main_get_sequence_length.pl is being skipped since its output files (
-    #
-    #     """
-    #     jobs = []
-    #
-    #     input_prefix = 'filter_reads'
-    #     output_prefix = 'filter_reads'
-    #
-    #     for readset in self.readsets:
-    #         input_dir = join(input_prefix, readset.name)
-    #         output_dir = join(output_prefix, readset.name)
-    #
-    #         for i in (1, 2):
-    #             jobs.append(Job(name='{step}.{name}'.format(step=self.remove_rrna.__name__, name=readset.name)))
+    def remove_rrna(self):
+        """
+        Remove the reads identified as rRNA
+
+        NOTE: this step replaces main_get_infernal_fromfile_1tophit.pl
+
+        """
+        jobs = []
+
+        input_prefix = 'filter_reads'
+        output_prefix = 'filter_reads'
+
+        for readset in self.readsets:
+            input_dir = join(input_prefix, readset.name)
+            output_dir = join(output_prefix, readset.name)
+
+            for i in (1, 2):
+                # Input files
+                infernalout = join(input_dir, '{name}.{i}.infernalout'.format(name=readset.name, i=i)),
+                read_description = join(input_dir, '{name}.{i}.read_description.json'.format(name=readset.name, i=i)),
+
+                # Output files
+                output_ids = join(output_dir, '{name}.{i}.rrna_ids.json')
+
+                jobs.append(Job(name='{step}.{readset}.{i}'.format(step=self.remove_rrna.__name__,
+                                                                   readset=readset.name,
+                                                                   i=i),
+                                input_files=[infernalout, read_description],
+                                output_files=[output_ids],
+                                command='python {script_path}/remove_rrna.py '
+                                        '--read_description {read_description} '
+                                        '--infernalout {infernalout} '
+                                        '--apply_cutoff '
+                                        '--max-evalue {max_evalue} '
+                                        '--min-percent-identity {min_percent_identity} '
+                                        '--out-ids {output_ids}'.format(script_path=self.script_path,
+                                                                        read_description=read_description,
+                                                                        infernalout=infernalout,
+                                                                        max_evalue=0.001,
+                                                                        min_min_percent_identity=90,
+                                                                        output_ids=output_ids)))
+
+        return jobs
 
     @property
     def steps(self):
@@ -374,6 +399,7 @@ class Metatranscriptomics(common.Illumina):
             self.cluster_duplicates,
             self.remove_duplicates,  # 6
             self.cmscan,
+            self.remove_rrna
         ]
 
 

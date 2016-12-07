@@ -17,7 +17,7 @@ def parse_args():
     arg_parser.add_argument('--unique-fasta', help='Fasta that has been de-duplicated')
     arg_parser.add_argument('--unique-uc', help='UC output from duplicate clustering step')
 
-    arg_parser.add_argument('--output-ids', help='File to store the IDs of reads that have been removed')
+    arg_parser.add_argument('--output-read-description', help='File to store the IDs of reads that have been removed')
     arg_parser.add_argument('--output-fastq', help='Fastq that has been de-duplicated')
     arg_parser.add_argument('--output-fasta', help='Fasta that has been de-duplicated')
 
@@ -130,7 +130,7 @@ unique_reads = get_unique_reads(args.input_fastq, args.unique_uc)
 assign_cluster_size(unique_reads, args.unique_uc, args.unique_fasta)
 
 # Keep track of how many duplicates there are of each read
-write_id_to_cluster_size(unique_reads, args.output_ids)
+write_id_to_cluster_size(unique_reads, args.output_read_description)
 
 # Write out a *.fasta and *.fastq file containing only the unique reads
 write_unique_reads(unique_reads, args.output_fastq, 'fastq')

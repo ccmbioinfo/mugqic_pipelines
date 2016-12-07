@@ -204,7 +204,7 @@ class Episeq(common.Illumina):
                 # Generate output path
                 # Obtain the output of the filename. ex. 'SRS23542_1' + '...'
                 id_name = [os.path.basename(nom).split('.gz')[0].split('.fastq')[0] for nom in raw_fq]
-                file_names = [nom + ext for nom in id_name for ext in ['.html', '.zip']]
+                file_names = [nom + '_fastqc' + ext for nom in id_name for ext in ['.html', '.zip']]
                 output = [os.path.join(out_dir, name) for name in file_names]
                 # Job creation
                 mkdir_job = Job(command='mkdir -p ' + out_dir)

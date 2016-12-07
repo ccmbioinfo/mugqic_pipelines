@@ -246,7 +246,7 @@ pandoc \\
                     entry=report_body,
                     report_template_dir=self.report_template_dir,
                     basename_report_file=os.path.basename(report_file),
-                    output_file=" ".join(file_names),
+                    output_file=" ".join(output),
                     data_loc=report_data,
                     table_hold=template_var_hold,
                     report_file=report_file)
@@ -257,7 +257,7 @@ pandoc \\
                     command=command,
                     report_files=[report_file])
                 # Add to list of jobs
-                jobs.append(concat_jobs([Job(command="START=$(date \"+%Y-%m-%d %H:%M:%S\")"),
+                jobs.append(concat_jobs([Job(command="START=$(date '+%Y-%m-%d %H:%M:%S')"),
                                          mkdir_job, job, update_template], name='pre_qc_check.' + readset.name))
         return jobs
 
@@ -440,14 +440,14 @@ BEGIN {table=0;}
                                                                        os.path.basename(input2_logs[2])) + ')'
                                              if input2_logs else '',
                                              start="$START",
-                                             completion="$(date \"+%Y-%m-%d %H:%M:%S\")")
+                                             completion="$(date '+%Y-%m-%d %H:%M:%S')")
                 command = """\
 # Mutual exclusion with other jobs
 flock -x "{table_hold}.lock" -c "echo \\"{entry}\\" >> {table_hold}" && \\
 mkdir -p {data_loc} && \\
 cp -f {output_file} {data_loc} && \\
 for i in {individual_page}; do
-    sed -r 's%^([^0-9S][a-z ].+):(\s+.+)%|\\1|\\2|%g' $i | sed 's/\t/|/g' | awk '{script}' > "$i.md" \\
+    sed -r 's%^([^0-9S][a-z ].+):(\s+.+)%|\\1|\\2|%g' $i | sed 's/\t/|/g' | awk '{script}' > "$i.md"; \\
 done
 table=$(cat {table_hold}) && \\
 pandoc \\
@@ -470,7 +470,7 @@ pandoc \\
                     command=command,
                     module_entries=[['trim_galore', 'module_pandoc']],
                     report_files=[report_file])
-                jobs.append(concat_jobs([Job(command="START=$(date \"+%Y-%m-%d %H:%M:%S\")"),
+                jobs.append(concat_jobs([Job(command="START=$(date '+%Y-%m-%d %H:%M:%S')"),
                                          mkdir_job, trim_job, report_job], name='trim_galore.' + readset.name))
         return jobs
 
@@ -616,14 +616,14 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                         a=os.path.join(report_data, report_log[1] + '.md'),
                         b="(" + os.path.join(report_data, report_log[1]) + ")" if report_log[1] else "N/A"),
                     start="$START",
-                    completion="$(date \"+%Y-%m-%d %H:%M:%S\")")
+                    completion="$(date '+%Y-%m-%d %H:%M:%S')")
                 command = """\
 # Mutual exclusion with other jobs
 flock -x {table_hold}.lock -c "echo \\"{entry}\\" >> {table_hold}" && \\
 mkdir -p {data_dir} && \\
 cp -f {reports} {data_dir} && \\
 for i in {logs}; do
-    sed -r 's/:\s+/|/g' $i | egrep -v "^Option" | egrep -v "^=+$" | awk '{script}' > $i".md" \\
+    sed -r 's/:\s+/|/g' $i | egrep -v "^Option" | egrep -v "^=+$" | awk '{script}' > $i".md"; \\
 done
 table=$(cat {table_hold}) && \\
 pandoc \\
@@ -647,7 +647,7 @@ pandoc \\
                                  report_files=[report_file],
                                  module_entries=[['bismark_align', 'module_pandoc']],
                                  command=command)
-                jobs.append(concat_jobs([Job(command="START=$(date \"+%Y-%m-%d %H:%M:%S\")"),
+                jobs.append(concat_jobs([Job(command="START=$(date '+%Y-%m-%d %H:%M:%S')"),
                                          mkdir_job, job, report_job], name="bismark_align." + readset.name))
         return jobs
 
@@ -998,7 +998,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                 report='[View HTML](' + os.path.join(report_data, os.path.basename(html_report)) + ')',
                 methyl_calls='[Download Raw Data](' + zip_file + ')',
                 start="$START",
-                completion="$(date \"+%Y-%m-%d %H:%M:%S\")")
+                completion="$(date '+%Y-%m-%d %H:%M:%S')")
             command = """\
             # Mutual exclusion with other jobs
             flock -x "{table_hold}.lock" -c "echo \\"{entry}\\" >> {table_hold}" && \\
@@ -1029,7 +1029,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                              report_files=[report_file],
                              module_entries=[['bismark_html_report_generator', 'module_pandoc']],
                              command=command)
-            jobs.append(concat_jobs([Job(command="START=$(date \"+%Y-%m-%d %H:%M:%S\")"),
+            jobs.append(concat_jobs([Job(command="START=$(date '+%Y-%m-%d %H:%M:%S')"),
                                      mkdir_job, job, report_job], name='bismark_report.' + sample.name))
         return jobs
 

@@ -10,11 +10,16 @@ from Bio import SeqIO
 # Parse args
 def parse_args():
     arg_parser = argparse.ArgumentParser(description=__doc__)
-    arg_parser.add_argument('--fastq')
-    arg_parser.add_argument('--fasta')
+
+    original_data = arg_parser.add_mutually_exclusive_group()
+    original_data.add_argument('--fastq')
+    original_data.add_argument('--fasta')
+
     arg_parser.add_argument('--id-file')
+
     arg_parser.add_argument('--included', help='Output filename for reads that are in the IDs')
     arg_parser.add_argument('--excluded', help='Output filename for reads that are not in the IDs')
+
     return arg_parser.parse_args()
 
 def get_ids(id_file):

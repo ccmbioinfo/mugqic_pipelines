@@ -996,7 +996,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                 sample=sample.name,
                 report='[View HTML](' + os.path.join(report_data, os.path.basename(html_report)) + ')',
                 methyl_calls='[Download Raw Data](' + zip_file + ')',
-                submission="$START",
+                start="$START",
                 completion="$(date \"+%Y-%m-%d %H:%M:%S\")")
             command = """\
             # Mutual exclusion with other jobs

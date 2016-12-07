@@ -20,7 +20,7 @@ def parse_args():
     return arg_parser.parse_args()
 
 
-def parse_read_description(read_description_file):
+def get_id_to_length(read_description_file):
     """
     Index a dict mapping from 'id' -> {'cluster_size': <cluster_size>, 'length': <length>}
 
@@ -31,15 +31,14 @@ def parse_read_description(read_description_file):
     }
 
     Example output:
-    {'@SRR1': {'cluster_size': 2, 'length': 100},
-     '@SRR2': {'cluster_size': 1, 'length': 98}}
+    {'@SRR1': 100, '@SRR2': 98}
 
     :param read_description_file: JSON file
     :return: dict
     """
     with open(read_description_file) as f:
         read_dict = json.load(f)
-        return {row['id']: {'length': row['length'], 'cluster_size': row['cluster_size']} for row in read_dict['rows']}
+        return {row['id']: int(row['length']) for row in read_dict['rows']}
 
 
 class InfernalFileParser:
@@ -56,10 +55,6 @@ class InfernalFileParser:
         return line.split()[8]
 
     @staticmethod
-    def get_score(line):
-        return line.split()[14]
-
-    @staticmethod
     def get_evalue(line):
         return line.split()[15]
 
@@ -73,12 +68,12 @@ def passes_cutoff(evalue, percent_identity, args):
     return evalue <= float(args.max_evalue) and percent_identity >= float(args.min_percent_identity)
 
 
-def parse_infernalout(infernalout, read_description, args):
+def parse_infernalout(infernalout, id_to_length, args):
     """
     Read the infernalout file and determine which read IDs are rRNA
 
     :param infernalout: table file from cmscan
-    :param read_description: dict
+    :param id_to_length: dict
     :return: set of str
     """
     rrna_ids = set()
@@ -88,14 +83,13 @@ def parse_infernalout(infernalout, read_description, args):
             id = InfernalFileParser.get_id(line)
             seq_from = InfernalFileParser.get_seq_from(line)
             seq_to = InfernalFileParser.get_seq_to(line)
-            score = InfernalFileParser.get_score(line)
             evalue = InfernalFileParser.get_evalue(line)
 
             if id not in rrna_ids:
-                if not hasattr(read_description[id], 'length'):
-                    read_description[id]['length'] = DEFAULT_READ_LENGTH
+                if id not in id_to_length:
+                    id_to_length[id] = DEFAULT_READ_LENGTH
 
-                percent_identity = get_percent_identity(seq_from, seq_to, int(read_description[id]['length']))
+                percent_identity = get_percent_identity(seq_from, seq_to, id_to_length[id])
 
                 if not args.apply_cutoff or passes_cutoff(percent_identity, evalue, args):
                     rrna_ids.add(id)
@@ -109,6 +103,6 @@ def write_rrna_ids(rrna_ids, output_ids):
 
 args = parse_args()
 
-read_description = parse_read_description(args.read_description)
-rrna_ids = parse_infernalout(args.infernalout, read_description, args)
+id_to_length = get_id_to_length(args.read_description)
+rrna_ids = parse_infernalout(args.infernalout, id_to_length, args)
 write_rrna_ids(rrna_ids, args.out_ids)

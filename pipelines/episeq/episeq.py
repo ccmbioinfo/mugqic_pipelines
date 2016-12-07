@@ -466,7 +466,8 @@ pandoc \\
                     script=output_parser,
                     report_file=report_file)
                 report_job = Job(
-                    output_files=[report_file] + key_report,
+                    output_files=[report_file] + [os.path.join(report_data,
+                                                               os.path.basename(item)) for item in output_reports],
                     command=command,
                     module_entries=[['trim_galore', 'module_pandoc']],
                     report_files=[report_file])

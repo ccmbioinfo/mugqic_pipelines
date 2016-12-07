@@ -182,7 +182,7 @@ class Episeq(common.Illumina):
         report_file = 'report/EpiSeq.pre_qc_check.md'
         report_data = 'report/data/pre_qc_check'
         fill_in_templ = "| {sample} | {readset} | [Report 1]({fq1_report}) [Download 1]({fq1_download}) | " \
-                        "[Report 2]({fq2_report}) [Download 2]({fq2_download}) | {submission} | {completion} |"
+                        "[Report 2]({fq2_report}) [Download 2]({fq2_download}) | {start} | {completion} |"
         # Generate processing job
         for sample in self.samples:
             for num, readset in enumerate(sample.readsets, 1):
@@ -226,7 +226,7 @@ class Episeq(common.Illumina):
                     fq1_download=os.path.join(report_data, id_name[0] + '.zip'),
                     fq2_report=os.path.join(report_data, id_name[1]) if len(id_name) == 2 else '',
                     fq2_download=os.path.join(report_data, id_name[1] + '.zip') if len(id_name) == 2 else '',
-                    submission=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    start="$START",
                     completion="$(date \"+%Y-%m-%d %H:%M:%S\")"
                 )
 
@@ -257,8 +257,8 @@ pandoc \\
                     command=command,
                     report_files=[report_file])
                 # Add to list of jobs
-                jobs.append(concat_jobs([mkdir_job, job, update_template],
-                                        name='pre_qc_check.' + readset.name))
+                jobs.append(concat_jobs([Job(command="START=$(date \"+%Y-%m-%d %H:%M:%S\")"),
+                                         mkdir_job, job, update_template], name='pre_qc_check.' + readset.name))
         return jobs
 
     def trim_galore(self):
@@ -280,7 +280,7 @@ pandoc \\
         report_data = 'report/data/trim_galore'
         template_string_file = 'trimmed/' + datetime.datetime.now().strftime('%Y_%m_%d') + "_template_var_strings.txt"
         fill_in_entry = '| {sample} | {readset} | {trim1_view} {trim1_download} {trim2_view} {trim2_download} | ' \
-                        '{qc1_view} {qc1_download} {qc2_view} {qc2_download} | {submission} | {completion} |'
+                        '{qc1_view} {qc1_download} {qc2_view} {qc2_download} | {start} | {completion} |'
         # Awk script to parse trim reports view easy viewing
         # It will read the start of each line to determine if it is something that we want to keep, or discard.
         # Headers have to be reformatted to a lower level, making the document make sense within the template.
@@ -438,7 +438,7 @@ BEGIN {table=0;}
                                                           os.path.join(report_data,
                                                                        os.path.basename(input2_logs[2])) + ')'
                                              if input2_logs else '',
-                                             submission=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                                             start="$START",
                                              completion="$(date \"+%Y-%m-%d %H:%M:%S\")")
                 command = """\
 # Mutual exclusion with other jobs
@@ -469,7 +469,8 @@ pandoc \\
                     command=command,
                     module_entries=[['trim_galore', 'module_pandoc']],
                     report_files=[report_file])
-                jobs.append(concat_jobs([mkdir_job, trim_job, report_job], name='trim_galore.' + readset.name))
+                jobs.append(concat_jobs([Job(command="START=$(date \"+%Y-%m-%d %H:%M:%S\")"),
+                                         mkdir_job, trim_job, report_job], name='trim_galore.' + readset.name))
         return jobs
 
     def bismark_align(self):
@@ -493,7 +494,7 @@ pandoc \\
         report_file = 'report/EpiSeq.bismark_align.md'
         report_data = 'report/data/bismark_align'
         template_string_file = 'aligned/' + datetime.datetime.now().strftime('%Y_%m_%d') + "_template_var_strings.txt"
-        fill_in_entry = '| {sample} | {readset} | {report_view} | {coverage_view} | {submission} | {completion} |'
+        fill_in_entry = '| {sample} | {readset} | {report_view} | {coverage_view} | {start} | {completion} |'
         awk_script = """\
 BEGIN { table=0; };
 {
@@ -613,7 +614,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                     coverage_view='[View HTML]({a}) [Download Text] {b}'.format(
                         a=os.path.join(report_data, report_log[1] + '.md'),
                         b="(" + os.path.join(report_data, report_log[1]) + ")" if report_log[1] else "N/A"),
-                    submission=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    start="$START",
                     completion="$(date \"+%Y-%m-%d %H:%M:%S\")")
                 command = """\
 # Mutual exclusion with other jobs
@@ -645,7 +646,8 @@ pandoc \\
                                  report_files=[report_file],
                                  module_entries=[['bismark_align', 'module_pandoc']],
                                  command=command)
-                jobs.append(concat_jobs([mkdir_job, job, report_job], name="bismark_align." + readset.name))
+                jobs.append(concat_jobs([Job(command="START=$(date \"+%Y-%m-%d %H:%M:%S\")"),
+                                         mkdir_job, job, report_job], name="bismark_align." + readset.name))
         return jobs
 
     def merge_bismark_alignment_report(self):
@@ -943,7 +945,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
         report_data = 'report/data/bismark_html_report_generator'
         template_string_file = 'bismark_summary_report/' + \
                                datetime.datetime.now().strftime('%Y_%m_%d') + "_template_var_strings.txt"
-        fill_in_entry = '| {sample} | {report} | {methyl_calls} | {submission} | {completion} |'
+        fill_in_entry = '| {sample} | {report} | {methyl_calls} | {start} | {completion} |'
 
         jobs = []
         module_list = [['bismark_html_report_generator', 'module_samtools'],
@@ -994,7 +996,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                 sample=sample.name,
                 report='[View HTML](' + os.path.join(report_data, os.path.basename(html_report)) + ')',
                 methyl_calls='[Download Raw Data](' + zip_file + ')',
-                submission=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                submission="$START",
                 completion="$(date \"+%Y-%m-%d %H:%M:%S\")")
             command = """\
             # Mutual exclusion with other jobs
@@ -1026,7 +1028,8 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                              report_files=[report_file],
                              module_entries=[['bismark_html_report_generator', 'module_pandoc']],
                              command=command)
-            jobs.append(concat_jobs([mkdir_job, job, report_job], name='bismark_report.' + sample.name))
+            jobs.append(concat_jobs([Job(command="START=$(date \"+%Y-%m-%d %H:%M:%S\")"),
+                                     mkdir_job, job, report_job], name='bismark_report.' + sample.name))
         return jobs
 
     def differential_methylated_pos(self):

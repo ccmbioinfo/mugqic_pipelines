@@ -375,12 +375,13 @@ BEGIN {table=0;}
                 # Trim Galore has no built in option to change the filenames of the output
                 # Below are the default output names when running in paired or single mode
                 output_reports = list()
+                key_report = list()
                 if run_type == "PAIRED_END":
                     if not readset.fastq2:
                         raise ValueError("Expecting paired reads be named as follows file1_1.fq file1_2.fq.")
                     if report_out:
                         output_reports += [input1_logs[0]] + [input2_logs[0]]  # Trim report
-                        key_report = output_reports
+                        key_report = [input1_logs[0]] + [input2_logs[0]]
                     if run_qc:
                         output_reports += [input1_logs[1]] + [input2_logs[1]]  # FastQC html
                         output_reports += [input1_logs[2]] + [input2_logs[2]]  # FastQC zip
@@ -388,7 +389,7 @@ BEGIN {table=0;}
                 else:
                     if report_out:
                         output_reports += [input1_logs[0]]
-                        key_report = output_reports
+                        key_report = [input1_logs[0]]
                     if run_qc:
                         output_reports += [input1_logs[1]] + [input1_logs[2]]
                     output_files = [input1_logs[3]]

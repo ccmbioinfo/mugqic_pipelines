@@ -352,6 +352,7 @@ class Metatranscriptomics(common.Illumina):
         NOTE: this step replaces main_get_infernal_fromfile_1tophit.pl
 
         """
+        # TODO: documentation
         jobs = []
 
         input_prefix = 'filter_reads'
@@ -421,6 +422,87 @@ class Metatranscriptomics(common.Illumina):
 
         return jobs
 
+    def align_to_host(self):
+        jobs = []
+
+        input_prefix = 'filter_reads'
+        output_prefix = 'filter_reads'
+
+        for readset in self.readsets:
+            input_dir = join(input_prefix, readset.name)
+            output_dir = join(output_prefix, readset.name)
+
+            host_database = config.param(self.align_to_host.__name__, 'host_db')
+
+            for i in (1, 2):
+                input_fastq = join(input_dir, '{name}.{i}.not_rrna.fastq'.format(name=readset.name, i=i))
+                output_alignment = join(output_dir, '{name}.{i}.host.sai'.format(name=readset.name, i=i))
+
+                alignment_job = Job(name='{step}.{readset}.{i}'.format(step=self.align_to_host.__name__,
+                                                                       readset=readset.name,
+                                                                       i=i),
+                                    input_files=[input_fastq, host_database],
+                                    output_files=[output_alignment],
+                                    module_entries=[[self.align_to_host.__name__, 'module_bwa']],
+                                    command='bwa aln -t 4 {host_db} {input_fastq}'
+                                            '> {output_alignment}'.format(host_db=host_database,
+                                                                          input_fastq=input_fastq,
+                                                                          output_alignment=output_alignment))
+                jobs.append(alignment_job)
+
+    def merge_host_alignments(self):
+        jobs = []
+
+        input_prefix = 'filter_reads'
+        output_prefix = 'filter_reads'
+
+        host_db = config.param(self.merge_host_alignments.__name__, 'host_db')
+
+        for readset in self.readsets:
+            input_dir = join(input_prefix, readset.name)
+            output_dir = join(output_prefix, readset.name)
+
+            input_alignment1 = join(input_dir, '{name}.1.host.sai'.format(name=readset.name))
+            input_alignment2 = join(input_dir, '{name}.2.host.sai'.format(name=readset.name))
+
+            input_fastq1 = join(input_dir, '{name}.1.not_rrna.fastq'.format(name=readset.name))
+            input_fastq2 = join(input_dir, '{name}.2.not_rrna.fastq'.format(name=readset.name))
+
+            merged_sam = join(output_dir, '{name}.host.sam'.format(name=readset.name))
+
+            jobs.append(Job(name='{step}.{readset}'.format(step=self.merge_host_alignments.__name__,
+                                                           readset=readset.name),
+                            input_files=[host_db, input_alignment1, input_alignment2, input_fastq1, input_fastq2],
+                            output_files=[merged_sam],
+                            module_entries=[[self.merge_host_alignments.__name__, 'module_bwa']],
+                            command='bwa sampe {host_db} {alignment1} {alignment2} '
+                                    '{input_fastq1} {input_fastq2} '
+                                    '> {merged_sam}'.format(host_db=host_db,
+                                                            alignment1=input_alignment1,
+                                                            alignment2=input_alignment2,
+                                                            input_fastq1=input_fastq1,
+                                                            input_fastq2=input_fastq2,
+                                                            merged_sam=merged_sam)))
+
+        return jobs
+
+    def extract_unmapped_host_reads(self):
+        jobs =[]
+
+        input_prefix = 'filter_reads'
+        output_prefix = 'filter_reads'
+
+        for readset in self.readsets:
+            input_dir = join(input_prefix, readset.name)
+            output_dir = join(output_prefix, readset.name)
+
+            pass
+            #TODO
+
+    def remove_host_reads(self):
+        pass
+        #TODO
+
     @property
     def steps(self):
         return [
@@ -432,7 +514,11 @@ class Metatranscriptomics(common.Illumina):
             self.remove_duplicates,  # 6
             self.cmscan,
             self.identify_rrna,
-            self.remove_rrna #9
+            self.remove_rrna,  # 9
+            self.align_to_host,
+            self.merge_host_alignments,
+            self.extract_unmapped_host_reads,
+            self.remove_host_reads
         ]
 
 

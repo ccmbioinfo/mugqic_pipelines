@@ -47,7 +47,7 @@ class InfernalFileParser:
     """
     @staticmethod
     def get_id(line):
-        return line.split()[1]
+        return line.split()[2]
 
     @staticmethod
     def get_seq_from(line):
@@ -98,6 +98,8 @@ def parse_infernalout(infernalout, id_to_length, args):
 
                 if not args.apply_cutoff or passes_cutoff(percent_identity, evalue, args):
                     rrna_ids.add(id)
+
+    return rrna_ids
 
 
 def write_rrna_ids(ids, output_ids):

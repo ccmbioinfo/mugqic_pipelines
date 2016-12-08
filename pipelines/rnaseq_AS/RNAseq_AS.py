@@ -567,7 +567,7 @@ pandoc --to=markdown \\
 
         jobs = []
 
-        if config.param('DEFAULT', 'library_type', type='string', required=True) == 'paired':
+        if config.param('miso_psi', 'library_type', type='string', required=True) == 'paired':
             for sample in self.samples:
 
                 alignment_file = os.path.join('alignment', sample.name, sample.name + '.sorted.bam')
@@ -656,6 +656,7 @@ pandoc --to=markdown \\
 
         report_dependencies = []
         event_plots = ''
+        bfx_dir = os.path.dirname(miso_funcs.__file__)
 
         plot_type = config.param('miso_plot', 'plot_type', type='string', required=True)
 
@@ -666,13 +667,13 @@ pandoc --to=markdown \\
             bam_files += '\"alignment/' + sample.name + '/' + sample.name + '.sorted.bam\", '
         sample_names = sample_names[:-2] + ']'
         bam_files = bam_files[:-2] + ']'
-        job = miso_funcs.plot_settings(sample_names, bam_files)
+        job = miso_funcs.plot_settings(sample_names, bam_files, bfx_dir)
         job.name = 'miso_plot_settings'
         jobs.append(job)
 
         if '--plot-insert-len' in plot_type:
 
-            if config.param('DEFAULT', 'library_type', type='string', required=True) == 'paired':
+            if config.param('miso_psi', 'library_type', type='string', required=True) == 'paired':
 
                 for sample in self.samples:
                     insert_file = os.path.join('miso', sample.name, 'insert-dist', sample.name + '.sorted.bam.insert_len')
@@ -850,12 +851,15 @@ pandoc --to=markdown \\
 
         jobs = []
 
+        bfx_dir = os.path.dirname(jctseq.__file__)
+
         for sample in self.samples:
             alignment_file = os.path.join("alignment", sample.name, sample.name + ".sorted.bam")
             raw_counts_dir = os.path.join("jctseq", "rawCts", sample.name)
             job = jctseq.raw_counts(
                 alignment_file,
                 raw_counts_dir,
+                bfx_dir
                 )
 
             job.name = "jctseq_raw_counts." + sample.name
@@ -867,7 +871,9 @@ pandoc --to=markdown \\
 
         jobs = []
 
-        job = jctseq.make_gff("jctseq/jctseq.gff.gz")
+        bfx_dir = os.path.dirname(jctseq.__file__)
+
+        job = jctseq.make_gff("jctseq/jctseq.gff.gz", bfx_dir)
         job.name = "jctseq_make_gff"
         jobs.append(job)
 
@@ -876,12 +882,19 @@ pandoc --to=markdown \\
     def jctseq_diff_prep(self):
         
         jobs = []
+
+        parser = argparse.ArgumentParser()
+        args = str(parser.parse_known_args())
+        design_file_name = args.split(", '-d', '")[1].split(".design'")[0] + '.design'
+        design_file = os.path.abspath(design_file_name)
+
         gff = os.path.join('jctseq', 'jctseq.gff.gz')
-        
+        bfx_dir = os.path.dirname(jctseq.__file__)
+
         for contrast in self.contrasts:
             folder = os.path.join('jctseq', contrast.name)
 
-            job = jctseq.diff_prep(folder, contrast.name, gff)
+            job = jctseq.diff_prep(folder, contrast.name, gff, bfx_dir, design_file)
             job.name = 'jctseq_diff_prep.' + contrast.name
             jobs.append(job)
 
@@ -890,6 +903,8 @@ pandoc --to=markdown \\
     def jctseq_diff(self):
 
         jobs = []
+
+        bfx_dir = os.path.dirname(jctseq.__file__)
 
         raw_counts = []
         for sample in self.samples:
@@ -906,7 +921,9 @@ pandoc --to=markdown \\
                 os.path.join('jctseq', contrast.name, 'plots'),
                 os.path.join('jctseq', contrast.name, 'results'),
                 jscs_file,
-                raw_counts)
+                raw_counts,
+                bfx_dir
+                )
 
             job.name = 'jctseq_diff.' + contrast.name
             jobs.append(job)

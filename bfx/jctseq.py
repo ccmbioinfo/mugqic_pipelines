@@ -7,9 +7,9 @@ import os
 from core.config import *
 from core.job import *
 
-def raw_counts(input_bam, output_dir):
+def raw_counts(input_bam, output_dir, bfx):
 
-    library_type = config.param('DEFAULT', 'library_type', type='string', required=True)  
+    library_type = config.param('jctseq_raw_counts', 'library_type', type='string', required=True)  
     if library_type == 'single':
         strand = '--singleEnded'
     else:
@@ -29,13 +29,13 @@ java -Xmx{ram} -jar {bfx}/QoRTs.jar QC {strand} {other_options} {input_bam} {gtf
             other_options = config.param('jctseq_raw_counts', 'QoRTs_other_options', type='string', required=False),
             ram = config.param('jctseq_raw_counts', 'ram', type='string', required=True),
             gtf = config.param('jctseq_make_gff', 'gtf', type='filepath', required=True),
-            bfx = config.param('DEFAULT', 'bfx_location', type='string', required=True),
+            bfx = bfx
             )
         )
 
-def make_gff(output_gff):
+def make_gff(output_gff, bfx):
 
-    library_type = config.param('DEFAULT', 'library_type', type='string', required=True)
+    library_type = config.param('jctseq_raw_counts', 'library_type', type='string', required=True)
     if library_type == 'single':
         strand = ''
     else:
@@ -51,14 +51,14 @@ java -Xmx{ram} -jar {bfx}/QoRTs.jar makeFlatGff {strand} {gtf} {output_gff}""".f
             strand = strand,
             ram = config.param('jctseq_make_gff', 'ram', type='string', required=True),
             gtf = config.param('DEFAULT', 'gtf', type='filepath', required=True),
-            bfx = config.param('DEFAULT', 'bfx_location', type='string', required=True)
+            bfx = bfx
             )
         )
 
-def diff_prep(folder, contrast_name, gff):
+def diff_prep(folder, contrast_name, gff, bfx, design_file):
 
     return Job(
-        [gff],
+        [gff, design_file],
         [os.path.join(folder, 'jscs1.r'), 'jctseq/jctseq.design'],
         command="""\
 cp {design_file} jctseq/jctseq.design ;\\
@@ -68,12 +68,12 @@ echo 'contrast <- decoder${contrast_name} \nfolder <- "{folder}"' >> {folder}/js
             folder = folder,
             contrast_name = contrast_name,
             gff = gff,
-            design_file = config.param('jctseq_diff_prep', 'design_file', type='filepath', required=True),
-            bfx = config.param('DEFAULT', 'bfx_location', type='string', required=True)
+            design_file = design_file,
+            bfx = bfx
             )
         )
 
-def jscs_diff(input_gff, output_plots, output_results, jscs_file, raw_counts_list):
+def jscs_diff(input_gff, output_plots, output_results, jscs_file, raw_counts_list, bfx):
 
     return Job(
         raw_counts_list + [input_gff, jscs_file],
@@ -90,7 +90,7 @@ Rscript {jscs_file}""".format(
             output_results = output_results,
             jscs_file = jscs_file,
             raw_counts_list = raw_counts_list,
-            bfx = config.param('DEFAULT', 'bfx_location', type='string', required=True)
+            bfx = bfx
             )
         )
 

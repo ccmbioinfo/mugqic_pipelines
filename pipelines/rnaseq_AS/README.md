@@ -261,7 +261,7 @@ This step is only needed if you are running MISO.
 13- miso_paired_end
 ------------
 Computes insert length distribution and its statistics for the next step by running `pe_utils --compute-insert-len`. This step is only needed for paired end reads, 
-and will run if `library_type=paired` in the `DEFAULT` section of the config file. This step will be skipped if `library_type=single`.
+and will run if `library_type=paired` in the `miso_psi` section of the config file. This step will be skipped if `library_type=single`.
 
 Important Config Settings:
 
@@ -278,7 +278,8 @@ This function will automatically calculate read length and whether to run in pai
 
 Important Config Settings:
 
-1. `other_options` can be any other options for `miso --run`.
+1. `library_type` should be `paired` or `single`.
+2. `other_options` can be any other options for `miso --run`.
 
 This step is only needed if you are running MISO.
 
@@ -308,8 +309,6 @@ This step is only needed if you are running MISO.
 Uses [Sashimi Plot](http://miso.readthedocs.io/en/fastmiso/sashimi.html) to plot the results from MISO.
 
 Important Config Settings:
-
-1. `bfx_location` in the `DEFAULT` section must be the full path to the bfx folder.
 
 This step is only needed if you are running MISO.
 
@@ -369,7 +368,6 @@ This step will run in single-end mode if `library_type=single` in the `DEFAULT` 
 Important Config Settings:
 
 1. `QoRTs_other_options` can be any other options for `java -jar QoRTs.jar QC`.
-2. `bfx_location` in the `DEFAULT` section must be the full path to the bfx folder.
 
 This step is only needed if you are running JunctionSeq.
 
@@ -377,29 +375,16 @@ This step is only needed if you are running JunctionSeq.
 ------------
 Uses QoRTs to generate an annotation file used by JunctionSeq. It uses the gtf specified in the `DEFAULT` section to create the gff file. This step will run in single-end mode if `library_type=single` in the `DEFAULT` section of the config file.
 
-Important Config Settings:
-
-1. `bfx_location` in the `DEFAULT` section must	be the full path to the	bfx folder.
-
 This step is only needed if you are running JunctionSeq.
 
 25- jctseq_diff_prep
 ------------
 Prepares the data for the next step.
 
-Important Config Settings:
-
-1. `design_file` is the absolute path to the design file.
-2. `bfx_location` in the `DEFAULT` section must	be the full path to the	bfx folder.
-
 This step is only needed if you are running JunctionSeq.
 
 26- jctseq_diff
 ------------
 Tests for differential usage of exons and splice junctions. It will also plot the results of JunctionSeq.
-
-Important Config Settings:
-
-1. `bfx_location` in the `DEFAULT` section must be the full path to the bfx folder.
 
 This step is only needed if you are running JunctionSeq.

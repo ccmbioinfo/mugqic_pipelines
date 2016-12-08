@@ -63,7 +63,7 @@ def compute_psi(input_bam, index_folder, output_header, output_folder_name, samp
     sdev_com = 'BEGIN { FS=",";} /mean/ {print substr($2,6);}'
     len_com = '{print length($10)}'
  
-    if config.param('DEFAULT', 'library_type', type='string', required=True) == 'paired':
+    if config.param('miso_psi', 'library_type', type='string', required=True) == 'paired':
         depend = [insert_file]
         p_end = '--paired-end'
 
@@ -126,7 +126,7 @@ compare_miso --compare-samples miso/{sample_one} miso/{sample_two} {output_direc
             )
         )
 
-def plot_settings(sample_names, bam_files):
+def plot_settings(sample_names, bam_files, bfx):
 
     optional = ''
     logged = config.param('miso_plot_settings', 'logged', type='string', required=False)
@@ -165,7 +165,7 @@ printf '\nbam_files = {bam_files} \nmiso_files = {sample_names} \n' >> miso/sash
 printf '[plotting] \nfig_width = {fig_width} \nfig_height = {fig_height} \nintron_scale = {intron_scale} \nexon_scale = {exon_scale} \nshow_posteriors = {show_posteriors} \nbar_posteriors = {bar_posteriors} \ncolors = {colors} \ncoverages = {coverages} \n{optional}' >> miso/sashimi_plot_settings.txt""".format(
             bam_files = bam_files,
             sample_names = sample_names,
-            bfx = config.param('DEFAULT', 'bfx_location', type='string', required = True),
+            bfx = bfx,
             fig_width = config.param('miso_plot_settings', 'fig_width', type='string', required=True),
             fig_height = config.param('miso_plot_settings', 'fig_height', type='string', required=True),
             intron_scale = config.param('miso_plot_settings', 'intron_scale', type='string', required=True),

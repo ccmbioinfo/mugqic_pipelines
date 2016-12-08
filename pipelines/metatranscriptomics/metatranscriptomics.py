@@ -418,8 +418,8 @@ class Metatranscriptomics(common.Illumina):
                 rrna_ids = join(input_dir, '{name}.{i}.rrna_ids.json'.format(name=readset.name, i=i))
                 in_fastq = join(input_dir, '{name}.{i}.unique.fastq'.format(name=readset.name, i=i))
 
-                out_rrna = join(output_dir, '{name}.{i}.rrna.fastq')
-                out_not_rrna = join(output_dir, '{name}.{i}.not_rrna.fastq')
+                out_rrna = join(output_dir, '{name}.{i}.rrna.fastq'.format(name=readset.name, i=i))
+                out_not_rrna = join(output_dir, '{name}.{i}.not_rrna.fastq'.format(name=readset.name, i=i))
 
                 jobs.append(Job(name='{step}.{readset}'.format(step=self.remove_rrna.__name__, readset=readset.name),
                                 input_files=[rrna_ids, in_fastq],
@@ -531,7 +531,7 @@ class Metatranscriptomics(common.Illumina):
             self.remove_rrna,  # 9
             self.align_to_host,
             self.merge_host_alignments,
-            self.extract_unmapped_host_reads,
+            self.extract_unmapped_host_reads, # 12
             self.remove_host_reads
         ]
 

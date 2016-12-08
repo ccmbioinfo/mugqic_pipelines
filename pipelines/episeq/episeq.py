@@ -173,7 +173,6 @@ class Episeq(common.Illumina):
         :return: A list of jobs that needs to be executed in this step.
         :rtype: list(Job)
         """
-        # static variables
         jobs = []  # List of jobs to run
         requires = [['pre_qc_check', 'module_java'],
                     ['pre_qc_check', 'module_fastqc']]
@@ -183,29 +182,31 @@ class Episeq(common.Illumina):
         report_data = 'report/data/pre_qc_check'
         fill_in_templ = "| {sample} | {readset} | [Report 1]({fq1_report}) [Download 1]({fq1_download}) | " \
                         "[Report 2]({fq2_report}) [Download 2]({fq2_download}) | {start} | {completion} |"
-        # Generate processing job
+        # Generate jobs
         for sample in self.samples:
-            for num, readset in enumerate(sample.readsets, 1):
-                # Determine what fastq files are given. 0 <= len(raw_fq) <= 2
-                raw_fq = filter(None, [readset.fastq1, readset.fastq2])
+            for readset in sample.readsets:
+                # Check inputs for readset
+                raw_fq = filter(None, [readset.fastq1, readset.fastq2])  # [0,2]
                 if not raw_fq:
-                    # If no fastq files, the sample just might only have a bam file, else throw error
                     log.info('No fastq files found for readset for ' + readset.name + '. Skipping...')
-                    if readset.bam:
+                    if readset.bam:  # Check if we have a bam file
                         continue
                     else:
                         raise ValueError('No sequencing data found for ' + readset.name)
+
                 # Determine output directory format
                 # My method of collapsing unneeded directories. If we only have 1 readset, don't make nested directories
                 if len(sample.readsets) == 1:
                     out_dir = os.path.join('pre_qc_check', sample.name)
                 else:
                     out_dir = os.path.join('pre_qc_check', sample.name, readset.name)
+
                 # Generate output path
                 # Obtain the output of the filename. ex. 'SRS23542_1' + '...'
-                id_name = [os.path.basename(nom).split('.gz')[0].split('.fastq')[0] for nom in raw_fq]
-                file_names = [nom + '_fastqc' + ext for nom in id_name for ext in ['.html', '.zip']]
-                output = [os.path.join(out_dir, name) for name in file_names]
+                id_name = [os.path.basename(nom).split('.gz')[0].split('.fastq')[0] for nom in raw_fq]  # Basename
+                file_names = [nom + '_fastqc' + ext for nom in id_name for ext in ['.html', '.zip']]  # Output Name
+                output = [os.path.join(out_dir, name) for name in file_names]  # Output file path
+
                 # Job creation
                 mkdir_job = Job(command='mkdir -p ' + out_dir)
                 job = Job(input_files=raw_fq,
@@ -217,6 +218,7 @@ class Episeq(common.Illumina):
                               others=config.param('pre_qc_check', 'other_options', required=False),
                               tmpdir=tmpdir),
                           removable_files=[output])
+
                 # Generate new report with new entry, only way to ensure nothing is missed, given no order guarantee.
                 # Since order is mixed, we can't make an organized table for viewing (without some fancier code)
                 report_body = fill_in_templ.format(
@@ -229,7 +231,6 @@ class Episeq(common.Illumina):
                     start="$START",
                     completion="$(date \"+%Y-%m-%d %H:%M:%S\")"
                 )
-
                 # Code to fill in template.
                 command = """\
 flock -x "{table_hold}.lock" -c "echo \\"{entry}\\" >> {table_hold}" && \\
@@ -255,8 +256,9 @@ pandoc \\
                     module_entries=[['pre_qc_check', 'module_pandoc']],
                     command=command,
                     report_files=[report_file])
+
                 # Add to list of jobs
-                jobs.append(concat_jobs([Job(command="START=$(date '+%Y-%m-%d %H:%M:%S')"),
+                jobs.append(concat_jobs([Job(command="START=$(date '+%Y-%m-%d %H:%M:%S')"),  # Get time when running
                                          mkdir_job, job, update_template], name='pre_qc_check.' + readset.name))
         return jobs
 
@@ -335,7 +337,7 @@ BEGIN {table=0;}
         jobs = []
         for sample in self.samples:
             for readset in sample.readsets:  # Iterate through each readset in project
-                # Determine if we can run trimming step for this set of data (in case user skips all other steps)
+                # Input check!
                 if readset.bam and not filter(None, [readset.fastq1, readset.fastq2]):
                     log.info('No fastq files found for readset for ' + readset.name + '. Skipping...')
                     continue  # There's still a bam file to process later, so skip this for now
@@ -346,11 +348,18 @@ BEGIN {table=0;}
                     trim_directory = os.path.join("trimmed", sample.name)
                 else:
                     trim_directory = os.path.join("trimmed", sample.name, readset.name)
+
+                # Some variables about the readset and current settings
+                output_reports = list()
+                key_report = list()
                 run_type = readset.run_type
                 protocol = readset.library
                 input_files = filter(None, [readset.fastq1, readset.fastq2])
                 file_basename = [os.path.join(trim_directory, os.path.basename(in_file).split('.')[0])
                                  for in_file in input_files]
+                add_options = config.param('trim_galore', 'other_options').split()  # options may affect output
+                run_qc = '--fastqc_args' in add_options or '--fastqc' in add_options
+                report_out = '--no_report_file' not in add_options
 
                 # List all possible outputs
                 if len(input_files) == 2:
@@ -366,15 +375,7 @@ BEGIN {table=0;}
                                    file_basename[0] + "_trimmed.fq.gz"]
                     input2_logs = []
 
-                # Parse custom options that may affect output (ex. Running FastQC or suppressing reports)
-                add_options = config.param('trim_galore', 'other_options').split()
-                run_qc = '--fastqc_args' in add_options or '--fastqc' in add_options
-                report_out = '--no_report_file' not in add_options
-
-                # Trim Galore has no built in option to change the filenames of the output
-                # Below are the default output names when running in paired or single mode
-                output_reports = list()
-                key_report = list()
+                # Build list of input reports/data
                 if run_type == "PAIRED_END":
                     if not readset.fastq2:
                         raise ValueError("Expecting paired reads be named as follows file1_1.fq file1_2.fq.")
@@ -408,7 +409,8 @@ BEGIN {table=0;}
                                    directory='--output_dir ' + trim_directory,
                                    fastq=' '.join(input_files)),
                                removable_files=output_files)
-                entry = fill_in_entry.format(sample=sample.name,
+
+                entry = fill_in_entry.format(sample=sample.name,  # For report jobs.
                                              readset=readset.name,
                                              trim1_view='[View details 1](' +
                                                         os.path.join(report_data,
@@ -443,7 +445,7 @@ BEGIN {table=0;}
                 command = """\
 flock -x "{table_hold}.lock" -c "echo \\"{entry}\\" >> {table_hold}" && \\
 mkdir -p {data_loc} && \\
-cp -f {output_file} {data_loc} && \\
+cp -f {output_file} {data_loc}; \\
 for i in {individual_page}; do
     sed -r 's%^([^0-9S][a-z ].+):(\s+.+)%|\\1|\\2|%g' $i | sed 's/\t/|/g' | awk '{script}' > "$i.md"; \\
 done
@@ -469,6 +471,7 @@ pandoc \\
                     command=command,
                     module_entries=[['trim_galore', 'module_pandoc']],
                     report_files=[report_file])
+
                 jobs.append(concat_jobs([Job(command="START=$(date '+%Y-%m-%d %H:%M:%S')"),
                                          mkdir_job, trim_job, report_job], name='trim_galore.' + readset.name))
         return jobs
@@ -526,7 +529,7 @@ BEGIN { table=0; };
         jobs = []
         for sample in self.samples:  # Process samples
             for readset in sample.readsets:
-                # Special cases to consider when finding files from the trimming step
+                # Check if the readset has an additional level of directories
                 if len(sample.readsets) == 1:
                     trim_prefix = os.path.join("trimmed", sample.name)
                 else:
@@ -579,7 +582,8 @@ BEGIN { table=0; };
                     if '--ambig_bam' in user_options:
                         out_files += [output_basename + '_aligned.ambig.bam']
                 else:
-                    raise AttributeError("Unknown run_type: " + run_type + ". Unknown file output name.")
+                    raise AttributeError("Unknown run_type: " + run_type + ". Unknown file output name for" +
+                                         sample.name)
 
                 # Job creation
                 mkdir_job = Job(command="mkdir -p " + align_directory)
@@ -619,7 +623,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                 command = """\
 flock -x {table_hold}.lock -c "echo \\"{entry}\\" >> {table_hold}" && \\
 mkdir -p {data_dir} && \\
-cp -f {reports} {data_dir} && \\
+cp -f {reports} {data_dir}; \\
 for i in {logs}; do
     sed -r 's/:\s+/|/g' $i | egrep -v "^Option" | egrep -v "^=+$" | awk '{script}' > $i".md"; \\
 done
@@ -645,8 +649,10 @@ pandoc \\
                                  report_files=[report_file],
                                  module_entries=[['bismark_align', 'module_pandoc']],
                                  command=command)
+
                 jobs.append(concat_jobs([Job(command="START=$(date '+%Y-%m-%d %H:%M:%S')"),
                                          mkdir_job, job, report_job], name="bismark_align." + readset.name))
+                # To next readset
         return jobs
 
     def merge_bismark_alignment_report(self):
@@ -832,7 +838,7 @@ pandoc \\
                                    Job([in_file], [out_file], command="cp -Ls -f " + abs_in_file + " " + abs_out_file),
                                    copy_job],
                                   name="skip_rrbs_deduplicate." + sample.name)
-            else:
+            else:  # WGBS
                 merge_job = Job([in_file],
                                 module_entries=[['bismark_deduplicate', 'module_samtools'],
                                                 ['bismark_deduplicate', 'module_perl'],
@@ -908,6 +914,7 @@ pandoc \\
                 os.path.join("methyl_calls", sample.name, "CpG_OT_" + sample.name + ".merged.deduplicated.txt.gz"),
                 os.path.join("methyl_calls", sample.name, "CpG_OB_" + sample.name + ".merged.deduplicated.txt.gz")]
             run_type = sample.readsets[0].run_type
+
             job = Job(
                 merged_sample + ['bismark_prepare_genome/'],
                 report_files + other_files,

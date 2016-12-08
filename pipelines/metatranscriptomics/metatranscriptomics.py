@@ -468,8 +468,8 @@ class Metatranscriptomics(common.Illumina):
             for i in (1, 2):
                 # bwa aln job
                 jobs.append(Job(name='{step}.aln.{readset}.{i}'.format(step=self.align_to_host.__name__,
-                                                                   readset=readset.name,
-                                                                   i=i),
+                                                                       readset=readset.name,
+                                                                       i=i),
                                 input_files=[input_fastq[i], host_db],
                                 output_files=[alignment[i]],
                                 module_entries=[[self.align_to_host.__name__, 'module_bwa']],
@@ -480,7 +480,7 @@ class Metatranscriptomics(common.Illumina):
 
             # bwa sampe job
             jobs.append(Job(name='{step}.sampe.{readset}'.format(step=self.align_to_host.__name__,
-                                                           readset=readset.name),
+                                                                 readset=readset.name),
                             input_files=[host_db, alignment[1], alignment[2], input_fastq[1], input_fastq[2]],
                             output_files=[output_sam],
                             module_entries=[[self.align_to_host.__name__, 'module_bwa']],
@@ -495,7 +495,7 @@ class Metatranscriptomics(common.Illumina):
 
         return jobs
 
-    def extract_unmapped_host_reads(self):
+    def identify_host_reads(self):
         jobs = []
 
         input_prefix = 'filter_reads'
@@ -505,8 +505,43 @@ class Metatranscriptomics(common.Illumina):
             input_dir = join(input_prefix, readset.name)
             output_dir = join(output_prefix, readset.name)
 
-            pass
-            # TODO
+            input_sam = join(input_dir, '{name}.host.sam'.format(name=readset.name))
+            sorted_bam = join(output_dir, '{name}.host_sorted.bam'.format(name=readset.name))
+            unmapped_sam = join(output_dir, '{name}.host.bwaout'.format(name=readset.name))
+            output_ids = join(output_dir, '{name}.host_ids.json')
+
+            sort_sam_job = Job(name='{step}.sort_host.{name}'.format(step=self.identify_host_reads.__name__,
+                                                                     name=readset.name),
+                               input_files=[input_sam],
+                               output_files=[sorted_bam],
+                               module_entries=[[self.identify_host_reads.__name__, 'module_samtools']],
+                               command='samtools view -bS {input_sam}'
+                                       '| samtools sort -n -o {sorted_bam}'.format(input_sam=input_sam,
+                                                                                   sorted_bam=sorted_bam))
+
+            unmapped_reads_job = Job(name='{step}.unmapped_reads.{name}'.format(step=self.identify_host_reads.__name__,
+                                                                                name=readset.name),
+                                     input_files=[sorted_bam],
+                                     output_files=[unmapped_sam],
+                                     module_entries=[[self.identify_host_reads.__name__, 'module_sam']],
+                                     command='samtools view -F 4 {sorted_bam}'
+                                             '> {unmapped_sam}'.format(sorted_bam=sorted_bam,
+                                                                       unmapped_sam=unmapped_sam))
+
+            extract_ids_job = Job(name='{step}.extract_IDs.{name}'.format(step=self.identify_host_reads.__name__,
+                                                                          name=readset.name),
+                                  input_files=[unmapped_sam],
+                                  output_files=[output_ids],
+                                  module_entries=[[self.identify_host_reads.__name__, 'module_perl']],
+                                  command='perl {script_path}/extract_ids_from_sam.py '
+                                          '--sam {unmapped_sam} '
+                                          '--id-file {output_ids}'.format(script_path=self.script_path,
+                                                                          unmapped_sam=unmapped_sam,
+                                                                          output_ids=output_ids))
+
+            jobs.extend([sort_sam_job, unmapped_reads_job, extract_ids_job])
+
+        return jobs
 
     def remove_host_reads(self):
         pass
@@ -525,8 +560,8 @@ class Metatranscriptomics(common.Illumina):
             self.identify_rrna,
             self.remove_rrna,  # 9
             self.align_to_host,
-            self.extract_unmapped_host_reads,  # 12
-            self.remove_host_reads
+            self.identify_host_reads,
+            self.remove_host_reads #12
         ]
 
 

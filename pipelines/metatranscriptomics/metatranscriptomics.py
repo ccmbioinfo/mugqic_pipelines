@@ -557,8 +557,36 @@ class Metatranscriptomics(common.Illumina):
         return jobs
 
     def remove_host_reads(self):
-        pass
-        # TODO
+        jobs = []
+
+        input_prefix = 'filter_reads'
+        output_prefix = 'filter_reads'
+
+        for readset in self.readsets:
+            input_dir = join(input_prefix, readset.name)
+            output_dir = join(output_prefix, readset.name)
+
+            for i in (1, 2):
+                id_file = join(input_dir, '{name}.host_ids.json'.format(name=readset.name))
+                input_fastq = join(input_dir, '{name}.{i}.not_rrna.fastq'.format(name=readset.name, i=i))
+
+                output_not_host = join(output_dir, '{name}.{i}.not_host.fastq'.format(name=readset.name, i=i))
+                output_host = join(output_dir, '{name}.{i}.host.fastq'.format(name=readset.name, i=i))
+
+                jobs.append(Job(name='{step}.{name}.{i}'.format(step=self.remove_host_reads.__name__, name=readset.name, i=i),
+                                input_files=[id_file, input_fastq],
+                                output_files=[output_host, output_not_host],
+                                command='python {script_path}/partition_reads_by_id.py '
+                                        '--fastq {input_fastq} '
+                                        '--id-file {id_file} '
+                                        '--included {output_host} '
+                                        '--excluded {output_not_host}'.format(script_path=self.script_path,
+                                                                              input_fastq=input_fastq,
+                                                                              id_file=id_file,
+                                                                              output_host=output_host,
+                                                                              output_not_host=output_not_host)))
+
+        return jobs
 
     @property
     def steps(self):

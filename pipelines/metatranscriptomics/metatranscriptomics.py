@@ -496,6 +496,15 @@ class Metatranscriptomics(common.Illumina):
         return jobs
 
     def identify_host_reads(self):
+        """
+        Identify reads that map to the host's genome
+
+        Input:
+        *.host.sam
+
+        Output:
+        *.host_ids.json
+        """
         jobs = []
 
         input_prefix = 'filter_reads'
@@ -507,39 +516,43 @@ class Metatranscriptomics(common.Illumina):
 
             input_sam = join(input_dir, '{name}.host.sam'.format(name=readset.name))
             sorted_bam = join(output_dir, '{name}.host_sorted.bam'.format(name=readset.name))
-            unmapped_sam = join(output_dir, '{name}.host.bwaout'.format(name=readset.name))
-            output_ids = join(output_dir, '{name}.host_ids.json')
+            host_sam = join(output_dir, '{name}.host.bwaout'.format(name=readset.name))
 
-            sort_sam_job = Job(name='{step}.sort_host.{name}'.format(step=self.identify_host_reads.__name__,
-                                                                     name=readset.name),
-                               input_files=[input_sam],
-                               output_files=[sorted_bam],
-                               module_entries=[[self.identify_host_reads.__name__, 'module_samtools']],
-                               command='samtools view -bS {input_sam}'
-                                       '| samtools sort -n -o {sorted_bam}'.format(input_sam=input_sam,
-                                                                                   sorted_bam=sorted_bam))
+            output_ids = join(output_dir, '{name}.host_ids.json'.format(name=readset.name))
 
-            unmapped_reads_job = Job(name='{step}.unmapped_reads.{name}'.format(step=self.identify_host_reads.__name__,
-                                                                                name=readset.name),
-                                     input_files=[sorted_bam],
-                                     output_files=[unmapped_sam],
-                                     module_entries=[[self.identify_host_reads.__name__, 'module_sam']],
-                                     command='samtools view -F 4 {sorted_bam}'
-                                             '> {unmapped_sam}'.format(sorted_bam=sorted_bam,
-                                                                       unmapped_sam=unmapped_sam))
+            # Sort the sam file
+            sort_sam_job = Job(
+                name='{step}.sort_host.{name}'.format(step=self.identify_host_reads.__name__, name=readset.name),
+                input_files=[input_sam],
+                output_files=[sorted_bam],
+                module_entries=[[self.identify_host_reads.__name__, 'module_samtools']],
+                command='samtools view -bS {input_sam}'
+                        '| samtools sort -n -o {sorted_bam}'.format(input_sam=input_sam,
+                                                                    sorted_bam=sorted_bam))
 
-            extract_ids_job = Job(name='{step}.extract_IDs.{name}'.format(step=self.identify_host_reads.__name__,
-                                                                          name=readset.name),
-                                  input_files=[unmapped_sam],
-                                  output_files=[output_ids],
-                                  module_entries=[[self.identify_host_reads.__name__, 'module_perl']],
-                                  command='perl {script_path}/extract_ids_from_sam.py '
-                                          '--sam {unmapped_sam} '
-                                          '--id-file {output_ids}'.format(script_path=self.script_path,
-                                                                          unmapped_sam=unmapped_sam,
-                                                                          output_ids=output_ids))
+            # Remove reads that did not map to the host
+            remove_unmapped_reads_job = Job(
+                name='{step}.remove_unmapped.{name}'.format(step=self.identify_host_reads.__name__, name=readset.name),
+                input_files=[sorted_bam],
+                output_files=[host_sam],
+                module_entries=[[self.identify_host_reads.__name__, 'module_samtools']],
+                command='samtools view -F 4 {sorted_bam}'
+                        '> {host_sam}'.format(sorted_bam=sorted_bam,
+                                              host_sam=host_sam))
 
-            jobs.extend([sort_sam_job, unmapped_reads_job, extract_ids_job])
+            # Given reads that mapped to the host, extract the FASTQ IDs in JSON
+            # These are the reads we want to remove
+            extract_ids_job = Job(
+                name='{step}.extract_IDs.{name}'.format(step=self.identify_host_reads.__name__, name=readset.name),
+                input_files=[host_sam],
+                output_files=[output_ids],
+                command='python {script_path}/extract_ids_from_sam.py '
+                        '--sam {unmapped_sam} '
+                        '--id-file {output_ids}'.format(script_path=self.script_path,
+                                                        unmapped_sam=host_sam,
+                                                        output_ids=output_ids))
+
+            jobs.extend([sort_sam_job, remove_unmapped_reads_job, extract_ids_job])
 
         return jobs
 
@@ -561,7 +574,7 @@ class Metatranscriptomics(common.Illumina):
             self.remove_rrna,  # 9
             self.align_to_host,
             self.identify_host_reads,
-            self.remove_host_reads #12
+            self.remove_host_reads  # 12
         ]
 
 

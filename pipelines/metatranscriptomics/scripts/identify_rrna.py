@@ -42,6 +42,9 @@ def get_id_to_length(read_description_file):
 
 
 class InfernalFileParser:
+    """
+    Namespace for functions that parse *.infernalout
+    """
     @staticmethod
     def get_id(line):
         return line.split()[1]
@@ -79,6 +82,9 @@ def parse_infernalout(infernalout, id_to_length, args):
 
     with open(infernalout) as f:
         for line in f:
+            # Skip comment lines
+            if line.startswith('#'): continue
+
             id = InfernalFileParser.get_id(line)
             seq_from = InfernalFileParser.get_seq_from(line)
             seq_to = InfernalFileParser.get_seq_to(line)
@@ -94,10 +100,25 @@ def parse_infernalout(infernalout, id_to_length, args):
                     rrna_ids.add(id)
 
 
-def write_rrna_ids(rrna_ids, output_ids):
+def write_rrna_ids(ids, output_ids):
+    """
+    Write IDs to JSON file
+
+    Example input:
+    {'@SRR1', '@SRR5'}
+
+    Example JSON output:
+    {
+        "rows": [{"id": "@SRR1"},
+                 {"id": "@SRR5"}]
+    }
+
+    :param ids: iterable of str
+    :param output_ids: JSON filename
+    """
     with open(output_ids, 'w+') as f:
         json.dump({
-            'rows': [{'id': id} for id in rrna_ids]
+            'rows': [{'id': id} for id in ids]
         }, f)
 
 

@@ -467,7 +467,7 @@ class Metatranscriptomics(common.Illumina):
 
             for i in (1, 2):
                 # bwa aln job
-                jobs.append(Job(name='{step}.{readset}.{i}'.format(step=self.align_to_host.__name__,
+                jobs.append(Job(name='{step}.aln.{readset}.{i}'.format(step=self.align_to_host.__name__,
                                                                    readset=readset.name,
                                                                    i=i),
                                 input_files=[input_fastq[i], host_db],
@@ -479,7 +479,7 @@ class Metatranscriptomics(common.Illumina):
                                                                alignment=alignment[i])))
 
             # bwa sampe job
-            jobs.append(Job(name='{step}.{readset}'.format(step=self.align_to_host.__name__,
+            jobs.append(Job(name='{step}.sampe.{readset}'.format(step=self.align_to_host.__name__,
                                                            readset=readset.name),
                             input_files=[host_db, alignment[1], alignment[2], input_fastq[1], input_fastq[2]],
                             output_files=[output_sam],

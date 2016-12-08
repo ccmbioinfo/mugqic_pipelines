@@ -24,7 +24,10 @@ $bwa_dir/bwa aln -t 4 $COW_CDS $input_dir/cow1_qual_unique_n_rRNA.fastq > $outpu
 $bwa_dir/bwa aln -t 4 $COW_CDS $input_dir/cow2_qual_unique_n_rRNA.fastq > $output_dir/cow2_host.sai
 
 #$bwa_dir/bwa sampe $COW_CDS $output_dir/cow1_host.sai $output_dir/cow2_host.sai $output_dir/cow1_matching_ids.fastq $output_dir/cow2_matching_ids.fastq > $output_dir/cow_host.sam
-$bwa_dir/bwa sampe $COW_CDS $output_dir/cow1_host.sai $output_dir/cow2_host.sai $input_dir/cow1_qual_unique_n_rRNA.fastq $input_dir/cow2_qual_unique_n_rRNA.fastq > $output_dir/cow_host.sam
+$bwa_dir/bwa sampe $COW_CDS \
+    $output_dir/cow1_host.sai $output_dir/cow2_host.sai \
+    $input_dir/cow1_qual_unique_n_rRNA.fastq $input_dir/cow2_qual_unique_n_rRNA.fastq \
+    > $output_dir/cow_host.sam
 #$bwa_dir/bwa sampe cow_cds.fa cow1_host.sai cow2_host.sai cow1_qual_unique_n_rRNA.fastq cow2_qual_unique_n_rRNA.fastq > cow_host.sam
 
 # extract unmapped reads

@@ -621,7 +621,7 @@ pandoc \\
                     report_template_dir=self.report_template_dir,
                     basename_report_file=os.path.basename(report_file),
                     output_file=" ".join(output_reports),
-                    individual_page=" ".join(key_report),
+                    individual_page=" ".join([os.path.basename(loc) for loc in key_report]),
                     data_loc=report_data,
                     table_hold=template_string_file,
                     script=output_parser,

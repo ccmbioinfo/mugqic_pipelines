@@ -437,6 +437,15 @@ class Metatranscriptomics(common.Illumina):
         return jobs
 
     def align_to_host(self):
+        """
+        Align reads to a host database
+
+        Input:
+        *.{1,2}.not_rrna.fastq
+
+        Output:
+        *.{1,2}.host.sai
+        """
         jobs = []
 
         input_prefix = 'filter_reads'
@@ -446,7 +455,7 @@ class Metatranscriptomics(common.Illumina):
             input_dir = join(input_prefix, readset.name)
             output_dir = join(output_prefix, readset.name)
 
-            host_database = config.param(self.align_to_host.__name__, 'host_db')
+            host_db = config.param(self.align_to_host.__name__, 'host_db')
 
             for i in (1, 2):
                 input_fastq = join(input_dir, '{name}.{i}.not_rrna.fastq'.format(name=readset.name, i=i))
@@ -455,14 +464,16 @@ class Metatranscriptomics(common.Illumina):
                 alignment_job = Job(name='{step}.{readset}.{i}'.format(step=self.align_to_host.__name__,
                                                                        readset=readset.name,
                                                                        i=i),
-                                    input_files=[input_fastq, host_database],
+                                    input_files=[input_fastq, host_db],
                                     output_files=[output_alignment],
                                     module_entries=[[self.align_to_host.__name__, 'module_bwa']],
                                     command='bwa aln -t 4 {host_db} {input_fastq}'
-                                            '> {output_alignment}'.format(host_db=host_database,
+                                            '> {output_alignment}'.format(host_db=host_db,
                                                                           input_fastq=input_fastq,
                                                                           output_alignment=output_alignment))
                 jobs.append(alignment_job)
+
+        return jobs
 
     def merge_host_alignments(self):
         jobs = []

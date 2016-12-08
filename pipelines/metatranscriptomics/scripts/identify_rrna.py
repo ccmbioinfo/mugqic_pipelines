@@ -59,7 +59,7 @@ class InfernalFileParser:
 
     @staticmethod
     def get_evalue(line):
-        return line.split()[15]
+        return float(line.split()[15])
 
 
 def get_percent_identity(seq_from, seq_to, seq_length):
@@ -96,7 +96,7 @@ def parse_infernalout(infernalout, id_to_length, args):
 
                 percent_identity = get_percent_identity(seq_from, seq_to, id_to_length[id])
 
-                if not args.apply_cutoff or passes_cutoff(percent_identity, evalue, args):
+                if not args.apply_cutoff or passes_cutoff(evalue, percent_identity, args):
                     rrna_ids.add(id)
 
     return rrna_ids

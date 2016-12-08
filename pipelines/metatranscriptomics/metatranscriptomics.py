@@ -379,9 +379,9 @@ class Metatranscriptomics(common.Illumina):
                                 input_files=[infernalout, read_description],
                                 output_files=[output_ids],
                                 command='python {script_path}/identify_rrna.py '
-                                        '--read_description {read_description} '
+                                        '--read-description {read_description} '
                                         '--infernalout {infernalout} '
-                                        '--apply_cutoff '
+                                        '--apply-cutoff '
                                         '--max-evalue {max_evalue} '
                                         '--min-percent-identity {min_percent_identity} '
                                         '--out-ids {output_ids}'.format(script_path=self.script_path,

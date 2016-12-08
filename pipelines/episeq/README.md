@@ -96,16 +96,23 @@ Steps:
 13- differential_methylated_regions
 ```
 
-## Episeq Pipeline Steps
+## Reports
+The pipeline generates a massive amount of data, many of which is not immediately visualized. Reports help provide a summary of results that is more readily understood. As such, it is one of the easier ways towards understanding the results. [Later](#epi-seq-pipeline-steps)
+### Pipeline-wide reporting
+A final report comes from running the Epi-Seq script with the `--report` option. This will generate a new `qsub.sh` script that will generate a report.
+
+### 
+
+## Epi-Seq Pipeline Steps
 ### 1. bismark_prepare_genome
-This step takes in a reference genome fasta file and convert the sequence for methylation alignment and sequencing. This is a pre-processing step for [bismark_align](#4._bismark_align). The step will link the reference genome to the output directory (if needed), and create the methylome sequence in the directory called `Bisulfite_Genome`, which contains two subdirectories within it. Each subdirectory contains a converted sequence of either C->T and G->A conversions. Each of these converted sequences are used to align the bisulfite-treated reads. Since bisulfite sequencing causes unmethylated C to covert to U and later interpreted as T, this step allows alignment to be made without excessive mismatches due to the bisulfite treatment. This step only needs to be done once within a project's output folder.
+This step takes in a reference genome fasta file and convert the sequence for methylation alignment and sequencing. This is a pre-processing step for [bismark_align](#4-bismark_align). The step will link the reference genome to the output directory (if needed), and create the methylome sequence in the directory called `Bisulfite_Genome`, which contains two subdirectories within it. Each subdirectory contains a converted sequence of either C->T and G->A conversions. Each of these converted sequences are used to align the bisulfite-treated reads. Since bisulfite sequencing causes unmethylated C to covert to U and later interpreted as T, this step allows alignment to be made without excessive mismatches due to the bisulfite treatment. This step only needs to be done once within a project's output folder.
 
 | Job Attribute | Value |
 |:----------|:------|
 | Output directory name: | `bismark_prepare_genome` |
 | Job name prefix | `bismark_prepare_genome` |
 | Requires | None
-| Blocks | [bismark_align](#4._bismark_align) <br /> [bismark_methylation_caller](#10._bismark_methylation_caller) |
+| Blocks | [bismark_align](#4-bismark_align) <br /> [bismark_methylation_caller](#10-bismark_methylation_caller) |
 
 
 __Note:__ Depending on the size of the genome, this step can take several hours to complete.
@@ -126,7 +133,7 @@ This step helps improve the alignment efficiency by performing quality trimming 
 | Output directory name: | `trimmed` |
 | Job name prefix | `trim_galore` |
 | Requires | None |
-| Blocks | [bismark_align](#4._bismark_align) |
+| Blocks | [bismark_align](#4-bismark_align) |
 
 ### 4. bismark_align
 This step aligns the trimmed reads to a reference genome from `bismark_prepare_genome`. The alignment is done by the open source package Bismark using the default stringency settings. By default, the settings can be somewhat strict, but is essential to avoid mismatches from sequencing error. Additional options can be entered through the "`other_options`" parameter in the configuration file. Output files are `.bam` files, but may be configured to output `cram` or `sam` files. This step can be ignored if the readset contains `.BAM` files
@@ -135,8 +142,8 @@ This step aligns the trimmed reads to a reference genome from `bismark_prepare_g
 |:----------|:------|
 | Output directory name: | `aligned` |
 | Job name prefix | `bismark_align` |
-| Requires | [bismark_prepare_genome](#1._bismark_prepare_genome) <br /> [trim_galore](#3._trim_galore) |
-| Blocks | [merge_bismark_alignment_report](#5._merge_bismark_alignment_report) <br /> [picard_merge_sam_files](#6._picard_merge_sam_files) |
+| Requires | [bismark_prepare_genome](#1-bismark_prepare_genome) <br /> [trim_galore](#3-trim_galore) |
+| Blocks | [merge_bismark_alignment_report](#5-merge_bismark_alignment_report) <br /> [picard_merge_sam_files](#6-picard_merge_sam_files) |
 
 
 ### 5. merge_bismark_alignment_report
@@ -146,8 +153,8 @@ So far, the pipeline has been handling data at a readset level. However, our ana
 |:----------|:------|
 | Output directory name: | `merged` |
 | Job name prefix | `merge_bismark_alignment_report` |
-| Requires | [bismark_align](#4._bismark_align) |
-| Blocks | [bismark_html_report_generator](#11._bismark_html_report_generator) |
+| Requires | [bismark_align](#4-bismark_align) |
+| Blocks | [bismark_html_report_generator](#11-bismark_html_report_generator) |
 
 ### 6. picard_merge_sam_files
 This step combines all readsets together to form a single `.bam` file for each sample. This is often required when multiple libraries or multiplexing is done before sequencing. Merging at this step allows us to parallelize the pipeline as much as we can before aggregating. `bismark_align` will merge any paired reads into a single file, which takes care some of the work for us.
@@ -156,8 +163,8 @@ This step combines all readsets together to form a single `.bam` file for each s
 |:----------|:------|
 | Output directory name: | `merged` |
 | Job name prefix | `picard_merge_sam_files`<br/> `symlink_readset_sample_bam` |
-| Requires | [bismark_align](#4._bismark_align) |
-| Blocks | [bismark_deduplicate](#8._bismark_deduplicate) <br/> [merged_nuc_stats](#7._merged_nuc_stats) |
+| Requires | [bismark_align](#4-bismark_align) |
+| Blocks | [bismark_deduplicate](#8-bismark_deduplicate) <br/> [merged_nuc_stats](#7-merged_nuc_stats) |
 
 ### 7. merged_nuc_stats
 There isn't a dedicated merge script for the nucleotide coverage information, so we have to rerun the analysis here to generate a new report file. This step is (again) for QC and troubleshooting purposes. Looking at the nucleotide coverage after all readsets are merged may reveal biases that are found in some readsets, but not others.
@@ -166,7 +173,7 @@ There isn't a dedicated merge script for the nucleotide coverage information, so
 |:----------|:------|
 | Output directory name: | `merged` |
 | Job name prefix | `bam2nuc` |
-| Requires | [picard_merge_sam_files](#6._picard_merge_sam_files) |
+| Requires | [picard_merge_sam_files](#6-picard_merge_sam_files) |
 | Blocks | None |
 
 ### 8. bismark_deduplicate
@@ -176,8 +183,8 @@ Merging readsets reads can cause all sorts of artifacts and errors. Depending on
 |:----------|:------|
 | Output directory name: | `dedup` |
 | Job name prefix | `bismark_deduplicate`<br/> `skip_rrbs_deduplicate` |
-| Requires | [picard_merge_sam_files](#6._picard_merge_sam_files) |
-| Blocks | [calc_dedup_nucleotide_coverage](#9._calc_dedup_nucleotide_coverage) <br/> [bismark_methylation_caller](#10._bismark_methylation_caller) <br/> [bismark_html_report_generator](#11._bismark_html_report_generator) |
+| Requires | [picard_merge_sam_files](#6-picard_merge_sam_files) |
+| Blocks | [calc_dedup_nucleotide_coverage](#9-calc_dedup_nucleotide_coverage) <br/> [bismark_methylation_caller](#10-bismark_methylation_caller) <br/> [bismark_html_report_generator](#11-bismark_html_report_generator) |
 
 ### 9. calc_dedup_nucleotide_coverage
 One more calculation is needed because the bam file has been modified since the last time this calculation has been done. The reason to keep each report file is for diagnostic and troubleshooting purposes. These calculations yield a metric that can be compared as the data moves through the pipeline. For this pipeline, this is the final read coverage information.
@@ -186,8 +193,8 @@ One more calculation is needed because the bam file has been modified since the 
 |:----------|:------|
 | Output directory name: | `dedup` |
 | Job name prefix | `bam2nuc` |
-| Requires | [bismark_deduplicate](#8._bismark_deduplicate) |
-| Blocks | [bismark_html_report_generator](#11._bismark_html_report_generator) |
+| Requires | [bismark_deduplicate](#8-bismark_deduplicate) |
+| Blocks | [bismark_html_report_generator](#11-bismark_html_report_generator) |
 
 ### 10. bismark_methylation_caller
 This step extracts the methylation call for every single cytosine analyzed from the Bismark result files.
@@ -200,8 +207,8 @@ The following input files are accepted:
 |:----------|:------|
 | Output directory name: | `methyl_calls` |
 | Job name prefix | `bismark_methylation_caller` |
-| Requires | [bismark_prepare_genome](#1._bismark_prepare_genome) <br/> [bismark_deduplicate](#8._bismark_deduplicate) |
-| Blocks | [bismark_html_report_generator](#11._bismark_html_report_generator) <br/> [differential_methylated_pos](#12._differential_methylated_pos) <br/>[differential_methylated_regions](13._differential_methylated_regions) |
+| Requires | [bismark_prepare_genome](#1-bismark_prepare_genome) <br/> [bismark_deduplicate](#8-bismark_deduplicate) |
+| Blocks | [bismark_html_report_generator](#11-bismark_html_report_generator) <br/> [differential_methylated_pos](#12-differential_methylated_pos) <br/>[differential_methylated_regions](13-differential_methylated_regions) |
 
 ### 11. bismark_html_report_generator
 This job summarizes all data from steps 3-10 into one HTML report file. It contains diagrams that summarizes the various report files Bismark creates in it's proccessing toolkit. This can serve as an excellent overview for the quality of the sample data and could make all other Bismark output reports redundant.
@@ -210,7 +217,7 @@ This job summarizes all data from steps 3-10 into one HTML report file. It conta
 |:----------|:------|
 | Output directory name: | `bismark_summary_report` |
 | Job name prefix | `bismark_report` |
-| Requires | [merge_bismark_alignment_report](#5._merge_bismark_alignment_report) <br/> [bismark_deduplicate](#8._bismark_deduplicate) <br/> [calc_dedup_nucleotide_coverage](#9._calc_dedup_nucleotide_coverage) <br /> [bismark_methylation_caller](#10._bismark_methylation_caller)|
+| Requires | [merge_bismark_alignment_report](#5-merge_bismark_alignment_report) <br/> [bismark_deduplicate](#8-bismark_deduplicate) <br/> [calc_dedup_nucleotide_coverage](#9-calc_dedup_nucleotide_coverage) <br /> [bismark_methylation_caller](#10-bismark_methylation_caller)|
 | Blocks | None |
 
 ### 12. differential_methylated_pos
@@ -225,7 +232,7 @@ contrast specified in the design file
 |:----------|:------|
 | Output directory name: | `differential_methylated_pos` |
 | Job name prefix | `differential_methylated_pos` |
-| Requires | [bismark_methylation_caller](#10._bismark_methylation_caller) |
+| Requires | [bismark_methylation_caller](#10-bismark_methylation_caller) |
 | Blocks | None |
 
 ### 13. differential_methylated_regions
@@ -235,7 +242,7 @@ This step runs the bumphunting algorithm to locate regions of differential methy
 |:----------|:------|
 | Output directory name: | `differential_methylated_regions` |
 | Job name prefix | `differential_methylated_regions` |
-| Requires | [bismark_methylation_caller](#10._bismark_methylation_caller) |
+| Requires | [bismark_methylation_caller](#10-bismark_methylation_caller) |
 | Blocks | None |
 
 __WARNING:__ This step is slow and requires large amounts of memory!

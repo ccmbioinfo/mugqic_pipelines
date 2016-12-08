@@ -30,7 +30,7 @@ Output Data
 - Bam file:
     - dedup/{sample.name}/{sample.name}.merged.deduplicated.bam
 - Methylation Graph Plot:
-    - methyl_calls,{sample.name}/{sample.name}.merged.deduplicated.bedGraph.gz
+    - methyl_calls/{sample.name}/{sample.name}.merged.deduplicated.bedGraph.gz
 - Methylation Coverage:
     - methyl_calls{sample.name}/{sample.name}.merged.deduplicated.bismark.cov.gz
 - CpG Methylation List:
@@ -42,9 +42,18 @@ Output Data
 
 Output Reports
 --------------
-- Alignment report:
+- Pre-QC Metrics Report:
+    - pre_qc_check/{sample.name}/{readset.name}/{readset.name}_fastqc.html (multiple readsets)
+    - pre_qc_check/{sample.name}/{readset.name}_fastqc.html (1 readset in sample)
+- Trimming Report:
+    - trimmed/{sample.name}/{readset.name}/{readset.name}/{readset.bam}_trimming_report.txt (multiple readsets)
+    - trimmed/{sample.name}/{readset.name}/{readset.bam}_trimming_report.txt (1 readset)
+- Post-Trim QC Report:
+    - trimmed/{sample.name}/{readset.name}/{readset.name}/{readset.bam}_fastqc.html (multiple readsets)
+    - trimmed/{sample.name}/{readset.name}/{readset.bam}_fastqc.html (1 readset)
+- Alignment Report:
     - merged/{sample.name}/{sample.name}.merged_aligned_PE_report.txt
-- Deduplication report:
+- Deduplication Report:
     - dedup/{sample.name}/{sample.name}.merged.deduplication_report.txt
 - Nucleotide Coverage:
     - dedup/{sample.name}/{sample.name}.merged.deduplicated.nucleotide_stats.txt
@@ -56,6 +65,20 @@ Output Reports
 - Bismark HTML Sample Summary:
     - bismark_summary_report/{sample.name}_final_bismark_report.html
 
+Report Generation
+-----------------
+Reports can be generating by rerunning the command line with the `--report` flag. The report will contain the minimum
+set of data that can describe the results of the pipeline. When the report is generated, it can be found at `report/`,
+under your designated output directory
+
+- Pre-QC Metrics
+- Trimming Report
+- Post-Trim QC Report
+- Alignment Report
+- Bismark HTML Sample Summary
+- Differentially Methylated Positions
+- Differentially Methylated Regions
+
 Workflow
 --------
 Below is the steps defined in this pipeline. The alphabetical designation shows which steps run concurrently in the
@@ -64,9 +87,9 @@ pipeline. It shows the order of the pipeline and the dependencies for each step.
  1. (a) Genome Methylation Conversion (bismark_prepare_genome)
  2. (a) Pre-Trim Quality Check (pre_qc_check)
  3. (a) Read and Adapter Trimming (trim_galore)
- 4. (b) Alignment (bismark_align)
- 5. (c) Merge Alignment Statistics(merge_bismark_alignment_report)
- 6. (c) Merge Aliged BAMs (picard_merge_sam_files)
+ 4. (b) Read Alignment (bismark_align)
+ 5. (c) Merge Alignment Statistics (merge_bismark_alignment_report)
+ 6. (c) Merge Aligned BAMs (picard_merge_sam_files)
  7. (d) Recalculate nucleotide coverage (merged_nuc_stats)
  8. (d) Remove Duplicate Reads (bismark_deduplication)
  9. (e) Recalculate nucleotide coverage 2 (calc_dedup_nucleotide_coverage)
@@ -75,12 +98,32 @@ pipeline. It shows the order of the pipeline and the dependencies for each step.
 12. (g) Position Specific Differential Analysis (differential_methylated_pos)
 13. (g) Regional Differential Analysis (differential_methylated_regions)
 
-Implementation
---------------
+Implementation and Development Comments
+---------------------------------------
 The pipeline is arranged to gradually decrease the number of input files when it make sense to do so. The trimming
 and QC step would be too slow if we merge readsets together, so we decided to trim each file individually. Then,
 the alignment phase allows us to convert out fastQ files to BAM files. This allows us to merge paired datasets into
 one BAM file per readset without explicitly doing so. After this, readsets are combined to run the analysis steps.
+
+In general, every step should first look at the following. This structure/framework is something that should be
+invariant between each job declaration.
+1. What readsets/samples are involved
+2. Additional user configuration from .ini file
+3. Required environment variables
+4. Required resources
+
+Next, the command input requires some additional information. These points need to be re-evaluated between
+samples/jobs:
+1. Determine which data is eligible to run
+2. Determine input and output file paths.
+3. Determine what formatting should be done prior to running (creating directories, etc.)
+
+The above highlights the many factors when creating a new step in the pipeline. There is a fair amount of
+preparation required to obtain every bit of information. In addition, these information may require different
+sources. For example, readset and sample information comes automatically from the superclasses (which is from
+the readset file), but the path information needs to be referenced from other jobs within the pipeline. Input files
+would need to be obtained from the previous step, which will require recreating this information.
+
 """
 
 # Python Standard Modules
@@ -117,6 +160,14 @@ class Episeq(common.Illumina):
     def __init__(self):
         self.argparser.add_argument("-d", "--design", help="design file", type=file)
         super(Episeq, self).__init__()
+
+    @property
+    def merge_py(self):
+        """
+        :return: A full path to the bismark report merge script.
+        :rtype: str
+        """
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bismark_merge_reports.py')
 
     @staticmethod
     def bismark_prepare_genome():
@@ -447,7 +498,7 @@ flock -x "{table_hold}.lock" -c "echo \\"{entry}\\" >> {table_hold}" && \\
 mkdir -p {data_loc} && \\
 cp -f {output_file} {data_loc}; \\
 for i in {individual_page}; do
-    sed -r 's%^([^0-9S][a-z ].+):(\s+.+)%|\\1|\\2|%g' $i | sed 's/\t/|/g' | awk '{script}' > "$i.md"; \\
+    sed -r 's%^([^0-9S][a-z ].+):(\s+.+)%|\\1|\\2|%g' $i | sed 's/\t/|/g' | awk '{script}' > "{data_loc}/$i.md"; \\
 done
 table=$(cat {table_hold}) && \\
 pandoc \\
@@ -466,8 +517,9 @@ pandoc \\
                     script=output_parser,
                     report_file=report_file)
                 report_job = Job(
-                    output_files=[report_file] + [os.path.join(report_data,
-                                                               os.path.basename(item)) for item in output_reports],
+                    output_files=[report_file] +
+                                 [os.path.join(report_data, os.path.basename(item)) for item in output_reports] +
+                                 [os.path.join(report_data, rep) + '.md' for rep in key_report],
                     command=command,
                     module_entries=[['trim_galore', 'module_pandoc']],
                     report_files=[report_file])
@@ -687,9 +739,7 @@ pandoc \\
             merge_job = Job(log_reports, [output_report],
                             [['merge_bismark_alignment_report', 'module_python']],
                             command="""python {script_loc} -o {output} -n {name} {logs}""".format(
-                                # A custom made script that should always be in the episeq directory, but not sure
-                                # how to reference that directory. TODO: Find script automatically?
-                                script_loc=os.path.abspath(config.param('DEFAULT', 'extern_script')),
+                                script_loc=self.merge_py,
                                 output=output_report,
                                 name=sample.name,
                                 logs=' '.join(log_reports)))
@@ -1054,26 +1104,36 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
         :return: A list of jobs that needs to be executed in this step.
         :rtype: list(Job)
         """
+        # Report file variables
+        report_file = 'report/EpiSeq.differential_methylated_pos.md'
+        report_data = 'report/data/differential_methylated_pos/'
+        zip_file = 'differential_methylated_pos.zip'  # Will hold all contrasts in one.
 
         jobs = []
-
         for contrast in self.contrasts:
-            # Determine the control and case samples to include in the analysis from the contrast
+            # Pulls data from design files such that zip(contrast, group) works.
             contrast_samples = [sample for sample in contrast.controls + contrast.treatments]
-            cov_files = [os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.bismark.cov.gz")
-                         for sample in contrast_samples]
             sample_group = ["control" if sample in contrast.controls else "case" for sample in contrast_samples]
+
+            # Get file paths
+            cov_files = [os.path.join("methyl_calls", sample.name, sample.name + ".merged.deduplicated.bismark.cov.gz")
+                         for sample in contrast_samples]  # Input files
             dmps_file = os.path.join("differential_methylated_positions",
-                                     contrast.name + "_RRBS_differential_methylated_pos.csv")
+                                     contrast.name + "_RRBS_differential_methylated_pos.csv")  # Output file
+
+            # Abort analysis if not enough samples (Will cause dmpFinder to throw an error)
             if len(contrast.controls) == 0 or contrast.treatments == 0 or len(contrast_samples) <= 2:  # No 1v1 or less
                 log.warn("Insufficient sample size to compare case and control. Skipping contrast: " + contrast.name)
                 continue
+
+            # Job declaration
             job = Job(
                 cov_files,
-                [dmps_file, 'report/data/differential_methylated_pos.zip'],
+                [dmps_file, os.path.join(report_data, zip_file)],
                 [
                     ["differential_methylated_pos", "module_R"],
-                    ["differential_methylated_pos", "module_mugqic_R_packages"]
+                    ["differential_methylated_pos", "module_mugqic_R_packages"],
+                    ["differential_methylated_pos", "module_pandoc"]
                 ],
                 command="""\
 mkdir -p {directory}
@@ -1108,7 +1168,11 @@ result <- result[abs(result["Avg Delta Beta"]) > {delta_beta_threshold}]
 write.csv(result, file="{dmps_file}", quote=FALSE, row.names=FALSE)
 
 EOF
-zip {zip_file} {dmps_file}
+zip {zip_file} {dmps_file} && \\
+pandoc \\
+    {report_template_dir}/{basename_report_file} \\
+    --template {report_template_dir}/{basename_report_file} \\
+    --to markdown > {report_file}
                 """.format(
                     directory=os.path.dirname(dmps_file),
                     samples=tuple(cov_files),
@@ -1122,12 +1186,13 @@ zip {zip_file} {dmps_file}
                     delta_beta_threshold=config.param("differential_methylated_pos", "delta_beta_threshold",
                                                       type="float"),
                     dmps_file=dmps_file,
-                    zip_file='report/data/differential_methylated_pos.zip'
+                    zip_file=os.path.join(report_data, zip_file),
+                    report_template_dir=self.report_template_dir,
+                    basename_report_file=os.path.basename(report_file),
+                    report_file=report_file
                 ),
                 name="differential_methylated_pos." + contrast.name)
-
             jobs.append(job)
-
         return jobs
 
     def differential_methylated_regions(self):
@@ -1142,6 +1207,11 @@ zip {zip_file} {dmps_file}
         :return: A list of jobs that needs to be executed in this step.
         :rtype: list(Job)
         """
+        # Report file variables
+        report_file = 'report/EpiSeq.differential_methylated_regions.md'
+        report_data = 'report/data/differential_methylated_regions/'
+        zip_file = 'differential_methylated_regions.zip'  # Will hold all contrasts in one.
+
         jobs = []
 
         for contrast in self.contrasts:
@@ -1155,10 +1225,11 @@ zip {zip_file} {dmps_file}
 
             job = Job(
                 cov_files,
-                [dmrs_file, 'report/data/differential_methylated_regions.zip'],
+                [dmrs_file, os.path.join(report_data, zip_file)],
                 [
                     ["differential_methylated_regions", "module_R"],
-                    ["differential_methylated_regions", "module_mugqic_R_packages"]
+                    ["differential_methylated_regions", "module_mugqic_R_packages"],
+                    ["differential_methylated_regions", "module_pandoc"]
                 ],
                 command="""\
 mkdir -p {directory}
@@ -1195,7 +1266,11 @@ write.csv(dmrs\$table, "{dmrs_file}", quote=FALSE, row.names=FALSE)
 
 EOF
 
-zip {zip_file} {dmrs_file}
+zip {zip_file} {dmrs_file} && \\
+pandoc \\
+    {report_template_dir}/{basename_report_file} \\
+    --template {report_template_dir}/{basename_report_file} \\
+    --to markdown > {report_file}
                 """.format(
                     directory=os.path.dirname(dmrs_file),
                     samples=tuple(cov_files),
@@ -1207,7 +1282,10 @@ zip {zip_file} {dmrs_file}
                                                       type="float"),
                     permutations=config.param("differential_methylated_regions", "permutations", type="int"),
                     dmrs_file=dmrs_file,
-                    zip_file='report/data/differential_methylated_regions.zip'
+                    zip_file=os.path.join(report_data, zip_file),
+                    report_template_dir=self.report_template_dir,
+                    basename_report_file=os.path.basename(report_file),
+                    report_file=report_file
                 ),
                 name="differential_methylated_regions." + contrast.name)
 

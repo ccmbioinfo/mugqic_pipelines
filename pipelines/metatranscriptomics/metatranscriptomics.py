@@ -267,9 +267,9 @@ class Metatranscriptomics(common.Illumina):
         filter_reads/*{1,2}.usearch_out.uc
 
         Output:
-        filter_reads/*{1,2}.unique.fastq            - de-duplicated fastq
-        filter_reads/*{1,2}.unique.fasta            - de-duplicated fasta
-        filter_reads/*{1,2}.read_description.json      - stores the number of duplicates and length of each read
+        filter_reads/*{1,2}.unique.fastq                - de-duplicated fastq
+        filter_reads/*{1,2}.unique.fasta                - de-duplicated fasta
+        filter_reads/*{1,2}.read_description.json       - stores ID, number of duplicates, length
         """
         jobs = []
 
@@ -347,12 +347,17 @@ class Metatranscriptomics(common.Illumina):
 
     def identify_rrna(self):
         """
-        Remove the reads identified as rRNA
+        Read the output from infernal and determine the FASTQ IDs that are rRNA
 
         NOTE: this step replaces main_get_infernal_fromfile_1tophit.pl
 
+        Input:
+        *.{1,2}.infernalout
+        *.{1,2}.read_description.json
+
+        Output:
+        *{1,2}.rrna_ids.json            - JSON file w/ rRNA IDs
         """
-        # TODO: documentation
         jobs = []
 
         input_prefix = 'filter_reads'
@@ -363,11 +368,9 @@ class Metatranscriptomics(common.Illumina):
             output_dir = join(output_prefix, readset.name)
 
             for i in (1, 2):
-                # Input files
                 infernalout = join(input_dir, '{name}.{i}.infernalout'.format(name=readset.name, i=i))
                 read_description = join(input_dir, '{name}.{i}.read_description.json'.format(name=readset.name, i=i))
 
-                # Output files
                 output_ids = join(output_dir, '{name}.{i}.rrna_ids.json'.format(name=readset.name, i=i))
 
                 jobs.append(Job(name='{step}.{readset}.{i}'.format(step=self.identify_rrna.__name__,
@@ -391,6 +394,17 @@ class Metatranscriptomics(common.Illumina):
         return jobs
 
     def remove_rrna(self):
+        """
+        Remove rRNA reads
+
+        Input:
+        *{1,2}.rrna_ids.json        - contains IDs of rRNA reads
+        *{1,2}.unique.json          - original reads
+
+        Output:
+        *{1,2}.rrna.fastq
+        *{1,2}.not_rrna.fastq       - new filtered data set
+        """
         jobs = []
 
         input_prefix = 'filter_reads'

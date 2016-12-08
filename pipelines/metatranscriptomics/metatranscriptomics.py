@@ -341,7 +341,9 @@ class Metatranscriptomics(common.Illumina):
                                                         '{name}.{i}.infernalout'.format(name=readset.name, i=i)),
                                             log_path=join(output_dir,
                                                           '{name}.{i}.rRNA.log'.format(name=readset.name, i=i)),
-                                            name='{step}.{name}'.format(step=self.cmscan.__name__, name=readset.name)))
+                                            name='{step}.{name}.{i}'.format(step=self.cmscan.__name__,
+                                                                            name=readset.name,
+                                                                            i=i)))
 
         return jobs
 

@@ -38,7 +38,8 @@ perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscr
     $output_dir/cow_host.bwaout \
     $output_dir/cow_host_bwa_IDs.txt \
     $output_dir/cow_host_bwa_pairs.txt \
-    $output_dir/cow_host_bwa_hitsID.txt
+    $output_dir/cow_host_bwa_hitsID.txt \
+    cow host bwa pairs
 #perl /hpf/largeprojects/ccmbio/nreinhardt/mugqic_pipelines/pipelines/metatranscriptomics/scripts/main_read_samout.pl cow host bwa pairs
 
 # cow1

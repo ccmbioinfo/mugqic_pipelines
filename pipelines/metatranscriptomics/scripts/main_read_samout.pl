@@ -2,7 +2,7 @@
 
 
 #my ($read_files, $db_type, $map_type, $read_type, $strain_type) = @ARGV;
-my ($infile, $outfile1, $outfile2, $outfile3) = @ARGV;
+my ($infile, $out_ids, $out_pairs, $out_hits, $read_files, $db_type, $map_type, $read_type, $strain_type) = @ARGV;
 
 my $Datapath = "~/CourseData/metagenomics/metatranscriptomics/";
 my $Workpath = "";
@@ -44,7 +44,7 @@ my $Workpath = "";
 #    $outfile2 = $Workpath.$read_files."_".$read_type."_".$strain_type."_".$map_type."_pairs.txt";
 #    $outfile3 = $Workpath.$read_files."_".$read_type."_".$strain_type."_".$map_type."_hitsID.txt";
 #}
-print "Outputfiles: $outfile1\n$outfile2\n$outfile3\n\n";
+print "Outputfiles: $out_ids\n$out_pairs\n$out_hits\n\n";
 
 my %IDs;
 my %pairs;
@@ -75,10 +75,10 @@ close(INPUT);
 
 print "number of mapped reads:  ".keys( %IDs ).".\n";
 print "number of mapped pairs:  ".keys( %pairs ).".\n";
-unlink($outfile1);
-open(OUTPUT1, '>>', $outfile1) or die "Error opening $outfile1 : $!\n";
-unlink($outfile2);
-open(OUTPUT2, '>>', $outfile2) or die "Error opening $outfile2 : $!\n";
+unlink($out_ids);
+open(OUTPUT1, '>>', $out_ids) or die "Error opening $out_ids : $!\n";
+unlink($out_pairs);
+open(OUTPUT2, '>>', $out_pairs) or die "Error opening $out_pairs : $!\n";
 foreach $key (sort keys %IDs) {
     print OUTPUT1 $key."\n";
     print OUTPUT2 $pairs{$key}."\n";
@@ -87,8 +87,8 @@ close(OUTPUT1);
 close(OUTPUT2);
 
 print "number of mapped hits:  ".keys( %hits ).".\n\n\n";
-unlink($outfile3);
-open(OUTPUT3, '>>', $outfile3) or die "Error opening $outfile3 : $!\n";
+unlink($out_hits);
+open(OUTPUT3, '>>', $out_hits) or die "Error opening $out_hits : $!\n";
 foreach $key (sort keys %hits) {
     print OUTPUT3 "$key\n";
 }

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """
-Pipeline Performance
+Pipeline Performance Viewer
+showjobs -u lmichael -n 5 | ./job_summary.py -s steps.txt > output.txt
 """
 from __future__ import division
 
@@ -213,7 +214,8 @@ class Task(object):
 
 class StatsManager(object):
     """
-    v
+    This is a class that will hold the string to create a table of values. It queries the Step class to
+    calculate various statistics
     """
     template = """
 Performance and Resource Statistics for Pipeline {pipeline_name}

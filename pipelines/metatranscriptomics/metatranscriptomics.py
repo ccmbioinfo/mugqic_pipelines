@@ -557,6 +557,19 @@ class Metatranscriptomics(common.Illumina):
         return jobs
 
     def remove_host_reads(self):
+        """
+        Remove the host reads from the data set
+
+        Filter the input FASTQs by using the host IDs in the JSON file
+
+        Input:
+        *.host_ids.json         - contains the IDs of host reads
+        *.{1,2}.not_rrna.fastq  - original data set including host reads
+
+        Output:
+        *.{1,2}.not_host.fastq  - all non-host reads
+        *.{1,2}.host.fasq       - all host reads
+        """
         jobs = []
 
         input_prefix = 'filter_reads'
@@ -573,7 +586,8 @@ class Metatranscriptomics(common.Illumina):
                 output_not_host = join(output_dir, '{name}.{i}.not_host.fastq'.format(name=readset.name, i=i))
                 output_host = join(output_dir, '{name}.{i}.host.fastq'.format(name=readset.name, i=i))
 
-                jobs.append(Job(name='{step}.{name}.{i}'.format(step=self.remove_host_reads.__name__, name=readset.name, i=i),
+                jobs.append(Job(name='{step}.{name}.{i}'.format(step=self.remove_host_reads.__name__,
+                                                                name=readset.name, i=i),
                                 input_files=[id_file, input_fastq],
                                 output_files=[output_host, output_not_host],
                                 command='python {script_path}/partition_reads_by_id.py '

@@ -20,7 +20,7 @@ Quick Start
     `cp episeq/episeq.ini episeq/episeq.design episeq/episeq.readset episeq/generate-qsub.sh .`
 
 1. Using your prefered text editor, modify `./episeq.readset` and `./episeq.design`  to add your samples and define your case/control groups, respectively.
-    - If you have a manifest file with the following columns, you may instead use the `episeq/readset_gen.py` utility to generate personallized readset and design files.
+    - If you have a manifest file with the following columns, you may instead use the `episeq/readset_gen.py` utility to generate personalised readset and design files.
         - SRA_Sample_s
         - Run_s
         - LibraryLayout_s
@@ -35,6 +35,8 @@ Quick Start
 1. Run `./generate-qsub.sh` and check the `./debug.log` and `./qsub.sh` files for any errors.
 
 1. When everything is set, run `./qsub.sh` to start the pipeline.
+
+1. Once the entire pipeline has completed successfully, add `--report` in `generate-qsub.sh` to generate a report for the entire pipeline. It will be made in the reports directory, under the output directory.
 
 Usage
 -----

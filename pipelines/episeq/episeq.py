@@ -3,18 +3,28 @@
 Epigenetics pipeline for RRBS/WGBS data
 =======================================
 
+This simple pipeline uses Bismark, Trim Galore!, R, and Picard to process data. See the README file for more information
+about the steps in the pipeline. See the accompanying documentation regarding tutorials and running the pipeline.
+
+Many objects are defined by the superclass, note that the __init__ function calls on the init function of the parent.
+Refer to the MUGQIC modules that are imported below. Looking at their source code will also help you understand some
+of the underlying infrastructure that keeps this pipeline working.
+
 Background
 ----------
-EpiSeq is a differential analysis pipeline for BS-seq sequencing. Currently only RRBS and WGBS datasets are
+Epi-Seq is a differential analysis pipeline for BS-seq sequencing. Currently only RRBS and WGBS datasets are
 tested to work with this pipeline. Similar to the other MUGQIC pipeline series, EpiSeq uses two metadata files to
-set up the pipeline. The design file is used to group samples into case vs control. The readsets files refer to
-which input files correspond to each same and, if applicable, which pairs of input files correspond to paired reads.
+set up the pipeline. The design file is used to group samples into case vs control. The readsets files maps input files
+to names and, if applicable, which pairs of input files correspond to paired reads.
 A readset is considered to be one instance/lane/segment of sequencing data. This is often used when multiple libraries
 are used for a given sample, or if multiplexing was done. These techniques tend to generate multiple sets of data
 for a given sample. The readset file allows users to specify these relationships.
 
-This simple pipeline uses Bismark, Trim Galore!, R, and Picard to process data. See the README file for more information
-about the steps in the pipeline.
+The main outputs are the results of the differential analysis. In this pipeline, 2 different analysis are done. One is
+for marking regions, with the other marks positions. These two files are in the form of a `.csv` file, which could be
+parsed to produce helpful visualizations. However, the two files are unlikely to be sufficient in an experiment. Indeed,
+some form of quality metrics needs to be collected throughout the pipeline to ensure the the final results are accurate.
+This can be found in the reports at various steps and are listed [below](#output-reports).
 
 Input
 -----
@@ -22,8 +32,7 @@ Input
 - Reference genome in ``FASTA`` format
 - MUGQIC formatted ``.design`` file
 - MUGQIC formatted ``.readset`` file
-- Episeq pipeline's ``.ini`` file
-- Episeq pipeline's ``bismark_merge_reports.py`` script
+- Epi-seq pipeline's ``.ini`` file
 
 Output Data
 -----------
@@ -69,7 +78,9 @@ Report Generation
 -----------------
 Reports can be generating by rerunning the command line with the `--report` flag. The report will contain the minimum
 set of data that can describe the results of the pipeline. When the report is generated, it can be found at `report/`,
-under your designated output directory
+under your designated output directory. The report provides the metrics collection from the readset level as well as
+the metrics from the sample level. While the read output of interest is from the differential analysis results, no
+visualization has been made. Instead, a copy of the contrasts are copied for the user to download.
 
 - Pre-QC Metrics
 - Trimming Report
@@ -122,7 +133,41 @@ The above highlights the many factors when creating a new step in the pipeline. 
 preparation required to obtain every bit of information. In addition, these information may require different
 sources. For example, readset and sample information comes automatically from the superclasses (which is from
 the readset file), but the path information needs to be referenced from other jobs within the pipeline. Input files
-would need to be obtained from the previous step, which will require recreating this information.
+would need to be obtained from the previous step, which will require recreating this information. Regardless,
+this is just some of the excuses I've made to explain why the code is a mess.
+
+A simpler system is required to avoid repetitive code that will easily cause errors when refactoring. Otherwise, the
+code will be large and difficult to maintain. As an effort to maintain readability in the code, here are some metrics
+produce by the python package radon as of Dec. 8/16
+
+Maintainability Index
+
+episeq.py - A (29.92)  - including doc strings
+
+episeq.py - B (16.41)  - without doc strings
+
+Cyclomatic Complexity score
+
+episeq.py
+
+    M 316:4 Episeq.trim_galore - D (26)
+    M 531:4 Episeq.bismark_align - D (23)
+    M 751:4 Episeq.picard_merge_sam_files - C (15)
+    M 210:4 Episeq.pre_qc_check - C (14)
+    M 1090:4 Episeq.differential_methylated_pos - C (12)
+    M 991:4 Episeq.bismark_html_report_generator - B (8)
+    C 154:0 Episeq - B (7)
+    M 710:4 Episeq.merge_bismark_alignment_report - B (7)
+    M 1198:4 Episeq.differential_methylated_regions - B (7)
+    M 848:4 Episeq.bismark_deduplicate - A (5)
+    M 933:4 Episeq.bismark_methylation_caller - A (4)
+    M 828:4 Episeq.merged_nuc_stats - A (3)
+    M 913:4 Episeq.calc_dedup_nucleotide_coverage - A (3)
+    M 160:4 Episeq.__init__ - A (1)
+    M 164:4 Episeq.merge_py - A (1)
+    M 172:4 Episeq.bismark_prepare_genome - A (1)
+    M 1296:4 Episeq.bam2nuc_job - A (1)
+    M 1323:4 Episeq.steps - A (1)
 
 """
 
@@ -148,7 +193,42 @@ from bfx import rmarkdown
 from pipelines import common
 import utils
 
+# There's a lot of redundant imports above, making it rather messy and haphazardly assembled. It would be helpful if
+# the parent/grandparent imports them, when possible. We should only be importing something that needs to be used
+# in this Class definition. Someone might want to go through the imports to simplify the relation between modules of
+# this package..
+
+# Use this logger to print warning messages to the debug log.
 log = logging.getLogger(__name__)
+
+
+# Locally defined job producer. May be moved to "bfx" package.
+def bam2nuc_job(output_dir, sample_name, suffix, in_bam):
+    """
+    Generates jobs for Bismark's bam2nuc script.
+
+    :param output_dir: A specified output directory for the report file
+    :type output_dir: str
+    :param sample_name: The sample of the sample to run
+    :type sample_name: str
+    :param suffix: A suffix to add to the filename before '.nucleotide_stats.txt'
+    :type suffix: str
+    :param in_bam: The bam file to analyse.
+    :type in_bam: str
+    :return: A Job object to run bam2nuc
+    :rtype: Job
+    """
+    output_file = os.path.join(output_dir, sample_name + suffix + '.nucleotide_stats.txt')
+    coverage_calc = Job(
+        input_files=[in_bam],
+        output_files=[output_file],
+        module_entries=[['bismark_deduplicate', 'module_samtools'],
+                        ['bismark_deduplicate', 'module_perl'],
+                        ['bismark_deduplicate', 'module_bismark']],
+        command='bam2nuc --dir ' + output_dir + ' --genome_folder bismark_prepare_genome ' + in_bam,
+        removable_files=[output_file],
+        name='bam2nuc.' + sample_name)
+    return coverage_calc
 
 
 class Episeq(common.Illumina):
@@ -164,13 +244,38 @@ class Episeq(common.Illumina):
     @property
     def merge_py(self):
         """
-        :return: A full path to the bismark report merge script.
+        :return: A full path to the bismark report merge script, for easy reference
         :rtype: str
         """
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bismark_merge_reports.py')
 
+    @property
+    def steps(self):
+        """
+        These are the steps to the pipeline and are listed in the order that should be processed. Don't forget to
+        change this as needed!
+
+        :return: list
+        """
+        return [
+            self.bismark_prepare_genome,
+            self.pre_qc_check,
+            self.trim_galore,
+            self.bismark_align,
+            self.merge_bismark_alignment_report,
+            self.picard_merge_sam_files,
+            self.merged_nuc_stats,
+            self.bismark_deduplicate,
+            self.calc_dedup_nucleotide_coverage,
+            self.bismark_methylation_caller,
+            self.bismark_html_report_generator,
+            self.differential_methylated_pos,
+            self.differential_methylated_regions
+        ]
+
+    # Pipeline steps
     @staticmethod
-    def bismark_prepare_genome():
+    def bismark_prepare_genome():  # Step 1
         """
         Bismark requires a processed reference genome to compare with the epigenome. This step can take several hours,
         depending on the size of the genome. It creates an index of bisulfite conversions and takes make space than
@@ -178,6 +283,8 @@ class Episeq(common.Illumina):
         a symlink is needed to create a "copy" in the desired output directory. Only runs once and generates one job.
 
         Note: The genome should be in fasta format.
+
+        Note: main_job can be modified to run bam2nuc, but there's a bug in Bismark that breaks it, fix when possible.
 
         Input: A reference sequence file as specified by user. Configuration is set in the episeq.ini file.
         Output: A directory called Bisulfite_Genome and a dinucleotide composition report.
@@ -200,14 +307,16 @@ class Episeq(common.Illumina):
                        command='cp -sfu ' + os.path.abspath(ref_seq) + ' ' + os.path.abspath(local_ref_seq),
                        removable_files=[local_ref_seq])
         main_job = Job(output_files=[output_idx], module_entries=modules,
-                       command="bismark_genome_preparation --verbose bismark_prepare_genome/")
+                       command="bismark_genome_preparation --verbose bismark_prepare_genome/",
+                       removable_files=[output_idx])
         nuc_count = Job(output_files=[], module_entries=modules,
                         command="bam2nuc --genomic_composition_only --genome_dir bismark_prepare_genome/ "
-                                "--dir bismark_prepare_genome/")
+                                "--dir bismark_prepare_genome/",
+                        removable_files=[])
         return [concat_jobs([mkdir_job, link_job, main_job, nuc_count],
                             name='bismark_prepare_genome.' + os.path.basename(ref_seq))]
 
-    def pre_qc_check(self):
+    def pre_qc_check(self):  # Step 2
         """
         Runs FastQC on the unprocessed fastq files to generate a baseline report. Helpful when comparing to post-trim
         metrics.
@@ -313,7 +422,7 @@ pandoc \\
                                          mkdir_job, job, update_template], name='pre_qc_check.' + readset.name))
         return jobs
 
-    def trim_galore(self):
+    def trim_galore(self):  # Step 3
         """
         This step trims raw FASTQ files for quality control using Trim Galore!
         This is a pre-processing step to ensure quality control.
@@ -336,7 +445,8 @@ pandoc \\
         # Awk script to parse trim reports view easy viewing
         # It will read the start of each line to determine if it is something that we want to keep, or discard.
         # Headers have to be reformatted to a lower level, making the document make sense within the template.
-        # Additional code is added to properly add table syntax when extra blank lines are found.
+        # Additional code is added to properly add table syntax when extra blank lines are found. This should create
+        # *.md files that we can link to from the pipeline report.
         output_parser = """\
 BEGIN {table=0;}
 {
@@ -528,7 +638,7 @@ pandoc \\
                                          mkdir_job, trim_job, report_job], name='trim_galore.' + readset.name))
         return jobs
 
-    def bismark_align(self):
+    def bismark_align(self):  # Step 4
         """
         This step aligns trimmed reads to a bisulfite converted reference genome using Bismark. This create
         BAM files and will only be compressed if the input is also compressed (which usually will be the case).
@@ -648,8 +758,7 @@ BEGIN { table=0; };
                      ['bismark_align', 'module_bismark']],
                     command="""\
 bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
-    --basename {basename} --genome_folder bismark_prepare_genome {input}
-        """.format(
+    --basename {basename} --genome_folder bismark_prepare_genome {input}""".format(
                         directory=align_directory,
                         other=config.param("bismark_align", "other_options"),
                         tmpdir=config.param('bismark_align', 'tmp_dir', required=False) or
@@ -685,8 +794,7 @@ pandoc \\
     --template {report_template_dir}/{basename_report_file} \\
     --variable data_table="$table" \\
     --to markdown \\
-> {report_file}
-""".format(
+> {report_file}""".format(
                     table_hold=template_string_file,
                     entry=report_entry,
                     data_dir=report_data,
@@ -707,7 +815,7 @@ pandoc \\
                 # To next readset
         return jobs
 
-    def merge_bismark_alignment_report(self):
+    def merge_bismark_alignment_report(self):  # Step 5
         """
         This steps takes all of Bismark's alignment reports for a sample and merges them with a custom script.
         Some stats are recalculated to match the total read population and specific settings are lost due to the
@@ -748,7 +856,7 @@ pandoc \\
             jobs.append(job)
         return jobs
 
-    def picard_merge_sam_files(self):
+    def picard_merge_sam_files(self):  # Step 6
         """
         This step merges all readsets of each sample into one handy bam file. Here, if a readset is defined by a
         bam file, it will finally be used to add with other readsets. Because merging multiple alignments together
@@ -825,7 +933,7 @@ pandoc \\
             jobs.append(job)
         return jobs
 
-    def merged_nuc_stats(self):
+    def merged_nuc_stats(self):  # Step 7
         """
         This step calculates the new nucleotide coverge for the merged bam file.
         This independent step is to reduce the likelihood of failing mid step.
@@ -841,11 +949,11 @@ pandoc \\
             if os.path.exists(os.path.join(output_dir, sample.name) + '.merged.nucleotide_stats.txt'):
                 continue
             merged_bam = os.path.join(output_dir, sample.name) + '.merged.bam'
-            job = self.__bam2nuc__(output_dir, sample.name, '.merged', merged_bam)
+            job = bam2nuc_job(output_dir, sample.name, '.merged', merged_bam)
             jobs.append(job)
         return jobs
 
-    def bismark_deduplicate(self):
+    def bismark_deduplicate(self):  # Step 8
         """
         Calls the de-duplication module from Bismark. The module operates on the output alignment files from
         Bismark, creating a new output file (SAM default, BAM possible) with the suffix *.deduplicated.bam.
@@ -910,7 +1018,7 @@ pandoc \\
             jobs.append(job)
         return jobs
 
-    def calc_dedup_nucleotide_coverage(self):
+    def calc_dedup_nucleotide_coverage(self):  # Step 9
         """
         This step recalculates the nucleotide coverage values using Bismark's bam2nuc script. This recalculation is
         done after deduplication. The removal of some reads will likely alter this value, so this is helps update it.
@@ -926,11 +1034,11 @@ pandoc \\
                 continue  # No deduplication done for RRBS samples
             output_dir = os.path.join('dedup', sample.name)
             merged_bam = os.path.join(output_dir, sample.name) + '.merged.deduplicated.bam'
-            job = self.__bam2nuc__(output_dir, sample.name, '.merged.deduplicated', merged_bam)
+            job = bam2nuc_job(output_dir, sample.name, '.merged.deduplicated', merged_bam)
             jobs.append(job)
         return jobs
 
-    def bismark_methylation_caller(self):
+    def bismark_methylation_caller(self):  # Step 10
         """
         This step extracts the methylation call for every single cytosine analyzed from the Bismark result files.
         The following input files are accepted:
@@ -974,8 +1082,7 @@ pandoc \\
                 command="""\
 mkdir -p {directory}
 bismark_methylation_extractor {library_type} {other} --multicore {core} --output {directory} \
---bedGraph --cytosine_report --gzip --genome_folder {genome} {sample}
-        """.format(
+--bedGraph --cytosine_report --gzip --genome_folder {genome} {sample}""".format(
                     directory=os.path.join("methyl_calls", sample.name),
                     library_type="--paired-end" if run_type == "PAIRED_END" else "--single-end",
                     other=config.param("bismark_methylation_caller", "other_options"),
@@ -988,7 +1095,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
             jobs.append(job)
         return jobs
 
-    def bismark_html_report_generator(self):
+    def bismark_html_report_generator(self):  # Step 11
         """
         Generates the Bismark Report page by combining data from alignment, deduplication, methylation, and
         nucleotide coverage reports. The alignment report is a requirement while all others are optional.
@@ -1065,8 +1172,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                 --template {report_template_dir}/{basename_report_file} \\
                 --variable data_table="$table" \\
                 --to markdown \\
-            > {report_file}
-            """.format(
+            > {report_file}""".format(
                 table_hold=template_string_file,
                 entry=report_entry,
                 data_dir=report_data,
@@ -1087,7 +1193,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                                      mkdir_job, job, report_job], name='bismark_report.' + sample.name))
         return jobs
 
-    def differential_methylated_pos(self):
+    def differential_methylated_pos(self):  # Step 12
         """
         This step finds a list of differentially methylated CpG sites with respect to a categorical
         phenotype (controls vs. cases). The BedGraph files from the previous methylation calling step are first combined
@@ -1172,8 +1278,7 @@ zip {zip_file} {dmps_file} && \\
 pandoc \\
     {report_template_dir}/{basename_report_file} \\
     --template {report_template_dir}/{basename_report_file} \\
-    --to markdown > {report_file}
-                """.format(
+    --to markdown > {report_file}""".format(
                     directory=os.path.dirname(dmps_file),
                     samples=tuple(cov_files),
                     group=tuple(sample_group),
@@ -1195,7 +1300,7 @@ pandoc \\
             jobs.append(job)
         return jobs
 
-    def differential_methylated_regions(self):
+    def differential_methylated_regions(self):  # Step 13
         """
         Similar to differential_methylated_positions, this step looks at methylation patterns on a larger, regional
         level. This step compares large-scale differences in methylation as opposed to comparing local methylation
@@ -1270,8 +1375,7 @@ zip {zip_file} {dmrs_file} && \\
 pandoc \\
     {report_template_dir}/{basename_report_file} \\
     --template {report_template_dir}/{basename_report_file} \\
-    --to markdown > {report_file}
-                """.format(
+    --to markdown > {report_file}""".format(
                     directory=os.path.dirname(dmrs_file),
                     samples=tuple(cov_files),
                     group=tuple(sample_group),
@@ -1292,56 +1396,6 @@ pandoc \\
             jobs.append(job)
 
         return jobs
-
-    @staticmethod
-    def __bam2nuc__(output_dir, sample_name, suffix, in_bam):
-        """
-        Generates jobs for Bismark's bam2nuc script.
-
-        :param output_dir: A specified output directory for the report file
-        :type output_dir: str
-        :param sample_name: The sample of the sample to run
-        :type sample_name: str
-        :param suffix: A suffix to add to the filename before '.nucleotide_stats.txt'
-        :type suffix: str
-        :param in_bam: The bam file to analyse.
-        :type in_bam: str
-        :return: A Job object to run bam2nuc
-        :rtype: Job
-        """
-        output_file = os.path.join(output_dir, sample_name + suffix + '.nucleotide_stats.txt')
-        coverage_calc = Job(
-            input_files=[in_bam],
-            output_files=[output_file],
-            module_entries=[['bismark_deduplicate', 'module_samtools'],
-                            ['bismark_deduplicate', 'module_perl'],
-                            ['bismark_deduplicate', 'module_bismark']],
-            command='bam2nuc --dir ' + output_dir + ' --genome_folder bismark_prepare_genome ' + in_bam,
-            name='bam2nuc.' + sample_name)
-        return coverage_calc
-
-    @property
-    def steps(self):
-        """
-        These are the steps to the pipeline and are listed in the order that should be processed
-
-        :return: list
-        """
-        return [
-            self.bismark_prepare_genome,
-            self.pre_qc_check,
-            self.trim_galore,
-            self.bismark_align,
-            self.merge_bismark_alignment_report,
-            self.picard_merge_sam_files,
-            self.merged_nuc_stats,
-            self.bismark_deduplicate,
-            self.calc_dedup_nucleotide_coverage,
-            self.bismark_methylation_caller,
-            self.bismark_html_report_generator,
-            self.differential_methylated_pos,
-            self.differential_methylated_regions
-        ]
 
 
 if __name__ == '__main__':

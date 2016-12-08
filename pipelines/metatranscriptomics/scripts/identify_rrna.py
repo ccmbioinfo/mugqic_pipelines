@@ -48,11 +48,11 @@ class InfernalFileParser:
 
     @staticmethod
     def get_seq_from(line):
-        return line.split()[7]
+        return int(line.split()[7])
 
     @staticmethod
     def get_seq_to(line):
-        return line.split()[8]
+        return int(line.split()[8])
 
     @staticmethod
     def get_evalue(line):
@@ -60,7 +60,6 @@ class InfernalFileParser:
 
 
 def get_percent_identity(seq_from, seq_to, seq_length):
-    # TODO: round to 2 decimal places
     return 100 * abs(seq_to - seq_from + 1) / seq_length
 
 
@@ -100,6 +99,7 @@ def write_rrna_ids(rrna_ids, output_ids):
         json.dump({
             'rows': [{'id': id} for id in rrna_ids]
         }, f)
+
 
 args = parse_args()
 

@@ -50,7 +50,7 @@ vast-tools combine -o vast_out {other_options} -sp {species}""".format(
         )
 
 
-def differential_splicing(control_samples_names, treatment_samples_names, input_table, inclusion_table):
+def differential_splicing(control_samples_names, treatment_samples_names, input_table, inclusion_table, contrast):
 
     controls = ''
     for sample in control_samples_names:
@@ -65,12 +65,13 @@ def differential_splicing(control_samples_names, treatment_samples_names, input_
         [inclusion_table],
         command="""\
 module load vast-tools && \\
-vast-tools diff -a {controls} -b {treatments} -o vast_out {other_options} > {inclusion_table}""".format(
+vast-tools diff -a {controls} -b {treatments} -o vast_out/{contrast} {other_options} > {inclusion_table}""".format(
             controls = controls[:-1],
             treatments = treatments[:-1],
             input_table = input_table,
             other_options = config.param('vast_tools_diff', 'other_options', type='string', required=False),
-            inclusion_table = inclusion_table,            
+            inclusion_table = inclusion_table,
+            contrast = contrast
             )
         )
 

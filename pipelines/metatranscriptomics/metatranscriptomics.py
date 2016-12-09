@@ -42,7 +42,8 @@ class Metatranscriptomics(common.Illumina):
     * search
         Search known microbial sequences using both contigs and singleton reads,
         try bwa, blat, and diamond
-    * Further
+    * Further phases in progress...
+
     Each phase is associated with its own directory
     Within each phase directory, each sample/readset will have its own directory
     """

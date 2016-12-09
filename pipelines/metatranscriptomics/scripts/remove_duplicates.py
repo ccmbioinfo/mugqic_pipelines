@@ -95,15 +95,15 @@ def assign_cluster_size(unique_reads, uc_file, unique_fasta):
 
 def write_id_to_cluster_size(reads, id_file):
     """
-    Write a table in json containing fastq ID and number of duplicates
+    Write a table in json containing fastq ID and cluster size
     Eg:
     {"rows": [
-        {"id": "SRR1", "num_duplicates": 3}
-        {"id": "SRR23", "num_duplicates": 1}
+        {"id": "SRR1", "cluster_size": 3}
+        {"id": "SRR23", "cluster_size": 1}
     ]}
     """
     id_to_cluster_size = {'rows':
-                              [{'id': read.id, 'num_duplicates': read.cluster_size, 'length': len(read.seq)} for read in reads]
+                              [{'id': read.id, 'cluster_size': read.cluster_size, 'length': len(read.seq)} for read in reads]
                           }
 
     with open(id_file, 'w+') as f:

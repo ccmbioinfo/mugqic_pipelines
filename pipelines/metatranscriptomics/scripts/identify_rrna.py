@@ -10,7 +10,7 @@ DEFAULT_READ_LENGTH = 100
 def parse_args():
     arg_parser = ArgumentParser()
     arg_parser.add_argument('--read-description',
-                            help="JSON file describing the unique reads.  Contains 'id', 'cluster_size', and 'length'")
+                            help="JSON file describing the unique reads.  Contains 'id' and 'length'")
     arg_parser.add_argument('--infernalout', help='Output from cmscan')
     arg_parser.add_argument('--apply-cutoff', help='Whether to apply cutoff values', action='store_true')
     arg_parser.add_argument('--max-evalue', help='The maximum e-value to accept a read as being rRNA')
@@ -22,12 +22,12 @@ def parse_args():
 
 def get_id_to_length(read_description_file):
     """
-    Index a dict mapping from 'id' -> {'cluster_size': <cluster_size>, 'length': <length>}
+    Return a dict mapping from 'id' to 'length'
 
     Example JSON file:
     {
-        "rows": [{"id": "@SRR1", "cluster_size": 2, "length": 100},
-                 {"id": "@SRR2", "cluster_size": 1, "length": 98}]
+        "rows": [{"id": "@SRR1", "length": 100},
+                 {"id": "@SRR2", "length": 98}]
     }
 
     Example output:

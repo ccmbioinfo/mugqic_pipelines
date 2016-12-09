@@ -660,7 +660,8 @@ class Metatranscriptomics(common.Illumina):
                                         '--read-description {read_description} '
                                         '--output-fastq {output_fastq}'.format(script_path=self.script_path,
                                                                                input_fastq=input_fastq,
-                                                                               read_description=read_description)))
+                                                                               read_description=read_description,
+                                                                               output_fastq=output_fastq)))
 
         return jobs
 

@@ -109,7 +109,7 @@ pipeline. It shows the order of the pipeline and the dependencies for each step.
 12. (g) Position Specific Differential Analysis (differential_methylated_pos)
 13. (g) Regional Differential Analysis (differential_methylated_regions)
 
-Implementation and Development Comments
+Creating new Steps and Jobs
 ---------------------------------------
 The pipeline is arranged to gradually decrease the number of input files when it make sense to do so. The trimming
 and QC step would be too slow if we merge readsets together, so we decided to trim each file individually. Then,
@@ -140,9 +140,20 @@ With the above information generated and gathered, creating Job objects should b
 in a Job object will help prompt you for the correct information. Please look at the examples below to help identify
 tricks to format a bash script or to join separate jobs into one job object.
 
+Notes about the final report
+----------------------------
+Developer's note on generating report stubs. The final report document requires a small bit of data from each job that
+ran. Unfortunately, not all jobs complete and jobs don't necessarily run in the same order, so idempotency is a
+valuable property to have in the steps below. You will find that the following 3 bits are important:
+1. Identify what output files are needed to display the final results. (Result representation)
+2. Identify how to organize all jobs onto a report page. (Template creation)
+3. Identify what operations need to be done to visualize the results. (Input formatting)
+
+Code Organization
+-----------------
 A simpler system is required to avoid repetitive code that will easily cause errors when refactoring. Otherwise, the
 code will be large and difficult to maintain. As an effort to maintain readability in the code, here are some metrics
-produce by the python package radon as of Dec. 8/16
+produce by the python package radon as of Dec. 8/16:
 
 Maintainability Index
 
@@ -174,16 +185,14 @@ episeq.py
     M 1323:4 Episeq.steps - A (1)
 
 """
-
 # Python Standard Modules
 import datetime
 import os
 
 # MUGQIC Modules
-from pipelines.common import Job, config, concat_jobs, logging, Illumina
+from pipelines.common import Illumina, Job, concat_jobs, config, logging
 
-
-# Use this logger to print warning messages to the debug log.
+# Use this logger to print warning messages to the debug log. (Global, imported from common.py)
 log = logging.getLogger(__name__)
 
 
@@ -258,7 +267,7 @@ class Episeq(Illumina):
             self.differential_methylated_regions
         ]
 
-    # Pipeline steps
+    # Pipeline steps start here
     @staticmethod
     def bismark_prepare_genome():  # Step 1
         """
@@ -331,7 +340,7 @@ class Episeq(Illumina):
         for sample in self.samples:
             for readset in sample.readsets:
                 # Check inputs for readset
-                raw_fq = filter(None, [readset.fastq1, readset.fastq2])  # [0,2]
+                raw_fq = filter(None, [readset.fastq1, readset.fastq2])  # size: [0,2]
                 if not raw_fq:
                     log.info('No fastq files found for readset for ' + readset.name + '. Skipping...')
                     if readset.bam:  # Check if we have a bam file
@@ -364,8 +373,7 @@ class Episeq(Illumina):
                               tmpdir=tmpdir),
                           removable_files=[output])
 
-                # Generate new report with new entry, only way to ensure nothing is missed, given no order guarantee.
-                # Since order is mixed, we can't make an organized table for viewing (without some fancier code)
+                # Fill in the blanks to generate a row in the report table. Will list the available jobs and results
                 report_body = fill_in_templ.format(
                     sample=sample.name,
                     readset=readset.name,
@@ -400,7 +408,8 @@ pandoc \\
                                   for out_log in output] + [report_file],
                     module_entries=[['pre_qc_check', 'module_pandoc']],
                     command=command,
-                    report_files=[report_file])
+                    report_files=[report_file],
+                    removable_files=[template_var_hold + '.lock'])
 
                 # Add to list of jobs
                 jobs.append(concat_jobs([Job(command="START=$(date '+%Y-%m-%d %H:%M:%S')"),  # Get time when running
@@ -483,17 +492,14 @@ BEGIN {table=0;}
         jobs = []
         for sample in self.samples:
             for readset in sample.readsets:  # Iterate through each readset in project
-                # Input check!
-                if readset.bam and not filter(None, [readset.fastq1, readset.fastq2]):
-                    log.info('No fastq files found for readset for ' + readset.name + '. Skipping...')
-                    continue  # There's still a bam file to process later, so skip this for now
-                elif not (readset.bam or readset.fastq1 or readset.fastq2):
-                    raise ValueError("There are no data associated with this readset: " + readset.name + "!\n")
+                if readset.bam:  # Input check!
+                    log.info('User-supplied bam file found for ' + readset.name + '. Skipping...')
+                    continue
 
-                if len(sample.readsets) == 1:  # output directory, colapse when needed
-                    trim_directory = os.path.join("trimmed", sample.name)
-                else:
-                    trim_directory = os.path.join("trimmed", sample.name, readset.name)
+                # Setup output directory structure
+                trim_directory = os.path.join("trimmed", sample.name)
+                if len(sample.readsets) > 1:
+                    trim_directory = os.path.join(trim_directory, readset.name)
 
                 # Some variables about the readset and current settings
                 output_reports = list()
@@ -502,43 +508,48 @@ BEGIN {table=0;}
                 protocol = readset.library
                 input_files = filter(None, [readset.fastq1, readset.fastq2])
                 file_basename = [os.path.join(trim_directory, os.path.basename(in_file).split('.')[0])
-                                 for in_file in input_files]
-                add_options = config.param('trim_galore', 'other_options').split()  # options may affect output
+                                 for in_file in input_files]  # Might be a bit too agressive of a split.
+                add_options = config.param('trim_galore', 'other_options').split()  # options that may affect output
                 run_qc = '--fastqc_args' in add_options or '--fastqc' in add_options
                 report_out = '--no_report_file' not in add_options
 
                 # List all possible outputs
                 if len(input_files) == 2:
                     input1_logs = [trim_directory + '/' + os.path.basename(readset.fastq1) + '_trimming_report.txt',
-                                   file_basename[0] + "_val_1_fastqc.html", file_basename[0] + "_val_1_fastqc.zip",
+                                   file_basename[0] + "_val_1_fastqc.html",
+                                   file_basename[0] + "_val_1_fastqc.zip",
                                    file_basename[0] + "_val_1.fq.gz"]
                     input2_logs = [trim_directory + '/' + os.path.basename(readset.fastq2) + '_trimming_report.txt',
-                                   file_basename[1] + "_val_2_fastqc.html", file_basename[1] + "_val_2_fastqc.zip",
+                                   file_basename[1] + "_val_2_fastqc.html",
+                                   file_basename[1] + "_val_2_fastqc.zip",
                                    file_basename[1] + "_val_2.fq.gz"]
-                else:
+                else:  # Different names, so have to have this block of code
                     input1_logs = [trim_directory + '/' + os.path.basename(readset.fastq1) + '_trimming_report.txt',
-                                   file_basename[0] + "_trimmed_fastqc.html", file_basename[0] + "_trimmed_fastqc.zip",
+                                   file_basename[0] + "_trimmed_fastqc.html",
+                                   file_basename[0] + "_trimmed_fastqc.zip",
                                    file_basename[0] + "_trimmed.fq.gz"]
-                    input2_logs = []
 
                 # Build list of input reports/data
-                if run_type == "PAIRED_END":
-                    if not readset.fastq2:
-                        raise ValueError("Expecting paired reads be named as follows file1_1.fq file1_2.fq.")
-                    if report_out:
-                        output_reports += [input1_logs[0]] + [input2_logs[0]]  # Trim report
-                        key_report = [input1_logs[0]] + [input2_logs[0]]
-                    if run_qc:
-                        output_reports += [input1_logs[1]] + [input2_logs[1]]  # FastQC html
-                        output_reports += [input1_logs[2]] + [input2_logs[2]]  # FastQC zip
-                    output_files = [input1_logs[3]] + [input2_logs[3]]
-                else:
-                    if report_out:
-                        output_reports += [input1_logs[0]]
-                        key_report = [input1_logs[0]]
-                    if run_qc:
-                        output_reports += [input1_logs[1]] + [input1_logs[2]]
-                    output_files = [input1_logs[3]]
+                try:
+                    if run_type == "PAIRED_END":
+                        if report_out:
+                            output_reports += [input1_logs[0]] + [input2_logs[0]]  # Trim report
+                            key_report = [input1_logs[0]] + [input2_logs[0]]
+                        if run_qc:
+                            output_reports += [input1_logs[1]] + [input2_logs[1]]  # FastQC html
+                            output_reports += [input1_logs[2]] + [input2_logs[2]]  # FastQC zip
+                        output_files = [input1_logs[3]] + [input2_logs[3]]
+                    else:
+                        if report_out:
+                            output_reports += [input1_logs[0]]
+                            key_report = [input1_logs[0]]
+                        if run_qc:
+                            output_reports += [input1_logs[1]] + [input1_logs[2]]
+                        output_files = [input1_logs[3]]
+                except NameError:  # When fastq2 is None
+                    log.error("Second fastq file is missing. Expecting files as follows file1_1.fq, file1_2.fq.")
+                    log.error("Files in readset " + readset.name + " :" + " ".join(input_files))
+                    raise
 
                 # Define jobs
                 mkdir_job = Job(command="mkdir -p " + trim_directory)
@@ -556,38 +567,31 @@ BEGIN {table=0;}
                                    fastq=' '.join(input_files)),
                                removable_files=output_files)
 
-                entry = fill_in_entry.format(sample=sample.name,  # For report jobs.
-                                             readset=readset.name,
-                                             trim1_view='[View details 1](' +
-                                                        os.path.join(report_data,
-                                                                     os.path.basename(input1_logs[0])) + '.md)',
-                                             trim1_download='[Download details 1](' +
-                                                            os.path.join(report_data,
-                                                                         os.path.basename(input1_logs[0])) + ')',
-                                             trim2_view='[View details 2](' +
-                                                        os.path.join(report_data,
-                                                                     os.path.basename(input2_logs[0])) + '.md)'
-                                             if input2_logs else '',
-                                             trim2_download='[Download details 2](' +
-                                                            os.path.join(report_data,
-                                                                         os.path.basename(input2_logs[0])) + ')'
-                                             if input2_logs else '',
-                                             qc1_view='[View report 1](' +
-                                                      os.path.join(report_data,
-                                                                   os.path.basename(input1_logs[1])) + ')',
-                                             qc1_download='[Download report 1](' +
-                                                          os.path.join(report_data,
-                                                                       os.path.basename(input1_logs[2])) + ')',
-                                             qc2_view='[View report 2](' +
-                                                      os.path.join(report_data,
-                                                                   os.path.basename(input2_logs[1])) + ')'
-                                             if input2_logs else '',
-                                             qc2_download='[Download report 2](' +
-                                                          os.path.join(report_data,
-                                                                       os.path.basename(input2_logs[2])) + ')'
-                                             if input2_logs else '',
-                                             start="$START",
-                                             completion="$(date '+%Y-%m-%d %H:%M:%S')")
+                entry = fill_in_entry.format(
+                    sample=sample.name,  # For report jobs.
+                    readset=readset.name,
+                    trim1_view='[View details 1](' +
+                               os.path.join(report_data, os.path.basename(input1_logs[0])) + '.md)',
+                    trim1_download='[Download details 1](' +
+                                   os.path.join(report_data, os.path.basename(input1_logs[0])) + ')',
+                    trim2_view='[View details 2](' +
+                               os.path.join(report_data, os.path.basename(input2_logs[0])) + '.md)'
+                    if input2_logs else '',
+                    trim2_download='[Download details 2](' +
+                                   os.path.join(report_data, os.path.basename(input2_logs[0])) + ')'
+                    if input2_logs else '',
+                    qc1_view='[View report 1](' +
+                             os.path.join(report_data, os.path.basename(input1_logs[1])) + ')',
+                    qc1_download='[Download report 1](' +
+                                 os.path.join(report_data, os.path.basename(input1_logs[2])) + ')',
+                    qc2_view='[View report 2](' +
+                             os.path.join(report_data, os.path.basename(input2_logs[1])) + ')'
+                    if input2_logs else '',
+                    qc2_download='[Download report 2](' +
+                                 os.path.join(report_data, os.path.basename(input2_logs[2])) + ')'
+                    if input2_logs else '',
+                    start="$START",
+                    completion="$(date '+%Y-%m-%d %H:%M:%S')")
                 command = """\
 flock -x "{table_hold}.lock" -c "echo \\"{entry}\\" >> {table_hold}" && \\
 mkdir -p {data_loc} && \\
@@ -611,13 +615,15 @@ pandoc \\
                     table_hold=template_string_file,
                     script=output_parser,
                     report_file=report_file)
+
                 report_job = Job(
                     output_files=[report_file] +
                                  [os.path.join(report_data, os.path.basename(item)) for item in output_reports] +
                                  [os.path.join(report_data, rep) + '.md' for rep in key_report],
                     command=command,
                     module_entries=[['trim_galore', 'module_pandoc']],
-                    report_files=[report_file])
+                    report_files=[report_file],
+                    removable_files=[template_string_file + '.lock'])
 
                 jobs.append(concat_jobs([Job(command="START=$(date '+%Y-%m-%d %H:%M:%S')"),
                                          mkdir_job, trim_job, report_job], name='trim_galore.' + readset.name))
@@ -677,10 +683,9 @@ BEGIN { table=0; };
         for sample in self.samples:  # Process samples
             for readset in sample.readsets:
                 # Check if the readset has an additional level of directories
-                if len(sample.readsets) == 1:
-                    trim_prefix = os.path.join("trimmed", sample.name)
-                else:
-                    trim_prefix = os.path.join("trimmed", sample.name, readset.name)
+                trim_prefix = os.path.join("trimmed", sample.name)
+                if len(sample.readsets) > 1:
+                    trim_prefix = os.path.join(trim_prefix, readset.name)
 
                 # Common Variables
                 run_type = readset.run_type
@@ -729,8 +734,7 @@ BEGIN { table=0; };
                     if '--ambig_bam' in user_options:
                         out_files += [output_basename + '_aligned.ambig.bam']
                 else:
-                    raise AttributeError("Unknown run_type: " + run_type + ". Unknown file output name for" +
-                                         sample.name)
+                    raise AttributeError("Unknown run_type or unknown file output name for " + sample.name)
 
                 # Job creation
                 mkdir_job = Job(command="mkdir -p " + align_directory)
@@ -792,6 +796,7 @@ pandoc \\
                 )
                 report_job = Job(output_files=[report_file] + new_logs,
                                  report_files=[report_file],
+                                 removable_files=[template_string_file + '.lock'],
                                  module_entries=[['bismark_align', 'module_pandoc']],
                                  command=command)
 
@@ -1172,6 +1177,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                                            os.path.join(report_data, os.path.basename(html_report)),
                                            zip_file],
                              report_files=[report_file],
+                             removable_files=[template_string_file + '.lock'],
                              module_entries=[['bismark_html_report_generator', 'module_pandoc']],
                              command=command)
             jobs.append(concat_jobs([Job(command="START=$(date '+%Y-%m-%d %H:%M:%S')"),

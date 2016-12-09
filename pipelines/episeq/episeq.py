@@ -176,31 +176,12 @@ episeq.py
 """
 
 # Python Standard Modules
-import argparse
-import collections
-import logging
+import datetime
 import os
-import re
-import sys
-
-# Append mugqic_pipelines directory to Python library path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0])))))
 
 # MUGQIC Modules
-from core.config import *
-from core.job import *
-from core.pipeline import *
-from bfx.readset import *
-from bfx.design import *
+from pipelines.common import Job, config, concat_jobs, logging, Illumina
 
-from bfx import rmarkdown
-from pipelines import common
-import utils
-
-# There's a lot of redundant imports above, making it rather messy and haphazardly assembled. It would be helpful if
-# the parent/grandparent imports them, when possible. We should only be importing something that needs to be used
-# in this Class definition. Someone might want to go through the imports to simplify the relation between modules of
-# this package..
 
 # Use this logger to print warning messages to the debug log.
 log = logging.getLogger(__name__)
@@ -235,7 +216,7 @@ def bam2nuc_job(output_dir, sample_name, suffix, in_bam):
     return coverage_calc
 
 
-class Episeq(common.Illumina):
+class Episeq(Illumina):
     """
     The Episeq pipeline takes FASTQ or BAM files (unsorted) as input as well as two metadata files and a configuration
     file. Refer to the user guide for more information on running the pipeline.

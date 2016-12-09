@@ -18,6 +18,7 @@ from bfx import flash
 from bfx import seqtk
 from bfx import usearch
 from bfx import infernal
+from bfx import trinity
 
 log = logging.getLogger(__name__)
 
@@ -672,6 +673,50 @@ class Metatranscriptomics(common.Illumina):
 
         return jobs
 
+    def trinity(self):
+        """
+        Assemble the reads into contigs for searching
+
+        Input:
+        filter_reads/*{1,2}.mRNA.fastq
+
+        Output:
+        contig_assembly/*.contigs.fasta
+        """
+        jobs = []
+
+        input_prefix = 'filter_reads'
+        output_prefix = 'contig_assembly'
+
+        for readset in self.readsets:
+            input_dir = join(input_prefix, readset.name)
+            output_dir = join(output_prefix, readset.name)
+            trinity_out_dir = join(output_dir, 'trinity_out_dir')
+
+            input_mrna_1 = join(input_dir, '{name}.1.mRNA.fastq'.format(name=readset.name))
+            input_mrna_2 = join(input_dir, '{name}.2.mRNA.fastq'.format(name=readset.name))
+            input_str = '--left {mrna_1} --right {mrna_2}'.format(mrna_1=input_mrna_1, mrna_2=input_mrna_2)
+
+            trinity_fasta = join(trinity_out_dir, 'Trinity.fasta')
+            output_fasta = join(output_dir, '{name}.contigs.fasta'.format(name=readset.name))
+
+            # Create 'Trinity.fasta'
+            trinity_job = trinity.trinity(input_files=[input_mrna_1, input_mrna_2],
+                                          trinity_fasta=trinity_fasta,
+                                          output_directory=trinity_out_dir,
+                                          reads_option=input_str)
+
+            # Rename output to '{name}.contigs.fasta'
+            rename_job = Job(input_files=[trinity_fasta],
+                             output_files=[output_fasta],
+                             command='cp {trinity_fasta} {output_fasta}'.format(trinity_fasta=trinity_fasta,
+                                                                                output_fasta=output_fasta))
+
+            jobs.append(concat_jobs([trinity_job, rename_job],
+                                    name='{step}.{name}'.format(step=self.trinity.__name__, name=readset.name)))
+
+        return jobs
+
     @property
     def steps(self):
         return [
@@ -687,7 +732,8 @@ class Metatranscriptomics(common.Illumina):
             self.align_to_host,
             self.identify_host_reads,
             self.remove_host_reads,  # 12
-            self.return_duplicates
+            self.return_duplicates,
+            self.trinity
         ]
 
 

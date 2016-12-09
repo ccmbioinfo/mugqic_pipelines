@@ -28,11 +28,11 @@ This can be found in the reports at various steps and are listed [below](#output
 
 Input
 -----
-- ``FASTQ`` or ``BAM`` files containing methylation sequencing data
-- Reference genome in ``FASTA`` format
-- MUGQIC formatted ``.design`` file
-- MUGQIC formatted ``.readset`` file
-- Epi-seq pipeline's ``.ini`` file
+- `FASTQ` or `BAM` files containing methylation sequencing data
+- Reference genome in `FASTA` format
+- MUGQIC formatted `.design` file
+- MUGQIC formatted `.readset` file
+- Epi-seq pipeline's `.ini` file
 
 Output Data
 -----------
@@ -116,15 +116,15 @@ and QC step would be too slow if we merge readsets together, so we decided to tr
 the alignment phase allows us to convert out fastQ files to BAM files. This allows us to merge paired datasets into
 one BAM file per readset without explicitly doing so. After this, readsets are combined to run the analysis steps.
 
-In general, every step should first look at the following. This structure/framework is something that should be
-invariant between each job declaration.
+Every step in the pipeline is simply a method within the Episeq class. These methods all have the following
+signature: (None) -> List(Job). In general, every step should first look at the following.
+This structure/framework is something that should be constant between each job declaration of a step.
 1. What readsets/samples are involved
 2. Additional user configuration from .ini file
 3. Required environment variables
 4. Required resources
 
-Next, the command input requires some additional information. These points need to be re-evaluated between
-samples/jobs:
+Next, jobs may require some additional information. These points need to be re-evaluated between samples/jobs:
 1. Determine which data is eligible to run
 2. Determine input and output file paths.
 3. Determine what formatting should be done prior to running (creating directories, etc.)
@@ -132,9 +132,13 @@ samples/jobs:
 The above highlights the many factors when creating a new step in the pipeline. There is a fair amount of
 preparation required to obtain every bit of information. In addition, these information may require different
 sources. For example, readset and sample information comes automatically from the superclasses (which is from
-the readset file), but the path information needs to be referenced from other jobs within the pipeline. Input files
-would need to be obtained from the previous step, which will require recreating this information. Regardless,
-this is just some of the excuses I've made to explain why the code is a mess.
+the readset file as `self.readsets`), but the path information needs to be referenced from other jobs within the
+pipeline. Input files would need to be obtained from the previous step, which will require recreating this
+information. Keep in mind that any fixed strings may require refactoring in other related steps.
+
+With the above information generated and gathered, creating Job objects should be straightforward. Filling all params
+in a Job object will help prompt you for the correct information. Please look at the examples below to help identify
+tricks to format a bash script or to join separate jobs into one job object.
 
 A simpler system is required to avoid repetitive code that will easily cause errors when refactoring. Otherwise, the
 code will be large and difficult to maintain. As an effort to maintain readability in the code, here are some metrics
@@ -202,10 +206,10 @@ import utils
 log = logging.getLogger(__name__)
 
 
-# Locally defined job producer. May be moved to "bfx" package.
+# Locally defined. May be moved to "bfx" package.
 def bam2nuc_job(output_dir, sample_name, suffix, in_bam):
     """
-    Generates jobs for Bismark's bam2nuc script.
+    Generates jobs for Bismark's bam2nuc script. Used to calculate nucleotide coverage statistics.
 
     :param output_dir: A specified output directory for the report file
     :type output_dir: str

@@ -363,23 +363,28 @@ This step is only needed if you are running Vast Tools.
 23- jctseq_raw_counts
 ------------
 Uses [QoRTs](http://hartleys.github.io/QoRTs/index.html) to calculate gene-level and splice-junction-level counts. 
-This step will run in single-end mode if `library_type=single` in the `DEFAULT` section of the config file.
 
 Important Config Settings:
 
-1. `QoRTs_other_options` can be any other options for `java -jar QoRTs.jar QC`.
+1. `library_type` should be `single` or `paired`. QoRTs will run in `--singleEnded` mode or not depending on this value for this step and the next.
+2. `strand` should be `stranded` or `unstranded. QoRTs will run in `--stranded` mode or not for this step and the next.
+2. `QoRTs_other_options` can be any other options for `java -jar QoRTs.jar QC`.
 
 This step is only needed if you are running JunctionSeq.
 
 24- jctseq_make_gff
 ------------
-Uses QoRTs to generate an annotation file used by JunctionSeq. It uses the gtf specified in the `DEFAULT` section to create the gff file. This step will run in single-end mode if `library_type=single` in the `DEFAULT` section of the config file.
+Uses QoRTs to generate an annotation file used by JunctionSeq. It uses the gtf specified in the `DEFAULT` section to create the gff file.
 
 This step is only needed if you are running JunctionSeq.
 
 25- jctseq_diff_prep
 ------------
 Prepares the data for the next step.
+
+Important Config Settings:
+
+1. `nCores` is the number of cores that the will be used when `runJunctionSeqAnalyses` is called in the next step.
 
 This step is only needed if you are running JunctionSeq.
 

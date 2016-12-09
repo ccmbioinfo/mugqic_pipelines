@@ -9,11 +9,16 @@ from core.job import *
 
 def raw_counts(input_bam, output_dir, bfx):
 
+    ended = ''
+    stranded = ''
+
     library_type = config.param('jctseq_raw_counts', 'library_type', type='string', required=True)  
     if library_type == 'single':
-        strand = '--singleEnded'
-    else:
-        strand = '--stranded'
+        ended = '--singleEnded'
+    
+    strand = config.param('jctseq_raw_counts', 'strand', type='string', required=True)
+    if strand == 'stranded':
+        stranded = '--stranded'
     
 
     return Job(
@@ -22,10 +27,11 @@ def raw_counts(input_bam, output_dir, bfx):
         command="""\
 mkdir -p {output_dir} && \\
 module load java/1.6.0 && \\
-java -Xmx{ram} -jar {bfx}/QoRTs.jar QC {strand} {other_options} {input_bam} {gtf} {output_dir}""".format(
+java -Xmx{ram} -jar {bfx}/QoRTs.jar QC {stranded} {ended} {other_options} {input_bam} {gtf} {output_dir}""".format(
             input_bam = input_bam,
             output_dir = output_dir,
-            strand = strand,
+            stranded = stranded,
+            ended = ended,
             other_options = config.param('jctseq_raw_counts', 'QoRTs_other_options', type='string', required=False),
             ram = config.param('jctseq_raw_counts', 'ram', type='string', required=True),
             gtf = config.param('jctseq_make_gff', 'gtf', type='filepath', required=True),
@@ -35,20 +41,26 @@ java -Xmx{ram} -jar {bfx}/QoRTs.jar QC {strand} {other_options} {input_bam} {gtf
 
 def make_gff(output_gff, bfx):
 
+    ended = ''
+    stranded = ''
+
     library_type = config.param('jctseq_raw_counts', 'library_type', type='string', required=True)
     if library_type == 'single':
-        strand = ''
-    else:
-        strand = '--stranded'
+        ended = '--singleEnded'
+
+    strand = config.param('jctseq_raw_counts', 'strand', type='string', required=True)
+    if strand == 'stranded':
+        stranded = '--stranded'
 
     return Job(
         output_files=[output_gff],
         command="""\
 mkdir -p jctseq && \\
 module load java/1.6.0 && \\
-java -Xmx{ram} -jar {bfx}/QoRTs.jar makeFlatGff {strand} {gtf} {output_gff}""".format(
+java -Xmx{ram} -jar {bfx}/QoRTs.jar makeFlatGff {stranded} {ended} {gtf} {output_gff}""".format(
             output_gff = output_gff,
-            strand = strand,
+            stranded = stranded,
+            ended = ended,
             ram = config.param('jctseq_make_gff', 'ram', type='string', required=True),
             gtf = config.param('DEFAULT', 'gtf', type='filepath', required=True),
             bfx = bfx
@@ -64,12 +76,13 @@ def diff_prep(folder, contrast_name, gff, bfx, design_file):
 cp {design_file} jctseq/jctseq.design ;\\
 mkdir -p {folder} && \\
 cp {bfx}/jscs1.r {folder} && \\
-echo 'contrast <- decoder${contrast_name} \nfolder <- "{folder}"' >> {folder}/jscs1.r""".format(
+echo 'contrast <- decoder${contrast_name} \nfolder <- "{folder}" \ncores <- {nCores}' >> {folder}/jscs1.r""".format(
             folder = folder,
             contrast_name = contrast_name,
             gff = gff,
             design_file = design_file,
-            bfx = bfx
+            bfx = bfx,
+            nCores = config.param('jctseq_diff_prep', 'nCores', type='string', required=True)
             )
         )
 

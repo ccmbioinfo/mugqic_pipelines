@@ -20,7 +20,7 @@ jscs <- runJunctionSeqAnalyses(sample.files = countFiles,
      sample.names = samps,
      condition=factor(group),
      flat.gff.file = gff.file,
-     nCores = 1,
+     nCores = cores,
      analysis.type = "junctionsAndExons"
      );
 

@@ -53,9 +53,16 @@ class Metatranscriptomics(common.Illumina):
 
     def format_fastq_headers(self):
         """
-        Mark the headers of the fastq files with /1 or /2 to differentiate the paired-end reads
+        Mark the FASTQ IDs with /1 or /2 to differentiate the paired-end reads
 
         Call 'main_add_subID_reads_fastq.pl'
+
+        Input:
+        <readset fastq1>
+        <readset fastq2>
+
+        Output:
+        format_reads/*.{1,2}.formatted.fastq
         """
         jobs = []
 
@@ -83,6 +90,16 @@ class Metatranscriptomics(common.Illumina):
         return jobs
 
     def trimmomatic(self):
+        """
+        Remove adaptors and trim low quality sequences
+
+        Input:
+        format_reads/*{1,2}.formatted.fastq
+
+        Output:
+        format_reads/*.{1,2}.qual_paired.fastq
+        format_reads/*.{1,2}.qual_unpaired.fastq
+        """
         jobs = []
 
         input_prefix = 'format_reads'
@@ -130,9 +147,15 @@ class Metatranscriptomics(common.Illumina):
 
     def merge_overlapping_reads(self):
         """
-        Reads from the paired-end fastqs are merged together.
+        Reads from the paired-end fastqs are merged together using FLASH
 
         The merged reads are added to the first paired-end fastq
+
+        Input:
+        format_reads/*.{1,2}.qual_paired.fastq
+
+        Output:
+        format_reads/*.{1,2}.qual_all.fastq
         """
         jobs = []
 
@@ -198,12 +221,13 @@ class Metatranscriptomics(common.Illumina):
         """
         Convert both fastq files to fastas
 
+        Required since our usearch/5.2.236 only takes fastas as input
+
         Input:
         format_reads/*{1,2}.qual_all.fastq
+
         Output:
         filter_reads/*{1,2}.qual_all.fasta
-
-        Required since our usearch/5.2.236 only takes fastas as input
         """
         jobs = []
 
@@ -654,7 +678,8 @@ class Metatranscriptomics(common.Illumina):
             self.remove_rrna,  # 9
             self.align_to_host,
             self.identify_host_reads,
-            self.remove_host_reads  # 12
+            self.remove_host_reads,  # 12
+            self.return_duplicates
         ]
 
 

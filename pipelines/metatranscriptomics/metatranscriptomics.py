@@ -379,11 +379,11 @@ class Metatranscriptomics(common.Illumina):
         NOTE: this step replaces main_get_infernal_fromfile_1tophit.pl
 
         Input:
-        *.{1,2}.infernalout
-        *.{1,2}.read_description.json
+        filter_reads/*.{1,2}.infernalout
+        filter_reds/*.{1,2}.read_description.json
 
         Output:
-        *{1,2}.rrna_ids.json            - JSON file w/ rRNA IDs
+        filter_reads/*{1,2}.rrna_ids.json            - JSON file w/ rRNA IDs
         """
         jobs = []
 
@@ -425,12 +425,12 @@ class Metatranscriptomics(common.Illumina):
         Remove rRNA reads
 
         Input:
-        *{1,2}.rrna_ids.json        - contains IDs of rRNA reads
-        *{1,2}.unique.json          - original reads
+        filter_reads/*{1,2}.rrna_ids.json        - contains IDs of rRNA reads
+        filter_reads/*{1,2}.unique.json          - original reads
 
         Output:
-        *{1,2}.rrna.fastq
-        *{1,2}.not_rrna.fastq       - new filtered data set
+        filter_reads/*{1,2}.rrna.fastq
+        filter_reads/*{1,2}.not_rrna.fastq       - new filtered data set
         """
         jobs = []
 
@@ -468,10 +468,10 @@ class Metatranscriptomics(common.Illumina):
         Align reads to a host database
 
         Input:
-        *.{1,2}.not_rrna.fastq
+        filter_reads/*.{1,2}.not_rrna.fastq
 
         Output:
-        *.{1,2}.host.sai
+        filter_reads/*.{1,2}.host.sai
         """
         jobs = []
 
@@ -527,10 +527,10 @@ class Metatranscriptomics(common.Illumina):
         Identify reads that map to the host's genome
 
         Input:
-        *.host.sam
+        filter_reads/*.host.sam
 
         Output:
-        *.host_ids.json
+        filter_reads/*.host_ids.json
         """
         jobs = []
 
@@ -590,12 +590,12 @@ class Metatranscriptomics(common.Illumina):
         Filter the input FASTQs by using the host IDs in the JSON file
 
         Input:
-        *.host_ids.json         - contains the IDs of host reads
-        *.{1,2}.not_rrna.fastq  - original data set including host reads
+        filter_reads/*.host_ids.json         - contains the IDs of host reads
+        filter_reads/*.{1,2}.not_rrna.fastq  - original data set including host reads
 
         Output:
-        *.{1,2}.not_host.fastq  - all non-host reads
-        *.{1,2}.host.fasq       - all host reads
+        filter_reads/*.{1,2}.not_host.fastq  - all non-host reads
+        filter_reads/*.{1,2}.host.fasq       - all host reads
         """
         jobs = []
 
@@ -635,6 +635,12 @@ class Metatranscriptomics(common.Illumina):
 
         Assists with assembly coverage
 
+        Input:
+        filter_reads/*.{1,2}.read_description.json
+        filter_reads/*.{1,2}.not_host.fastq
+
+        Output:
+        filter_reads/*.{1,2}.mRNA.fastq
         """
         jobs = []
 

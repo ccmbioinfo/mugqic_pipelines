@@ -93,7 +93,7 @@ args = parse_args()
 
 id_to_cluster_size = get_id_to_cluster_size(args.read_description)
 
-de_duplicated_reads = list(parse(args.fastq, 'fastq'))
+de_duplicated_reads = list(parse(args.input_fastq, 'fastq'))
 reads = add_duplicates(de_duplicated_reads, id_to_cluster_size)
 
 write(reads, args.output_fastq, 'fastq')

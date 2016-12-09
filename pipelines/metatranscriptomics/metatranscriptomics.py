@@ -604,6 +604,42 @@ class Metatranscriptomics(common.Illumina):
 
         return jobs
 
+    def return_duplicates(self):
+        """
+        Return the duplicate reads back to the data set
+
+        Assists with assembly coverage
+
+        """
+        jobs = []
+
+        input_prefix = 'filter_reads'
+        output_prefix = 'filter_reads'
+
+        for readset in self.readsets:
+            for i in (1, 2):
+                input_dir = join(input_prefix, readset.name)
+                output_dir = join(output_prefix, readset.name)
+
+                input_fastq = join(input_dir, '{name}.{i}.not_host.fastq'.format(name=readset.name, i=i))
+                read_description = join(input_dir, '{name}.{i}.read_description.json'.format(name=readset.name, i=i))
+
+                output_fastq = join(output_dir, '{name}.{i}.mRNA.fastq'.format(name=readset.name, i=i))
+
+                jobs.append(Job(name='{step}.{name}.{i}'.format(step=self.return_duplicates.__name__,
+                                                                name=readset.name,
+                                                                i=i),
+                                input_files=[input_fastq, read_description],
+                                output_files=[output_fastq],
+                                command='python {script_path}/add_duplicates.py '
+                                        '--input-fastq {input_fastq} '
+                                        '--read-description {read_description} '
+                                        '--output-fastq {output_fastq}'.format(script_path=self.script_path,
+                                                                               input_fastq=input_fastq,
+                                                                               read_description=read_description)))
+
+        return jobs
+
     @property
     def steps(self):
         return [

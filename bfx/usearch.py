@@ -4,8 +4,8 @@ from core.config import config
 from core.job import Job
 
 
-def cluster_duplicates(input_fasta, output_fasta, output_uc, name='cluster_duplicates'):
-    return Job(name=name,
+def cluster_duplicates(input_fasta, output_fasta, output_uc, job_name='cluster_duplicates'):
+    return Job(name=job_name,
                input_files=[input_fasta],
                output_files=[output_fasta, output_uc],
                module_entries=[['DEFAULT', 'module_usearch']],

@@ -254,14 +254,14 @@ class Metatranscriptomics(common.Illumina):
 
             # For both paired-end reads
             for i in (1, 2):
-                input_fasta = join(input_dir, '{name}.{i}.qual_all.fasta'.format(name=readset.name, i=i))
-
-                output_fasta = join(output_dir, '{name}.{i}.usearch_out.fasta'.format(name=readset.name, i=i))
-                output_uc = join(output_dir, '{name}.{i}.usearch_out.uc'.format(name=readset.name, i=i))
-
-                job_name = 'cluster_duplicates.{name}.{i}'.format(name=readset.name, i=i)
-
-                jobs.append(usearch.cluster_duplicates(input_fasta, output_fasta, output_uc, name=job_name))
+                jobs.append(
+                    usearch.cluster_duplicates(
+                        input_fasta=join(input_dir, '{name}.{i}.qual_all.fasta'.format(name=readset.name, i=i)),
+                        output_fasta=join(output_dir, '{name}.{i}.usearch_out.fasta'.format(name=readset.name, i=i)),
+                        output_uc=join(output_dir, '{name}.{i}.usearch_out.uc'.format(name=readset.name, i=i)),
+                        job_name='{step}.{name}.{i}'.format(step=self.cluster_duplicates.__name__,
+                                                            name=readset.name,
+                                                            i=i)))
 
         return jobs
 

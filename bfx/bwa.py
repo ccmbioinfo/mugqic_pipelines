@@ -32,8 +32,9 @@ def index(input):
         [input + ".bwt"],
         [['bwa_mem', 'module_bwa']],
         command="""\
-bwa index \\
+bwa index {options} \\
   {input}""".format(
+        options=config.param('bwa_mem', 'options', required=False),
         input=input
         ),
         local=config.param('bwa_mem', 'use_localhd', required=False)

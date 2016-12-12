@@ -225,7 +225,7 @@ def bam2nuc_job(output_dir, sample_name, suffix, in_bam):
     return coverage_calc
 
 
-class Episeq(Illumina):
+class EpiSeq(Illumina):
     """
     The Episeq pipeline takes FASTQ or BAM files (unsorted) as input as well as two metadata files and a configuration
     file. Refer to the user guide for more information on running the pipeline.
@@ -233,7 +233,7 @@ class Episeq(Illumina):
 
     def __init__(self):
         self.argparser.add_argument("-d", "--design", help="design file", type=file)
-        super(Episeq, self).__init__()
+        super(EpiSeq, self).__init__()
 
     @property
     def merge_py(self):
@@ -868,7 +868,7 @@ pandoc \\
                                   readset in sample.readsets if readset.run_type == 'SINGLE_END' and not readset.bam]
             processed_fastq = processed_fastq_pe + processed_fastq_se
             # Bam files from user, if specified by readset file. Not exclusive with having fastq
-            listed_bam_files = [readset.bam for readset in sample.readsets if readset.bam != '' and not readset.fastq1]
+            listed_bam_files = [readset.bam for readset in sample.readsets if readset.bam != '']
 
             input_files = processed_fastq + listed_bam_files  # All bam files that belong to the sample
             merge_prefix = os.path.join('merged', sample.name)
@@ -885,15 +885,15 @@ pandoc \\
                         ['picard_merge_sam_files', 'module_picard']
                     ],
                     command="""\
-    java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} \\
-      -jar $PICARD_HOME/picard.jar MergeSamFiles \\
-      VALIDATION_STRINGENCY=SILENT \\
-      TMP_DIR={tmp_dir} \\
-      {inputs} \\
-      OUTPUT={output} \\
-      USE_THREADING=true \\
-      SORT_ORDER=queryname \\
-      MAX_RECORDS_IN_RAM={max_records_in_ram}""".format(
+java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} \\
+  -jar $PICARD_HOME/picard.jar MergeSamFiles \\
+  VALIDATION_STRINGENCY=SILENT \\
+  TMP_DIR={tmp_dir} \\
+  {inputs} \\
+  OUTPUT={output} \\
+  USE_THREADING=true \\
+  SORT_ORDER=queryname \\
+  MAX_RECORDS_IN_RAM={max_records_in_ram}""".format(
                         tmp_dir=config.param('picard_merge_sam_files', 'tmp_dir'),
                         java_other_options=config.param('picard_merge_sam_files', 'java_other_options'),
                         ram=config.param('picard_merge_sam_files', 'ram'),
@@ -974,8 +974,7 @@ pandoc \\
             mkdir_job = Job(command='mkdir -p ' + work_dir)
             copy_job = Job([in_report_file],
                            [copy_report],
-                           command="cp -fu " + in_report_file + " " + copy_report,
-                           report_files=[copy_report])
+                           command="cp -fu " + in_report_file + " " + copy_report)
 
             # A job name that is different from the heading will not use the params listed. (Uses default, instead)
             if protocol == 'RRBS':  # Deduplication is not recommended for RRBS datatypes. Keep what we have
@@ -1001,8 +1000,7 @@ pandoc \\
                                removable_files=[out_file])
                 move_log = Job(output_files=[report_file],
                                command='mv -fu ' + os.path.join(os.path.dirname(in_file),
-                                                                os.path.basename(report_file)) + ' ' + report_file,
-                               report_files=[report_file])
+                                                                os.path.basename(report_file)) + ' ' + report_file)
                 job = concat_jobs([mkdir_job, merge_job, move_bam, move_log, copy_job],
                                   name='bismark_deduplicate.' + sample.name)
             jobs.append(job)
@@ -1079,7 +1077,6 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
                     core=config.param('bismark_methylation_caller', 'cores'),
                     sample=" ".join(merged_sample),
                     genome=os.path.join(self.output_dir, 'bismark_prepare_genome')),
-                report_files=report_files,
                 removable_files=other_files,
                 name="bismark_methylation_caller." + sample.name)
             jobs.append(job)
@@ -1133,7 +1130,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
             # Job creation
             mkdir_job = Job(command='mkdir -p ' + os.path.dirname(html_report))
             job = Job(input_files=report_list, output_files=[html_report],
-                      module_entries=module_list, report_files=[html_report],
+                      module_entries=module_list,
                       command="""bismark2report -o {out} --verbose --alignment_report {align} \
                       {dedup} {split} {mbias} {nt}""".format(
                           out=html_report,
@@ -1285,8 +1282,8 @@ pandoc \\
                     zip_file=os.path.join(report_data, zip_file),
                     report_template_dir=self.report_template_dir,
                     basename_report_file=os.path.basename(report_file),
-                    report_file=report_file
-                ),
+                    report_file=report_file),
+                report_files=[report_file],
                 name="differential_methylated_pos." + contrast.name)
             jobs.append(job)
         return jobs
@@ -1380,8 +1377,8 @@ pandoc \\
                     zip_file=os.path.join(report_data, zip_file),
                     report_template_dir=self.report_template_dir,
                     basename_report_file=os.path.basename(report_file),
-                    report_file=report_file
-                ),
+                    report_file=report_file),
+                report_files=[report_file],
                 name="differential_methylated_regions." + contrast.name)
 
             jobs.append(job)
@@ -1390,4 +1387,4 @@ pandoc \\
 
 
 if __name__ == '__main__':
-    Episeq()
+    EpiSeq()

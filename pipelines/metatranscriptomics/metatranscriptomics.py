@@ -322,6 +322,8 @@ class Metatranscriptomics(common.Illumina):
         """
         Runs cmscan to predict which reads are rRNA
 
+        Note: this is a computationally intensive step
+
         Input:
         filter_reads/*{1,2}.unique.fasta
 
@@ -377,23 +379,22 @@ class Metatranscriptomics(common.Illumina):
 
                 output_ids = join(output_dir, '{name}.{i}.rrna_ids.json'.format(name=readset.name, i=i))
 
-                jobs.append(Job(name='{step}.{readset}.{i}'.format(step=self.identify_rrna.__name__,
-                                                                   readset=readset.name,
-                                                                   i=i),
-                                input_files=[infernalout, read_description],
-                                output_files=[output_ids],
-                                command='python {script_path}/identify_rrna.py '
-                                        '--read-description {read_description} '
-                                        '--infernalout {infernalout} '
-                                        '--apply-cutoff '
-                                        '--max-evalue {max_evalue} '
-                                        '--min-percent-identity {min_percent_identity} '
-                                        '--out-ids {output_ids}'.format(script_path=self.script_path,
-                                                                        read_description=read_description,
-                                                                        infernalout=infernalout,
-                                                                        max_evalue=0.001,
-                                                                        min_percent_identity=90,
-                                                                        output_ids=output_ids)))
+                jobs.append(
+                    Job(name='{step}.{readset}.{i}'.format(step=self.identify_rrna.__name__, readset=readset.name, i=i),
+                        input_files=[infernalout, read_description],
+                        output_files=[output_ids],
+                        command='python {script_path}/identify_rrna.py '
+                                '--read-description {read_description} '
+                                '--infernalout {infernalout} '
+                                '--apply-cutoff '
+                                '--max-evalue {max_evalue} '
+                                '--min-percent-identity {min_percent_identity} '
+                                '--out-ids {output_ids}'.format(script_path=self.script_path,
+                                                                read_description=read_description,
+                                                                infernalout=infernalout,
+                                                                max_evalue=0.001,
+                                                                min_percent_identity=90,
+                                                                output_ids=output_ids)))
 
         return jobs
 
@@ -461,41 +462,39 @@ class Metatranscriptomics(common.Illumina):
 
             host_db = config.param(self.align_to_host.__name__, 'host_db')
 
-            # input_fastq[1], input_fastq[2]
-            input_fastq = {i: join(input_dir,
-                                   '{name}.{i}.not_rrna.fastq'.format(name=readset.name, i=i)) for i in (1, 2)}
-            # alignment[1], alignment[2]
-            alignment = {i: join(output_dir, '{name}.{i}.host.sai'.format(name=readset.name, i=i)) for i in (1, 2)}
+            input_fastq, alignment = {}, {}
+            for i in (1, 2):
+                input_fastq[i] = join(input_dir, '{name}.{i}.not_rrna.fastq'.format(name=readset.name, i=i))
+                alignment[i] = join(output_dir, '{name}.{i}.host.sai'.format(name=readset.name, i=i))
 
             output_sam = join(output_dir, '{name}.host.sam'.format(name=readset.name))
 
             for i in (1, 2):
                 # bwa aln job
-                jobs.append(Job(name='{step}.aln.{readset}.{i}'.format(step=self.align_to_host.__name__,
-                                                                       readset=readset.name,
-                                                                       i=i),
-                                input_files=[input_fastq[i], host_db],
-                                output_files=[alignment[i]],
-                                module_entries=[[self.align_to_host.__name__, 'module_bwa']],
-                                command='bwa aln -t 4 {host_db} {input_fastq}'
-                                        '> {alignment}'.format(host_db=host_db,
-                                                               input_fastq=input_fastq[i],
-                                                               alignment=alignment[i])))
+                jobs.append(
+                    Job(name='{step}.aln.{name}.{i}'.format(step=self.align_to_host.__name__, name=readset.name, i=i),
+                        input_files=[input_fastq[i], host_db],
+                        output_files=[alignment[i]],
+                        module_entries=[[self.align_to_host.__name__, 'module_bwa']],
+                        command='bwa aln -t 4 {host_db} {input_fastq}'
+                                '> {alignment}'.format(host_db=host_db,
+                                                       input_fastq=input_fastq[i],
+                                                       alignment=alignment[i])))
 
             # bwa sampe job
-            jobs.append(Job(name='{step}.sampe.{readset}'.format(step=self.align_to_host.__name__,
-                                                                 readset=readset.name),
-                            input_files=[host_db, alignment[1], alignment[2], input_fastq[1], input_fastq[2]],
-                            output_files=[output_sam],
-                            module_entries=[[self.align_to_host.__name__, 'module_bwa']],
-                            command='bwa sampe {host_db} {alignment1} {alignment2} '
-                                    '{input_fastq1} {input_fastq2} '
-                                    '> {merged_sam}'.format(host_db=host_db,
-                                                            alignment1=alignment[1],
-                                                            alignment2=alignment[2],
-                                                            input_fastq1=input_fastq[1],
-                                                            input_fastq2=input_fastq[2],
-                                                            merged_sam=output_sam)))
+            jobs.append(
+                Job(name='{step}.sampe.{readset}'.format(step=self.align_to_host.__name__, readset=readset.name),
+                    input_files=[host_db, alignment[1], alignment[2], input_fastq[1], input_fastq[2]],
+                    output_files=[output_sam],
+                    module_entries=[[self.align_to_host.__name__, 'module_bwa']],
+                    command='bwa sampe {host_db} {alignment1} {alignment2} '
+                            '{input_fastq1} {input_fastq2} '
+                            '> {merged_sam}'.format(host_db=host_db,
+                                                    alignment1=alignment[1],
+                                                    alignment2=alignment[2],
+                                                    input_fastq1=input_fastq[1],
+                                                    input_fastq2=input_fastq[2],
+                                                    merged_sam=output_sam)))
 
         return jobs
 

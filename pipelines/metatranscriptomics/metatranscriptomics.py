@@ -289,15 +289,15 @@ class Metatranscriptomics(common.Illumina):
 
             for i in (1, 2):
                 input_fastq = join(input_original_dir, '{name}.{i}.qual_all.fastq'.format(name=readset.name, i=i))
-                input_unique_fasta = join(input_unique_dir, '{name}.{i}.usearch_out.fasta'.format(name=readset.name,
-                                                                                                  i=i))
+                input_unique_fasta = join(input_unique_dir,
+                                          '{name}.{i}.usearch_out.fasta'.format(name=readset.name, i=i))
                 input_uc = join(input_unique_dir, '{name}.{i}.usearch_out.uc'.format(name=readset.name, i=i))
 
                 read_description = join(output_dir, '{name}.{i}.read_description.json'.format(name=readset.name, i=i))
                 output_fastq = join(output_dir, '{name}.{i}.unique.fastq'.format(name=readset.name, i=i))
                 output_fasta = join(output_dir, '{name}.{i}.unique.fasta'.format(name=readset.name, i=i))
 
-                job_name = 'remove_duplicates.{name}.{i}'.format(name=readset.name, i=i)
+                job_name = '{step}.{name}.{i}'.format(step=self.remove_duplicates.__name__, name=readset.name, i=i)
 
                 jobs.append(Job(name=job_name,
                                 input_files=[input_fastq, input_unique_fasta, input_uc],
@@ -729,7 +729,6 @@ class Metatranscriptomics(common.Illumina):
             samtools_faidx_job = samtools.faidx(contigs)
             samtools_faidx_job.name = '{step}.samtools_faidx.{name}'.format(step=self.index_contigs.__name__,
                                                                             name=readset.name)
-
             jobs.extend([bwa_index_job, samtools_faidx_job])
 
         return jobs

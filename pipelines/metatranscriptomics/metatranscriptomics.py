@@ -117,12 +117,9 @@ class Metatranscriptomics(common.Illumina):
 
             input_fastq, output_paired, output_unpaired = {}, {}, {}
             for i in (1, 2):
-                # input_fastq[1], input_fastq[2]
                 input_fastq[i] = join(input_dir, '{name}.{i}.formatted.fastq'.format(name=readset.name, i=i))
 
-                # output_paired[1], output_paired[2]
                 output_paired[i] = join(output_dir, '{name}.{i}.qual_paired.fastq'.format(name=readset.name, i=i))
-                # output_unpaired[1], output_unpaired[2]
                 output_unpaired[i] = join(output_dir, '{name}.{i}.qual_unpaired.fastq'.format(name=readset.name, i=i))
 
             job = trimmomatic.trimmomatic(input_fastq[1],
@@ -683,10 +680,11 @@ class Metatranscriptomics(common.Illumina):
             output_fasta = join(output_dir, '{name}.contigs.fasta'.format(name=readset.name))
 
             # Create 'Trinity.fasta'
-            trinity_job = trinity.trinity(input_files=[input_mrna_1, input_mrna_2],
-                                          trinity_fasta=trinity_fasta,
-                                          output_directory=trinity_out_dir,
-                                          reads_option=input_str)
+            trinity_job = concat_jobs([mkdir(trinity_fasta),
+                                       trinity.trinity(input_files=[input_mrna_1, input_mrna_2],
+                                                       trinity_fasta=trinity_fasta,
+                                                       output_directory=trinity_out_dir,
+                                                       reads_option=input_str)])
 
             # Rename output to '{name}.contigs.fasta'
             rename_job = Job(input_files=[trinity_fasta],

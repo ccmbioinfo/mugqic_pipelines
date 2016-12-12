@@ -339,16 +339,13 @@ class Metatranscriptomics(common.Illumina):
             output_dir = join(output_prefix, readset.name)
 
             for i in (1, 2):
-                jobs.append(infernal.cmscan(rfam_path=config.param('cmscan', 'rfam_location'),
-                                            query=join(input_dir,
-                                                       '{name}.{i}.unique.fasta'.format(name=readset.name, i=i)),
-                                            tblout=join(output_dir,
-                                                        '{name}.{i}.infernalout'.format(name=readset.name, i=i)),
-                                            log_path=join(output_dir,
-                                                          '{name}.{i}.rRNA.log'.format(name=readset.name, i=i)),
-                                            name='{step}.{name}.{i}'.format(step=self.cmscan.__name__,
-                                                                            name=readset.name,
-                                                                            i=i)))
+                jobs.append(
+                    infernal.cmscan(
+                        rfam_path=config.param('cmscan', 'rfam_location'),
+                        query=join(input_dir, '{name}.{i}.unique.fasta'.format(name=readset.name, i=i)),
+                        tblout=join(output_dir, '{name}.{i}.infernalout'.format(name=readset.name, i=i)),
+                        log_path=join(output_dir, '{name}.{i}.rRNA.log'.format(name=readset.name, i=i)),
+                        name='{step}.{name}.{i}'.format(step=self.cmscan.__name__, name=readset.name, i=i)))
 
         return jobs
 

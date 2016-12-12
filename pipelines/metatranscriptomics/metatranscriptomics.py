@@ -19,6 +19,8 @@ from bfx import seqtk
 from bfx import usearch
 from bfx import infernal
 from bfx import trinity
+from bfx import bwa
+from bfx import samtools
 
 log = logging.getLogger(__name__)
 
@@ -719,7 +721,7 @@ class Metatranscriptomics(common.Illumina):
 
     def index_contigs(self):
         """
-        Index the assembled contigs
+        Index the assembled contigs with 'bwa index' and 'samtools faidx'
 
         Input:
         contig_assembly/*.contigs.fasta
@@ -741,17 +743,22 @@ class Metatranscriptomics(common.Illumina):
 
             contigs = join(contig_dir, '{name}.contigs.fasta'.format(name=readset.name))
 
-            bwa_index_job = Job(
-                name='{step}.bwa_index.{name}'.format(step=self.index_contigs.__name__, name=readset.name),
-                input_files=[contigs],
-                output_files=['{contigs}.bwt'.format(contigs=contigs),
-                              '{contigs}.pac'.format(contigs=contigs),
-                              '{contigs}.ann'.format(contigs=contigs),
-                              '{contigs}.amb'.format(contigs=contigs),
-                              '{contigs}.sa'.format(contigs=contigs), ],
-                module_entries=[[self.index_contigs.__name__, 'module_bwa']],
-                command='bwa index -a bwtsw {contigs}'.format(contigs=contigs))
+            # 'bwa index'
+            bwa_index_job = bwa.index(contigs)
+            bwa_index_job.name = '{step}.bwa_index.{name}'.format(step=self.index_contigs.__name__, name=readset.name)
 
+            # bwa_index_job = Job(
+            #     name='{step}.bwa_index.{name}'.format(step=self.index_contigs.__name__, name=readset.name),
+            #     input_files=[contigs],
+            #     output_files=['{contigs}.bwt'.format(contigs=contigs),
+            #                   '{contigs}.pac'.format(contigs=contigs),
+            #                   '{contigs}.ann'.format(contigs=contigs),
+            #                   '{contigs}.amb'.format(contigs=contigs),
+            #                   '{contigs}.sa'.format(contigs=contigs), ],
+            #     module_entries=[[self.index_contigs.__name__, 'module_bwa']],
+            #     command='bwa index -a bwtsw {contigs}'.format(contigs=contigs))
+
+            # 'samtools faidx'
             samtools_faidx_job = Job(
                 name='{step}.samtools_faidx.{name}'.format(step=self.index_contigs.__name__, name=readset.name),
                 input_files=[contigs],

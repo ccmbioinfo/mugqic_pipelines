@@ -135,7 +135,7 @@ class Metatranscriptomics(common.Illumina):
                                           None,
                                           adapter_file=config.param(self.trimmomatic.__name__, 'adapter_fasta'),
                                           trim_log=join(output_dir, '{name}.trim.log'.format(name=readset.name)))
-            job.name = 'trimmomatic.{name}'.format(name=readset.name)
+            job.name = '{step}.{name}'.format(step=self.trimmomatic.__name__, name=readset.name)
             jobs.append(job)
 
         return jobs
@@ -144,71 +144,60 @@ class Metatranscriptomics(common.Illumina):
         """
         Reads from the paired-end fastqs are merged together using FLASH
 
-        The merged reads are added to the first paired-end fastq
+        The merged reads are added to the 1st paired-end fastq
 
         Input:
         format_reads/*.{1,2}.qual_paired.fastq
 
+        Intermediate output:
+        format_reads/*.{1,2}.notCombined_1.fastq    - unmerged reads
+        format_reads/*.extendedFrags.fastq          - merged reads
+
         Output:
-        format_reads/*.{1,2}.qual_all.fastq
+        format_reads/*.1.qual_all.fastq             - contains fastq1 reads + merged reads
+        format_reads/*.2.qual_all.fastq             - contains fastq2 reads
         """
         jobs = []
 
         input_prefix = 'format_reads'
         output_prefix = 'format_reads'
 
-        def get_inputs(readset):
-            """
-            :return: 2 fastq filenames for paired-end reads
-            """
-            input_dir = join(input_prefix, readset.name)
-            return join(input_dir, readset.name + '.1.qual_paired.fastq'), \
-                   join(input_dir, readset.name + '.2.qual_paired.fastq')
-
-        def get_flash_params(readset):
-            """
-            :return: flash's output directory and output prefix
-            """
-            return join(output_prefix, readset.name), readset.name
-
-        def get_flash_outputs(output_dir, flash_output_prefix):
-            """
-            Get the filenames that flash will output
-
-            Flash will output 3 files, one for both fastqs, and one for the merged reads
-            :return: 2 uncombined fastq files + merged reads fastq file
-            """
-            return join(output_dir, flash_output_prefix + '.notCombined_1.fastq'), \
-                   join(output_dir, flash_output_prefix + '.notCombined_2.fastq'), \
-                   join(output_dir, flash_output_prefix + '.extendedFrags.fastq')
-
-        def get_outputs(readset):
-            """
-            :return: 2 output filenames
-            """
-            output_dir = join(output_prefix, readset.name)
-            return join(output_dir, readset.name + '.1.qual_all.fastq'), \
-                   join(output_dir, readset.name + '.2.qual_all.fastq')
-
         for readset in self.readsets:
+            input_dir = join(input_prefix, readset.name)
+            output_dir = join(output_prefix, readset.name)
+
             # Get the filenames
-            input1, input2 = get_inputs(readset)
-            flash_output_dir, flash_output_prefix = get_flash_params(readset)
-            flash1, flash2, flash_merged = get_flash_outputs(flash_output_dir, flash_output_prefix)
-            output1, output2 = get_outputs(readset)
+            input_fastq, flash_out, output_fastq = {}, {}, {}
+            for i in (1, 2):
+                input_fastq[i] = join(input_dir, '{name}.{i}.qual_paired.fastq'.format(name=readset.name, i=i))
+                flash_out[i] = join(output_dir, '{name}.{i}.notCombined_1.fastq'.format(name=readset.name, i=i))
+                output_fastq[i] = join(output_dir, '{name}.{i}.qual_all.fastq'.format(name=readset.name, i=i))
+            flash_merged = join(output_dir, '{name}.extendedFrags.fastq'.format(name=readset.name))
 
             # Create jobs
-            flash_job = flash.merge_overlapping_reads(input1, input2, flash_output_dir, flash_output_prefix)
+            flash_job = flash.merge_overlapping_reads(fastq1=input_fastq[1],
+                                                      fastq2=input_fastq[2],
+                                                      output_dir=output_dir,
+                                                      output_prefix=readset.name)
+
             # Put the merged reads into fastq1
-            fastq1_job = Job(input_files=[flash1, flash_merged],
-                             output_files=[output1],
-                             command='cat {flash1} {merged} > {output1}'.format(flash1=flash1, merged=flash_merged,
-                                                                                output1=output1))
+            fastq1_job = Job(input_files=[flash_out[1], flash_out[2]],
+                             output_files=[output_fastq[1]],
+                             command='cat {flash1} {merged} > {output1}'.format(flash1=flash_out[1],
+                                                                                merged=flash_merged,
+                                                                                output1=output_fastq[1]))
+
             # Rename fastq2 to be consistent with fastq1
-            fastq2_job = Job(input_files=[flash2],
-                             output_files=[output2],
-                             command='cp {flash2} {output2}'.format(flash2=flash2, output2=output2))
-            jobs.append(concat_jobs([flash_job, fastq1_job, fastq2_job], name='flash.' + readset.name))
+            fastq2_job = Job(input_files=[flash_out[2]],
+                             output_files=[output_fastq[2]],
+                             command='cp {flash2} {output2}'.format(flash2=flash_out[2], output2=output_fastq[2]))
+
+            jobs.append(
+                concat_jobs([flash_job,
+                             fastq1_job,
+                             fastq2_job],
+                            name='{step}.{name}'.format(step=self.merge_overlapping_reads.__name__,
+                                                        name=readset.name)))
 
         return jobs
 
@@ -764,7 +753,7 @@ class Metatranscriptomics(common.Illumina):
             self.remove_host_reads,  # 12
             self.return_duplicates,
             self.trinity,
-            self.index_contigs, #15
+            self.index_contigs,  # 15
         ]
 
 

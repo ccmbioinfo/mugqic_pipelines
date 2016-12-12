@@ -870,7 +870,7 @@ pandoc \\
             # Bam files from user, if specified by readset file. Not exclusive with having fastq
             listed_bam_files = [readset.bam for readset in sample.readsets if readset.bam != '']
 
-            input_files = processed_fastq + listed_bam_files  # All bam files that belong to the sample
+            input_files = filter(None, processed_fastq + listed_bam_files)  # All bam files that belong to the sample
             merge_prefix = os.path.join('merged', sample.name)
             output_bam = os.path.join(merge_prefix, sample.name + '.merged.bam')
             mkdir_job = Job(command='mkdir -p ' + merge_prefix)

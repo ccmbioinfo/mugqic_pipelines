@@ -39,7 +39,7 @@ class Metatranscriptomics(common.Illumina):
         Remove duplicates (temporarily),
         remove rRNA,
         remove reads from host
-    * contig_assembly
+    * contigs
         Assemble reads into larger contigs,
         map the reads to these contigs
     * search
@@ -683,12 +683,12 @@ class Metatranscriptomics(common.Illumina):
         filter_reads/*{1,2}.mRNA.fastq
 
         Output:
-        contig_assembly/*.contigs.fasta
+        contigs/*.contigs.fasta
         """
         jobs = []
 
         input_prefix = 'filter_reads'
-        output_prefix = 'contig_assembly'
+        output_prefix = 'contigs'
 
         for readset in self.readsets:
             input_dir = join(input_prefix, readset.name)
@@ -724,19 +724,19 @@ class Metatranscriptomics(common.Illumina):
         Index the assembled contigs with 'bwa index' and 'samtools faidx'
 
         Input:
-        contig_assembly/*.contigs.fasta
+        contigs/*.contigs.fasta
 
         Output:
-        contig_assembly/*.contigs.fasta.amb     - bwa index
-        contig_assembly/*.contigs.fasta.sa      - bwa index
-        contig_assembly/*.contigs.fasta.ann     - bwa index
-        contig_assembly/*.contigs.fasta.pac     - bwa index
-        contig_assembly/*.contigs.fasta.bwt     - bwa index
-        contig_assembly/*.contigs.fasta.fai     - samtools faidx
+        contigs/*.contigs.fasta.amb     - bwa index
+        contigs/*.contigs.fasta.sa      - bwa index
+        contigs/*.contigs.fasta.ann     - bwa index
+        contigs/*.contigs.fasta.pac     - bwa index
+        contigs/*.contigs.fasta.bwt     - bwa index
+        contigs/*.contigs.fasta.fai     - samtools faidx
         """
         jobs = []
 
-        contig_prefix = 'contig_assembly'
+        contig_prefix = 'contigs'
 
         for readset in self.readsets:
             contig_dir = join(contig_prefix, readset.name)
@@ -756,6 +756,17 @@ class Metatranscriptomics(common.Illumina):
 
         return jobs
 
+    # def align_to_contigs(self):
+    #     """
+    #     Align paired-end reads to assembled contigs
+    #
+    #     Input:
+    #     filter_reads/*.{1,2}.mRNA.fastq
+    #     contigs/*.contigs.fasta
+    #
+    #     Output:
+    #     contigs
+    #     """
     @property
     def steps(self):
         return [

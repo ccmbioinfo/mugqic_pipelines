@@ -224,11 +224,11 @@ class Metatranscriptomics(common.Illumina):
 
             # For both fastq files (paired-end reads)
             for i in (1, 2):
-                input_fastq = join(input_dir, readset.name + '.{i}.qual_all.fastq'.format(i=i))
-                output_fasta = join(output_dir, readset.name + '.{i}.qual_all.fasta'.format(i=i))
-                job_name = 'fastq_to_fasta.{name}.{i}'.format(name=readset.name, i=i)
-
-                jobs.append(seqtk.fastq_to_fasta(input_fastq, output_fasta, name=job_name))
+                jobs.append(
+                    seqtk.fastq_to_fasta(
+                        fastq=join(input_dir, '{name}.{i}.qual_all.fastq'.format(name=readset.name, i=i)),
+                        fasta=join(output_dir, '{name}.{i}.qual_all.fasta'.format(name=readset.name, i=i)),
+                        job_name='{step}.{name}'.format(step=self.fastq_to_fasta.__name__, name=readset.name)))
 
         return jobs
 

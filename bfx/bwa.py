@@ -40,6 +40,7 @@ bwa index {options} \\
         local=config.param('bwa_mem', 'use_localhd', required=False)
     )
 
+
 def mem(in1fastq, in2fastq=None, out_sam=None, read_group=None, ref=None, ini_section='bwa_mem'):
     other_options = config.param(ini_section, 'other_options', required=False)
 
@@ -60,4 +61,19 @@ bwa mem {other_options}{read_group} \\
         ),
         removable_files=[out_sam],
         local=config.param('bwa_mem', 'use_localhd', required=False)
+    )
+
+
+def aln(query, target, output, num_threads=4, name='bwa_aln'):
+    return Job(
+        name=name,
+        input_files=[query, target],
+        output_files=[output],
+        commmand='bwa aln -t {num_threads} '
+                 '{query} {target} > {output}'.format(
+            num_threads=num_threads,
+            query=query,
+            target=target,
+            output=output
+        )
     )

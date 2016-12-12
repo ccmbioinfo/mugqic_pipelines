@@ -589,19 +589,19 @@ class Metatranscriptomics(common.Illumina):
                 output_not_host = join(output_dir, '{name}.{i}.not_host.fastq'.format(name=readset.name, i=i))
                 output_host = join(output_dir, '{name}.{i}.host.fastq'.format(name=readset.name, i=i))
 
-                jobs.append(Job(name='{step}.{name}.{i}'.format(step=self.remove_host_reads.__name__,
-                                                                name=readset.name, i=i),
-                                input_files=[id_file, input_fastq],
-                                output_files=[output_host, output_not_host],
-                                command='python {script_path}/partition_reads_by_id.py '
-                                        '--fastq {input_fastq} '
-                                        '--id-file {id_file} '
-                                        '--included {output_host} '
-                                        '--excluded {output_not_host}'.format(script_path=self.script_path,
-                                                                              input_fastq=input_fastq,
-                                                                              id_file=id_file,
-                                                                              output_host=output_host,
-                                                                              output_not_host=output_not_host)))
+                jobs.append(
+                    Job(name='{step}.{name}.{i}'.format(step=self.remove_host_reads.__name__, name=readset.name, i=i),
+                        input_files=[id_file, input_fastq],
+                        output_files=[output_host, output_not_host],
+                        command='python {script_path}/partition_reads_by_id.py '
+                                '--fastq {input_fastq} '
+                                '--id-file {id_file} '
+                                '--included {output_host} '
+                                '--excluded {output_not_host}'.format(script_path=self.script_path,
+                                                                      input_fastq=input_fastq,
+                                                                      id_file=id_file,
+                                                                      output_host=output_host,
+                                                                      output_not_host=output_not_host)))
 
         return jobs
 
@@ -633,18 +633,17 @@ class Metatranscriptomics(common.Illumina):
 
                 output_fastq = join(output_dir, '{name}.{i}.mRNA.fastq'.format(name=readset.name, i=i))
 
-                jobs.append(Job(name='{step}.{name}.{i}'.format(step=self.return_duplicates.__name__,
-                                                                name=readset.name,
-                                                                i=i),
-                                input_files=[input_fastq, read_description],
-                                output_files=[output_fastq],
-                                command='python {script_path}/add_duplicates.py '
-                                        '--input-fastq {input_fastq} '
-                                        '--read-description {read_description} '
-                                        '--output-fastq {output_fastq}'.format(script_path=self.script_path,
-                                                                               input_fastq=input_fastq,
-                                                                               read_description=read_description,
-                                                                               output_fastq=output_fastq)))
+                jobs.append(
+                    Job(name='{step}.{name}.{i}'.format(step=self.return_duplicates.__name__, name=readset.name, i=i),
+                        input_files=[input_fastq, read_description],
+                        output_files=[output_fastq],
+                        command='python {script_path}/return_duplicates.py '
+                                '--input-fastq {input_fastq} '
+                                '--read-description {read_description} '
+                                '--output-fastq {output_fastq}'.format(script_path=self.script_path,
+                                                                       input_fastq=input_fastq,
+                                                                       read_description=read_description,
+                                                                       output_fastq=output_fastq)))
 
         return jobs
 
@@ -682,7 +681,7 @@ class Metatranscriptomics(common.Illumina):
                                                        output_directory=trinity_out_dir,
                                                        reads_option=input_str)])
 
-            # Rename output to '{name}.contigs.fasta'
+            # Rename output to '*.contigs.fasta'
             rename_job = Job(input_files=[trinity_fasta],
                              output_files=[output_fasta],
                              command='cp {trinity_fasta} {output_fasta}'.format(trinity_fasta=trinity_fasta,

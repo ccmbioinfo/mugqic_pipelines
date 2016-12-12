@@ -885,7 +885,7 @@ pandoc --to=markdown \\
 
         parser = argparse.ArgumentParser()
         args = str(parser.parse_known_args())
-        design_file_name = args.split(", '-d', '")[1].split(".design'")[0] + '.design'
+        design_file_name = args.split(", '-d', '")[1].split("'")[0]
         design_file = os.path.abspath(design_file_name)
 
         gff = os.path.join('jctseq', 'jctseq.gff.gz')

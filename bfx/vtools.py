@@ -64,6 +64,7 @@ def differential_splicing(control_samples_names, treatment_samples_names, input_
         [input_table],
         [inclusion_table],
         command="""\
+mkdir vast_out/{contrast} && \\
 module load vast-tools && \\
 vast-tools diff -a {controls} -b {treatments} -o vast_out/{contrast} {other_options} > {inclusion_table}""".format(
             controls = controls[:-1],

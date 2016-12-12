@@ -717,6 +717,53 @@ class Metatranscriptomics(common.Illumina):
 
         return jobs
 
+    def index_contigs(self):
+        """
+        Index the assembled contigs
+
+        Input:
+        contig_assembly/*.contigs.fasta
+
+        Output:
+        contig_assembly/*.contigs.fasta.amb     - bwa index
+        contig_assembly/*.contigs.fasta.sa      - bwa index
+        contig_assembly/*.contigs.fasta.ann     - bwa index
+        contig_assembly/*.contigs.fasta.pac     - bwa index
+        contig_assembly/*.contigs.fasta.bwt     - bwa index
+        contig_assembly/*.contigs.fasta.fai     - samtools faidx
+        """
+        jobs = []
+
+        contig_prefix = 'contig_assembly'
+
+        for readset in self.readsets:
+            contig_dir = join(contig_prefix, readset.name)
+
+            contigs = join(contig_dir, '{name}.contigs.fasta'.format(name=readset.name))
+
+            bwa_index_job = Job(
+                name='{step}.bwa_index.{name}'.format(step=self.index_contigs.__name__, name=readset.name),
+                input_files=[contigs],
+                output_files=['{contigs}.bwt'.format(contigs=contigs),
+                              '{contigs}.pac'.format(contigs=contigs),
+                              '{contigs}.ann'.format(contigs=contigs),
+                              '{contigs}.amb'.format(contigs=contigs),
+                              '{contigs}.sa'.format(contigs=contigs), ],
+                module_entries=[[self.index_contigs.__name__, 'module_bwa']],
+                command='bwa index -a bwtsw {contigs}'.format(contigs=contigs))
+
+            samtools_faidx_job = Job(
+                name='{step}.samtools_faidx.{name}'.format(step=self.index_contigs.__name__, name=readset.name),
+                input_files=[contigs],
+                output_files=['{contigs}.fai'.format(contigs=contigs)],
+                module_entries=[[self.index_contigs.__name__, 'module_samtools']],
+                command='samtools faidx {contigs}'.format(contigs=contigs)
+            )
+
+            jobs.extend([bwa_index_job, samtools_faidx_job])
+
+        return jobs
+
     @property
     def steps(self):
         return [
@@ -733,7 +780,8 @@ class Metatranscriptomics(common.Illumina):
             self.identify_host_reads,
             self.remove_host_reads,  # 12
             self.return_duplicates,
-            self.trinity
+            self.trinity,
+            self.index_contigs, #15
         ]
 
 

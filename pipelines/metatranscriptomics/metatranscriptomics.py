@@ -109,42 +109,31 @@ class Metatranscriptomics(common.Illumina):
         input_prefix = 'format_reads'
         output_prefix = 'format_reads'
 
-        def get_inputs(readset):
-            """
-            :return: 2 fastq filenames for paired-end reads
-            """
-            input_dir = join(input_prefix, readset.name)
-            return input_dir, \
-                   join(input_dir, readset.name + '.1.formatted.fastq'), \
-                   join(input_dir, readset.name + '.2.formatted.fastq')
-
-        def get_outputs(readset):
-            """
-            :return: output directory name,
-                     4 fastq filenames
-            """
-            output_dir = join(output_prefix, readset.name)
-            return output_dir, \
-                   join(output_dir, readset.name + '.1.qual_paired.fastq'), \
-                   join(output_dir, readset.name + '.1.qual_unpaired.fastq'), \
-                   join(output_dir, readset.name + '.2.qual_paired.fastq'), \
-                   join(output_dir, readset.name + '.2.qual_unpaired.fastq')
-
         for readset in self.readsets:
-            input_dir, input1, input2 = get_inputs(readset)
-            output_dir, output_paired1, output_unpaired1, output_paired2, output_unpaired2 = get_outputs(readset)
+            input_dir = join(input_prefix, readset.name)
+            output_dir = join(output_prefix, readset.name)
 
-            job = trimmomatic.trimmomatic(input1,
-                                          input2,
-                                          output_paired1,
-                                          output_unpaired1,
-                                          output_paired2,
-                                          output_unpaired2,
+            input_fastq, output_paired, output_unpaired = dict(), dict(), dict()
+            for i in (1, 2):
+                # input_fastq[1], input_fastq[2]
+                input_fastq[i] = join(input_dir, '{name}.{i}.formatted.fastq'.format(name=readset.name, i=i))
+
+                # output_paired[1], output_paired[2]
+                output_paired[i] = join(output_dir, '{name}.{i}.qual_paired.fastq'.format(name=readset.name, i=i))
+                # output_unpaired[1], output_unpaired[2]
+                output_unpaired[i] = join(output_dir, '{name}.{i}.qual_unpaired.fastq'.format(name=readset.name, i=i))
+
+            job = trimmomatic.trimmomatic(input_fastq[1],
+                                          input_fastq[2],
+                                          output_paired[1],
+                                          output_unpaired[1],
+                                          output_paired[2],
+                                          output_unpaired[2],
                                           None,
                                           None,
-                                          adapter_file=config.param('trimmomatic', 'adapter_fasta'),
-                                          trim_log=join(output_prefix, readset.name, readset.name + '.trim.log'))
-            job.name = 'trimmomatic.' + readset.name
+                                          adapter_file=config.param(self.trimmomatic.__name__, 'adapter_fasta'),
+                                          trim_log=join(output_dir, '{name}.trim.log'.format(name=readset.name)))
+            job.name = 'trimmomatic.{name}'.format(name=readset.name)
             jobs.append(job)
 
         return jobs
@@ -756,17 +745,6 @@ class Metatranscriptomics(common.Illumina):
 
         return jobs
 
-    # def align_to_contigs(self):
-    #     """
-    #     Align paired-end reads to assembled contigs
-    #
-    #     Input:
-    #     filter_reads/*.{1,2}.mRNA.fastq
-    #     contigs/*.contigs.fasta
-    #
-    #     Output:
-    #     contigs
-    #     """
     @property
     def steps(self):
         return [

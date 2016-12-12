@@ -170,7 +170,7 @@ class Metatranscriptomics(common.Illumina):
             input_fastq, flash_out, output_fastq = {}, {}, {}
             for i in (1, 2):
                 input_fastq[i] = join(input_dir, '{name}.{i}.qual_paired.fastq'.format(name=readset.name, i=i))
-                flash_out[i] = join(output_dir, '{name}.{i}.notCombined_1.fastq'.format(name=readset.name, i=i))
+                flash_out[i] = join(output_dir, '{name}.notCombined_{i}.fastq'.format(name=readset.name, i=i))
                 output_fastq[i] = join(output_dir, '{name}.{i}.qual_all.fastq'.format(name=readset.name, i=i))
             flash_merged = join(output_dir, '{name}.extendedFrags.fastq'.format(name=readset.name))
 

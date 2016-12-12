@@ -74,22 +74,24 @@ class Metatranscriptomics(common.Illumina):
         for readset in self.readsets:
             output_dir = join(output_prefix, readset.name)
 
-            output1 = join(output_dir, readset.name + '.1.formatted.fastq')
-            output2 = join(output_dir, readset.name + '.2.formatted.fastq')
+            output_fastq = {}
+            for i in (1, 2):
+                output_fastq[i] = join(output_dir, '{name}.{i}.formatted.fastq'.format(name=readset.name, i=i))
 
-            jobs.append(concat_jobs([mkdir(output1),
-                                     mkdir(output2),
+            jobs.append(concat_jobs([mkdir(output_fastq[1]),
+                                     mkdir(output_fastq[2]),
                                      Job(input_files=[readset.fastq1, readset.fastq2],
-                                         output_files=[output1, output2],
+                                         output_files=[output_fastq[1], output_fastq[2]],
                                          module_entries=[['DEFAULT', 'module_perl']],
                                          command='perl {script_path}/main_add_subID_reads_fastq.pl '
                                                  '{input1} {output1} '
                                                  '{input2} {output2}'.format(script_path=self.script_path,
                                                                              input1=readset.fastq1,
-                                                                             output1=output1,
+                                                                             output1=output_fastq[1],
                                                                              input2=readset.fastq2,
-                                                                             output2=output2))],
-                                    name='format_fastq_headers.' + readset.name))
+                                                                             output2=output_fastq[2]))],
+                                    name='{step}.{name}'.format(step=self.format_fastq_headers.__name__,
+                                                                name=readset.name)))
 
         return jobs
 
@@ -113,7 +115,7 @@ class Metatranscriptomics(common.Illumina):
             input_dir = join(input_prefix, readset.name)
             output_dir = join(output_prefix, readset.name)
 
-            input_fastq, output_paired, output_unpaired = dict(), dict(), dict()
+            input_fastq, output_paired, output_unpaired = {}, {}, {}
             for i in (1, 2):
                 # input_fastq[1], input_fastq[2]
                 input_fastq[i] = join(input_dir, '{name}.{i}.formatted.fastq'.format(name=readset.name, i=i))

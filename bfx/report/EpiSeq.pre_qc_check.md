@@ -1,6 +1,6 @@
 ### FastQC for Bisulfite Sequencing
 
-[FastQC] runs on sequencing data and measure various statistics to inform the user about the quality of the raw data and what precautions to consider going forward. Information about library contamination and poor base quality can be used to guide the trimming and filtering processes [@fastqc].
+[FastQC]([@fastqc]) runs on sequencing data and measure various statistics to inform the user about the quality of the raw data and what precautions to consider going forward. Information about library contamination and poor base quality can be used to guide the trimming and filtering processes.
 
 #### HTML Reports
 

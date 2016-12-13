@@ -711,7 +711,7 @@ class Metatranscriptomics(common.Illumina):
             contigs = join(contig_dir, '{name}.contigs.fasta'.format(name=readset.name))
 
             # 'bwa index'
-            bwa_index_job = bwa.index(contigs, options=config.param('index_contigs', 'bwa_index_options'))
+            bwa_index_job = bwa.index(contigs, options=config.param('bwa_mem', 'bwa_index_options'))
             bwa_index_job.name = '{step}.bwa_index.{name}'.format(step=self.index_contigs.__name__, name=readset.name)
 
             # 'samtools faidx'

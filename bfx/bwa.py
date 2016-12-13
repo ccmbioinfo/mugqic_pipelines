@@ -26,7 +26,7 @@ import os
 from core.config import *
 from core.job import *
 
-def index(input):
+def index(input, options=''):
     return Job(
         [input],
         [input + ".bwt"],
@@ -34,7 +34,7 @@ def index(input):
         command="""\
 bwa index {options} \\
   {input}""".format(
-        options=config.param('bwa_mem', 'options', required=False),
+        options=options,
         input=input
         ),
         local=config.param('bwa_mem', 'use_localhd', required=False)

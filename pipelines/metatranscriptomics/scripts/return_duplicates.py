@@ -6,11 +6,11 @@ The output FASTQ file will contain 'cluster_size' copies of each read,
 as described by the read-description JSON file
 """
 
-
 from json import load
 from copy import copy
 from argparse import ArgumentParser
 from itertools import chain
+import sys
 
 from Bio.SeqIO import parse, write
 
@@ -18,7 +18,8 @@ from Bio.SeqIO import parse, write
 def parse_args():
     arg_parser = ArgumentParser()
     arg_parser.add_argument('--input-fastq', help='De-duplicated FASTQ')
-    arg_parser.add_argument('--read-description', help="JSON file describing the reads.  Must contain the fields 'id' and 'cluster_size'")
+    arg_parser.add_argument('--read-description',
+                            help="JSON file describing the reads.  Must contain the fields 'id' and 'cluster_size'")
     arg_parser.add_argument('--output-fastq', help='FASTQ file to write duplicates to')
     return arg_parser.parse_args()
 
@@ -60,8 +61,14 @@ def duplicate(read, i):
     :return: Bio.SeqIO.SeqRecord
     """
     new_read = copy(read)
-    new_read.id = '{pre_slash}_{i}'.format(pre_slash=read.id.split('/')[0], i=i) + \
-                  ('/{}'.format(read.id.split('/')[1]) if '/' in read.id else '')
+
+    new_id = '{pre_slash}_{i}'.format(pre_slash=read.id.split('/')[0], i=i) + \
+             ('/{}'.format(read.id.split('/')[1]) if '/' in read.id else '')
+
+    # Have to change both the id and description for Bio.SeqIO
+    new_read.id = new_id
+    new_read.description = new_id
+
     return new_read
 
 

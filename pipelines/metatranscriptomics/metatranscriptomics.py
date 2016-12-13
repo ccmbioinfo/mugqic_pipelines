@@ -130,7 +130,8 @@ class Metatranscriptomics(common.Illumina):
                                           output_unpaired[2],
                                           None,
                                           None,
-                                          adapter_file=config.param(self.trimmomatic.__name__, 'adapter_fasta', type='filepath'),
+                                          adapter_file=config.param(self.trimmomatic.__name__, 'adapter_fasta',
+                                                                    type='filepath'),
                                           trim_log=join(output_dir, '{name}.trim.log'.format(name=readset.name)))
             job.name = '{step}.{name}'.format(step=self.trimmomatic.__name__, name=readset.name)
             jobs.append(job)
@@ -467,19 +468,16 @@ class Metatranscriptomics(common.Illumina):
                 input_fastq[i] = join(input_dir, '{name}.{i}.not_rrna.fastq'.format(name=readset.name, i=i))
                 alignment[i] = join(output_dir, '{name}.{i}.host.sai'.format(name=readset.name, i=i))
 
-            output_sam = join(output_dir, '{name}.host.sam'.format(name=readset.name))
-
-            for i in (1, 2):
                 # bwa aln job
                 jobs.append(
-                    Job(name='{step}.aln.{name}.{i}'.format(step=self.align_to_host.__name__, name=readset.name, i=i),
-                        input_files=[input_fastq[i], host_db],
-                        output_files=[alignment[i]],
-                        module_entries=[[self.align_to_host.__name__, 'module_bwa']],
-                        command='bwa aln -t 4 {host_db} {input_fastq}'
-                                '> {alignment}'.format(host_db=host_db,
-                                                       input_fastq=input_fastq[i],
-                                                       alignment=alignment[i])))
+                    bwa.aln(
+                        query=host_db,
+                        target=input_fastq[i],
+                        output=alignment[i],
+                        num_threads=4,
+                        name='{step}.aln.{name}.{i}'.format(step=self.align_to_host.__name__, name=readset.name, i=i)))
+
+            output_sam = join(output_dir, '{name}.host.sam'.format(name=readset.name))
 
             # bwa sampe job
             jobs.append(
@@ -717,7 +715,7 @@ class Metatranscriptomics(common.Illumina):
             contigs = join(contig_dir, '{name}.contigs.fasta'.format(name=readset.name))
 
             # 'bwa index'
-            bwa_index_job = bwa.index(contigs)
+            bwa_index_job = bwa.index(contigs, options=config.param('index_contigs', 'bwa_index_options'))
             bwa_index_job.name = '{step}.bwa_index.{name}'.format(step=self.index_contigs.__name__, name=readset.name)
 
             # 'samtools faidx'

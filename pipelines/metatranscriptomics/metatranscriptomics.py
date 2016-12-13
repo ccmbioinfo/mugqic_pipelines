@@ -130,7 +130,7 @@ class Metatranscriptomics(common.Illumina):
                                           output_unpaired[2],
                                           None,
                                           None,
-                                          adapter_file=config.param(self.trimmomatic.__name__, 'adapter_fasta'),
+                                          adapter_file=config.param(self.trimmomatic.__name__, 'adapter_fasta', type='filepath'),
                                           trim_log=join(output_dir, '{name}.trim.log'.format(name=readset.name)))
             job.name = '{step}.{name}'.format(step=self.trimmomatic.__name__, name=readset.name)
             jobs.append(job)
@@ -343,7 +343,7 @@ class Metatranscriptomics(common.Illumina):
             for i in (1, 2):
                 jobs.append(
                     infernal.cmscan(
-                        rfam_path=config.param('cmscan', 'rfam_location'),
+                        rfam_path=config.param('cmscan', 'rfam_location', type='filepath'),
                         query=join(input_dir, '{name}.{i}.unique.fasta'.format(name=readset.name, i=i)),
                         tblout=join(output_dir, '{name}.{i}.infernalout'.format(name=readset.name, i=i)),
                         log_path=join(output_dir, '{name}.{i}.rRNA.log'.format(name=readset.name, i=i)),
@@ -460,7 +460,7 @@ class Metatranscriptomics(common.Illumina):
             input_dir = join(input_prefix, readset.name)
             output_dir = join(output_prefix, readset.name)
 
-            host_db = config.param(self.align_to_host.__name__, 'host_db')
+            host_db = config.param(self.align_to_host.__name__, 'host_db', type='filepath')
 
             input_fastq, alignment = {}, {}
             for i in (1, 2):

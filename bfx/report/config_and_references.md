@@ -51,8 +51,7 @@ references:
       given: Katja
     - family: Klein
       given: Hans-Ulrich
-  URL: http://bioconductor.org/packages/release/bioc/html/BiSeq.html
-  version: 1.14.0
+  URL: 'http://bioconductor.org/packages/release/bioc/html/BiSeq.html'
   issued:
     year: 2015
 
@@ -112,7 +111,7 @@ references:
   volume: 41
   issue: 1
   pages: 200-209
-  URL: http://bioconductor.org/packages/release/bioc/html/bumphunter.html
+  URL: 'http://bioconductor.org/packages/release/bioc/html/bumphunter.html'
   DOI: 10.1093/ije/dyr238
   type: article-journal
 
@@ -312,8 +311,8 @@ references:
       given: Simon
   issued:
     year: 2016
-  type: Website
-  URL: http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
+  type: website
+  URL: 'http://www.bioinformatics.babraham.ac.uk/projects/fastqc/'
   
 
 - id: gatk
@@ -479,7 +478,7 @@ references:
   volume: 30
   issue: 10
   pages: 1363-1369
-  URL: http://bioconductor.org/packages/release/bioc/html/minfi.html
+  URL: 'http://bioconductor.org/packages/release/bioc/html/minfi.html'
   DOI: 10.1093/bioinformatics/btu049
   type: article-journal
 
@@ -642,8 +641,8 @@ references:
     year: 2012
 
 - id: trim_galore
-  title: 'Babraham Bioinformatics - FastQC'
-  type: Website
+  title: 'Babraham Bioinformatics - Trim Galore!'
+  type: website
   URL: 'http://www.bioinformatics.babraham.ac.uk/projects/trim_galore/'
   container-title: Babraham Bioinformatics
   author:

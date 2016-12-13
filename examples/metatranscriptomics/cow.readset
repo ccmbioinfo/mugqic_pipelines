@@ -1,2 +1,2 @@
 Sample	Readset	Library	RunType	FASTQ1	FASTQ2
-cow	cow_readset	cow_lib	PAIRED_END	/hpf/largeprojects/ccmbio/nreinhardt/metatranscriptomics-test/reference-files/cow1.fastq	/hpf/largeprojects/ccmbio/nreinhardt/metatranscriptomics-test/reference-files/cow2.fastq	
+cow	cow_readset	cow_lib	PAIRED_END	/hpf/largeprojects/ccmbio/metagenomics/Code_Test/cow1.fastq	/hpf/largeprojects/ccmbio/metagenomics/Code_Test/cow2.fastq

@@ -95,6 +95,7 @@ class Metatranscriptomics(common.Illumina):
 
         return jobs
 
+    # TODO: use common/trimmomatic
     def trimmomatic(self):
         """
         Remove adaptors and trim low quality sequences
@@ -118,7 +119,6 @@ class Metatranscriptomics(common.Illumina):
             input_fastq, output_paired, output_unpaired = {}, {}, {}
             for i in (1, 2):
                 input_fastq[i] = join(input_dir, '{name}.{i}.formatted.fastq'.format(name=readset.name, i=i))
-
                 output_paired[i] = join(output_dir, '{name}.{i}.qual_paired.fastq'.format(name=readset.name, i=i))
                 output_unpaired[i] = join(output_dir, '{name}.{i}.qual_unpaired.fastq'.format(name=readset.name, i=i))
 
@@ -343,7 +343,7 @@ class Metatranscriptomics(common.Illumina):
             for i in (1, 2):
                 jobs.append(
                     infernal.cmscan(
-                        rfam_path=config.param('cmscan', 'rfam_location', type='filepath'),
+                        database=config.param('cmscan', 'rfam_location', type='filepath'),
                         query=join(input_dir, '{name}.{i}.unique.fasta'.format(name=readset.name, i=i)),
                         tblout=join(output_dir, '{name}.{i}.infernalout'.format(name=readset.name, i=i)),
                         log_path=join(output_dir, '{name}.{i}.rRNA.log'.format(name=readset.name, i=i)),

@@ -45,7 +45,7 @@ def get_cluster_id_to_size(fasta):
         return re.search('Cluster(\d+);', line).group(1)
 
     def get_size(line):
-        return re.search('size=(\d+)', line).group(1)
+        return int(re.search('size=(\d+)', line).group(1))
 
     return {get_id(line): get_size(line) for line in open(fasta) if line.startswith('>')}
 
@@ -61,7 +61,7 @@ def get_fastq_id_to_cluster_id(uc_file):
         return re.match('^(\S+\t){8}(\S+)', line).group(2)
 
     def cluster_id(line):
-        return re.match('^(\S+\t){2}(\S+)', line).group(2)
+        return re.match('^(\S+\t){1}(\S+)', line).group(2)
 
     return {fastq_id(line): cluster_id(line) for line in open(uc_file) if line.startswith('S')}
 

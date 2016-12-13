@@ -86,34 +86,38 @@ echo 'contrast <- decoder${contrast_name} \nfolder <- "{folder}" \ncores <- {nCo
             )
         )
 
-def jscs_diff(input_gff, output_plots, output_results, jscs_file, raw_counts_list, bfx):
+def jscs_diff(input_gff, output_plots, output_results, jscs_file, raw_counts_list, bfx, contrast_name):
 
     return Job(
         raw_counts_list + [input_gff, jscs_file],
-        [output_plots, output_results],
+        [os.path.join(output_plots, 'dispersion-plot.png'), output_results],
         command="""\
+mkdir -p report && \\
 mkdir -p {output_plots} && \\
 mkdir -p {output_results} && \\
 cat {bfx}/jscs2.r >> {jscs_file} && \\
 module load R/3.3.0 && \\
 module load gcc && \\
-Rscript {jscs_file}""".format(
+Rscript {jscs_file} && \\
+cp {output_plots}/dispersion-plot.png report/{contrast_name}-dispersion-plot.png ;\\
+cp {output_plots}/ma-plot* report/{contrast_name}-ma-plot.png""".format(
             input_gff = input_gff,
             output_plots = output_plots,
             output_results = output_results,
             jscs_file = jscs_file,
             raw_counts_list = raw_counts_list,
-            bfx = bfx
+            bfx = bfx,
+            contrast_name = contrast_name
             )
         )
 
-def report(report_dependencies, report_file, report_template_dir, basename_report_file):
+def report(report_dependencies, report_file, report_template_dir, basename_report_file, contrast_names):
 
-    event_names = config.param('miso_plot', 'events_names', type='string', required=True).split()
-
-    events = ''
-    for event in event_names:
-        events += event + '.pdf\n'
+    dispersions = ''
+    MAs = ''
+    for contrast in contrast_names:
+        dispersions += '[' + contrast + '-dispersion-plot.png](' + contrast + '-dispersion-plot.png)\n'
+        MAs += '[' +  contrast + '-ma-plot.png](' + contrast + '-ma-plot.png)\n'
     
     return Job(
         report_dependencies,
@@ -123,13 +127,15 @@ def report(report_dependencies, report_file, report_template_dir, basename_repor
 mkdir -p report && \\
 pandoc --to=markdown \\
 --template {report_template_dir}/{basename_report_file} \\
---variable events="{events}" \\
+--variable dispersions="{dispersions}" \\
+--variable MAs="{MAs}" \\
 {report_template_dir}/{basename_report_file} \\
 > {report_file}""".format(
             report_template_dir = report_template_dir,
             basename_report_file = basename_report_file,
             report_file = report_file,
-            events = events
+            dispersions = dispersions,
+            MAs = MAs
             ),
         report_files = [report_file],
         name = "jctseq_diff_report"

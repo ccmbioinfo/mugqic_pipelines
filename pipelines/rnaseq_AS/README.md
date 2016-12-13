@@ -359,7 +359,7 @@ Plots the results from Vast Tools.
 
 Important Config Settings:
 
-1. `significant_events` should be the Vast Tools ID (ie `HsaEX0000000`) of each event to be plotted separated by a space.
+1. `threshold` is the minimum difference between PSI values that are acceptable to qualify as significant. It is the same as the `-m` flag for the `vast-tools diff` function.
 2. `other_options` can be any other options for `vast-tools plot`.
 
 This step is only needed if you are running Vast Tools.

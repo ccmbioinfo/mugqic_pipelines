@@ -507,7 +507,7 @@ END
         job.name = "cuffnorm" 
         jobs.append(job)
 
-        report_file = os.path.join("report", "RNAseq_AS.cuffdiff.md")
+        report_file = os.path.join("report", "RNAseq_AS.py")
         jobs.append(
             Job(
                 [os.path.join(fpkm_directory, sample.name, "abundances.cxb") for sample in self.samples],
@@ -838,11 +838,16 @@ pandoc --to=markdown \\
         report_template_dir = self.report_template_dir
         basename_report_file = os.path.basename(report_file)
 
+        diff_plots = []
+        for contrast in self.contrasts:
+            diff_plots.append(os.path.join('report', contrast.name + '.PSI_plots.pdf'))
+
         job = vtools.report(
             report_file,
             report_template_dir,
             basename_report_file,
             full_inclusion,
+            diff_plots
             )
         
         jobs.append(job)

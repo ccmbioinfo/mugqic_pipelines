@@ -80,11 +80,13 @@ def plots(full_inclusion, filtered_inclusion, contrast_name):
 
     return Job(
         [full_inclusion, filtered_inclusion],
-        ['vast_out/plot_events_' + contrast_name + '.tab', 'vast_out/plot_events_' + contrast_name + '.PSI_plots.pdf'],
+        ['report/' + contrast_name + '.PSI_plots.pdf', 'vast_out/plot_events_' + contrast_name + '.PSI_plots.pdf'],
         command="""\
+mkdir -p report && \\
 module load vast-tools && \\
 grep "$(awk '$6 >= {threshold} {action}' {filtered_inclusion})" {full_inclusion} > vast_out/plot_events_{contrast_name}.tab && \\
-vast-tools plot {other_options} vast_out/plot_events_{contrast_name}.tab""".format(
+vast-tools plot {other_options} vast_out/plot_events_{contrast_name}.tab && \\
+cp vast_out/plot_events_{contrast_name}.PSI_plots.pdf report/{contrast_name}.PSI_plots.pdf""".format(
             full_inclusion = full_inclusion,
             filtered_inclusion = filtered_inclusion,
             action = action,
@@ -94,10 +96,14 @@ vast-tools plot {other_options} vast_out/plot_events_{contrast_name}.tab""".form
             )
         )
 
-def report(report_file, report_template_dir, basename_report_file, full_inclusion):
+def report(report_file, report_template_dir, basename_report_file, full_inclusion, diff_plots):
+
+    plots = ''
+    for plot in diff_plots:
+        plots += '[' + plot[6:] + '](' + plot[6:] + ')\n'
 
     return Job(
-        [full_inclusion, 'vast_out/plot_events.PSI_plots.pdf'],
+        [full_inclusion] + diff_plots,
         [report_file],
         [['pandoc', 'module_pandoc']],
         command="""\
@@ -106,12 +112,14 @@ cp {full_inclusion} report/INCLUSION_LEVELS_FULL.tab && \\
 cp vast_out/plot_events.PSI_plots.pdf report && \\
 pandoc --to=markdown \\
 --template {report_template_dir}/{basename_report_file} \\
+--variable plots="{plots}" \\
 {report_template_dir}/{basename_report_file} \\
 > {report_file}""".format(
             report_template_dir = report_template_dir,
             basename_report_file = basename_report_file,
             report_file = report_file,
-            full_inclusion = full_inclusion
+            full_inclusion = full_inclusion,
+            plots = plots
             ),
         report_files = [report_file],
         name = "vast_tools_report"

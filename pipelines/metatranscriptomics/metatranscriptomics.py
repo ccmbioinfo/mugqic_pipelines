@@ -698,10 +698,6 @@ class Metatranscriptomics(common.Illumina):
         contigs/*.contigs.fasta
 
         Output:
-        contigs/*.contigs.fasta.amb     - bwa index
-        contigs/*.contigs.fasta.sa      - bwa index
-        contigs/*.contigs.fasta.ann     - bwa index
-        contigs/*.contigs.fasta.pac     - bwa index
         contigs/*.contigs.fasta.bwt     - bwa index
         contigs/*.contigs.fasta.fai     - samtools faidx
         """

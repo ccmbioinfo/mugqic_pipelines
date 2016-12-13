@@ -310,6 +310,10 @@ Uses [Sashimi Plot](http://miso.readthedocs.io/en/fastmiso/sashimi.html) to plot
 
 Important Config Settings:
 
+1. `plot_type` must be `--plot-insert-len`, `--plot-bf-dist` or `--plot-event` or any combination of the 3. NOTE: `--plot-insert-len` and `--plot-bf-dist` may not working due to Sashimi bugs.
+2. `event_names` should be the MISO ID (ie `chr4:53951933:53952063:+@chr4:53952354:53952422:+@chr4:53960654:53960763:+`) of each event to be plotted separated by a space. This option is only required for plot type `--plot-event`.
+3. The options under the `miso_plot_settings` section are to customize the plots. Check the Sashimi Plot documentation for information on these options.
+
 This step is only needed if you are running MISO.
 
 18- bam_to_fastq

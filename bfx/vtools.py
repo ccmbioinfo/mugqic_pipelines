@@ -50,7 +50,7 @@ vast-tools combine -o vast_out {other_options} -sp {species}""".format(
         )
 
 
-def differential_splicing(control_samples_names, treatment_samples_names, input_table, inclusion_table, contrast):
+def differential_splicing(control_samples_names, treatment_samples_names, input_table, inclusion_table):
 
     controls = ''
     for sample in control_samples_names:
@@ -64,33 +64,32 @@ def differential_splicing(control_samples_names, treatment_samples_names, input_
         [input_table],
         [inclusion_table],
         command="""\
-mkdir -p vast_out/{contrast} && \\
 module load vast-tools && \\
-vast-tools diff -a {controls} -b {treatments} -o vast_out/{contrast} {other_options} > {inclusion_table}""".format(
+vast-tools diff -a {controls} -b {treatments} -o vast_out {other_options} > {inclusion_table}""".format(
             controls = controls[:-1],
             treatments = treatments[:-1],
             input_table = input_table,
             other_options = config.param('vast_tools_diff', 'other_options', type='string', required=False),
-            inclusion_table = inclusion_table,
-            contrast = contrast
+            inclusion_table = inclusion_table
             )
         )
 
-def plots(inclusion_table, events_list):
+def plots(full_inclusion, filtered_inclusion, contrast_name):
 
-    search_str = '/EVENT/ || '
-    for event in events_list:
-        search_str += '/' + event + '/ || '
+    action = '{print $2}'
 
     return Job(
-        [inclusion_table],
-        ['vast_out/plot_events.tab', 'vast_out/plot_events.PSI_plots.pdf'],
+        [full_inclusion, filtered_inclusion],
+        ['vast_out/plot_events_' + contrast_name + '.tab', 'vast_out/plot_events_' + contrast_name + '.PSI_plots.pdf'],
         command="""\
 module load vast-tools && \\
-awk '{search}' {inclusion_table} > vast_out/plot_events.tab && \\
-vast-tools plot {other_options} vast_out/plot_events.tab""".format(
-            inclusion_table = inclusion_table,
-            search = search_str[0:-4],
+grep "$(awk '$6 >= {threshold} {action}' {filtered_inclusion})" {full_inclusion} > vast_out/plot_events_{contrast_name}.tab && \\
+vast-tools plot {other_options} vast_out/plot_events_{contrast_name}.tab""".format(
+            full_inclusion = full_inclusion,
+            filtered_inclusion = filtered_inclusion,
+            action = action,
+            contrast_name = contrast_name,
+            threshold = config.param('vast_tools_plot', 'threshold', type='string', required=True),
             other_options = config.param('vast_tools_plot', 'other_options', type='string', required=False)
             )
         )

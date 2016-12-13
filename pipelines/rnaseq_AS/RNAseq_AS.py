@@ -807,7 +807,7 @@ pandoc --to=markdown \\
 
             filtered_inclusion_table = os.path.join("vast_out", contrast.name, "INCLUSION-FILTERED-" + contrast.name + ".tab" )
 
-            job = vtools.differential_splicing(control_samples_names, treatment_samples_names, full_inclusion, filtered_inclusion_table, contrast.name)
+            job = vtools.differential_splicing(control_samples_names, treatment_samples_names, full_inclusion, filtered_inclusion_table)
 
             job.name = "vast_tools_diff." + contrast.name
             jobs.append(job)
@@ -824,11 +824,13 @@ pandoc --to=markdown \\
 
         species = config.param('vast_tools_align', 'species', type='string', required=True)
         full_inclusion = 'vast_out/INCLUSION_LEVELS_FULL-' + species + str(num_samples) + '.tab'
-        events_list = config.param('vast_tools_plot', 'significant_events', type='string', required=True).split()
 
-        job = vtools.plots(full_inclusion, events_list)
-        job.name = 'vast_tools_plot'
-        jobs.append(job)
+        for contrast in self.contrasts:
+            filtered_inclusion = os.path.join("vast_out", "INCLUSION-FILTERED-" + contrast.name + ".tab" )
+
+            job = vtools.plots(full_inclusion, filtered_inclusion, contrast.name)
+            job.name = 'vast_tools_plot.' + contrast.name
+            jobs.append(job)
 
 ################### report gen
 
@@ -914,7 +916,7 @@ pandoc --to=markdown \\
         for contrast in self.contrasts:
             
             jscs_file = os.path.join('jctseq', contrast.name, 'jscs1.r')
-            report_dependencies.append(os.path.join('jctseq', contrast.name, 'plots'))
+            report_dependencies.append(os.path.join('jctseq', contrast.name, 'plots', 'dispersion-plot.png'))
 
             job = jctseq.jscs_diff(
                 'jctseq/jctseq.gff.gz', 
@@ -922,7 +924,8 @@ pandoc --to=markdown \\
                 os.path.join('jctseq', contrast.name, 'results'),
                 jscs_file,
                 raw_counts,
-                bfx_dir
+                bfx_dir,
+                contrast.name
                 )
 
             job.name = 'jctseq_diff.' + contrast.name
@@ -933,11 +936,16 @@ pandoc --to=markdown \\
         report_template_dir = self.report_template_dir
         basename_report_file = os.path.basename(report_file)
 
+        contrast_names = []
+        for contrast in self.contrasts:
+            contrast_names.append(contrast.name)
+
         job = jctseq.report(
             report_dependencies,
             report_file,
             report_template_dir,
-            basename_report_file
+            basename_report_file,
+            contrast_names
             )
         
         jobs.append(job)

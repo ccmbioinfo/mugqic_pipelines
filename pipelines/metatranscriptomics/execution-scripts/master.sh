@@ -10,7 +10,7 @@
 
 cd $PBS_O_WORKDIR
 
-./format_fastq_headers.sh /hpf/largeprojects/ccmbio/metagenomics/Code_Test/cow1.fastq /hpf/largeprojects/ccmbio/metagenomics/Code_Test/cow2.fastq
+./format_fastq_headers.sh
 ./trim.sh
 ./flash.sh
 ./cluster_duplicates.sh

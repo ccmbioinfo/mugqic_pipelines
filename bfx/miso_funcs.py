@@ -232,7 +232,7 @@ def report(dependencies, report_file, report_template_dir, basename_report_file)
 
         plots += event_plot + ' '
 
-        events += event_name + '.pdf\n'
+        events += '[' + event_name + '.pdf](' + event_name + '.pdf)\n'
 
     return Job(
         dependencies,

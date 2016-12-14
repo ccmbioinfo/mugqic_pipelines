@@ -480,20 +480,14 @@ class Metatranscriptomics(common.Illumina):
             output_sam = join(output_dir, '{name}.host.sam'.format(name=readset.name))
 
             # bwa sampe job
-            # TODO: use bwa.sampe
             jobs.append(
-                Job(name='{step}.sampe.{name}'.format(step=self.align_to_host.__name__, name=readset.name),
-                    input_files=[host_db, alignment[1], alignment[2], input_fastq[1], input_fastq[2]],
-                    output_files=[output_sam],
-                    module_entries=[[self.align_to_host.__name__, 'module_bwa']],
-                    command='bwa sampe {host_db} {alignment1} {alignment2} '
-                            '{input_fastq1} {input_fastq2} '
-                            '> {merged_sam}'.format(host_db=host_db,
-                                                    alignment1=alignment[1],
-                                                    alignment2=alignment[2],
-                                                    input_fastq1=input_fastq[1],
-                                                    input_fastq2=input_fastq[2],
-                                                    merged_sam=output_sam)))
+                bwa.sampe(target=host_db,
+                          sai1=alignment[1],
+                          sai2=alignment[2],
+                          fastq1=input_fastq[1],
+                          fastq2=input_fastq[2],
+                          output=output_sam,
+                          name='{step}.sampe.{name}'.format(step=self.align_to_host.__name__, name=readset.name)))
 
         return jobs
 

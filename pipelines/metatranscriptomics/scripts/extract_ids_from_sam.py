@@ -9,6 +9,7 @@ from argparse import ArgumentParser
 
 HEADER_SYMBOL = '@'
 
+
 def parse_args():
     arg_parser = ArgumentParser(description=__doc__)
     arg_parser.add_argument('--sam', help='Output from samtools')

@@ -78,3 +78,17 @@ def aln(query, target, output, num_threads=4, name='bwa_aln'):
             output=output
         )
     )
+
+def sampe(target, sai1, sai2, fastq1, fastq2, output, name='bwa_sampe'):
+    return Job(
+        name=name,
+        input_files=[target, sai1, sai2, fastq1, fastq2],
+        output_files=[output],
+        module_entries=[['bwa_mem', 'module_bwa']],
+        command='bwa sampe {target} {sai1} {sai2} '
+                '{fastq1} {fastq2}'.format(target=target,
+                                           sai1=sai1,
+                                           sai2=sai2,
+                                           fastq1=fastq1,
+                                           fastq2=fastq2))
+

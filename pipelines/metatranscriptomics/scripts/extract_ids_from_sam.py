@@ -17,8 +17,17 @@ def parse_args():
     return arg_parser.parse_args()
 
 
-def get_id(line):
-    return line.split('\t')[0]
+def get_ids(sam):
+    """
+    Get the IDs from the given sam file
+
+    :param sam: *.sam filename
+    :return: set
+    """
+    def get_id(line):
+        return line.split('\t')[0]
+
+    return {get_id(line) for line in open(sam) if not line.startswith(HEADER_SYMBOL)}
 
 
 def write_ids(ids, file):
@@ -48,5 +57,5 @@ def write_ids(ids, file):
 
 
 args = parse_args()
-ids = {get_id(line) for line in open(args.sam) if not line.startswith(HEADER_SYMBOL)}
+ids = get_ids(args.sam)
 write_ids(ids, args.id_file)

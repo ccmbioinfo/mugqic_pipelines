@@ -480,8 +480,9 @@ class Metatranscriptomics(common.Illumina):
             output_sam = join(output_dir, '{name}.host.sam'.format(name=readset.name))
 
             # bwa sampe job
+            # TODO: use bwa.sampe
             jobs.append(
-                Job(name='{step}.sampe.{readset}'.format(step=self.align_to_host.__name__, readset=readset.name),
+                Job(name='{step}.sampe.{name}'.format(step=self.align_to_host.__name__, name=readset.name),
                     input_files=[host_db, alignment[1], alignment[2], input_fastq[1], input_fastq[2]],
                     output_files=[output_sam],
                     module_entries=[[self.align_to_host.__name__, 'module_bwa']],
@@ -722,6 +723,60 @@ class Metatranscriptomics(common.Illumina):
 
         return jobs
 
+    def align_to_contigs(self):
+        """
+        Align both sets of reads to the assembled contigs
+
+        Input:
+        filter_reads/*.{1,2}.mRNA.fastq
+        contigs/*.contigs.fasta
+
+        Output:
+        contigs/*.trinity.sam
+        """
+        jobs = []
+
+        input_reads_prefix = 'filter_reads'
+        input_contigs_prefix = 'contigs'
+
+        output_prefix = 'contigs'
+
+        for readset in self.readsets:
+            input_reads_dir = join(input_reads_prefix, readset.name)
+            input_contigs_dir = join(input_contigs_prefix, readset.name)
+            output_dir = join(output_prefix, readset.name)
+
+            contigs = join(input_contigs_dir, '{name}.contigs.fasta'.format(name=readset.name))
+
+            input_reads, sai = {}, {}
+            for i in (1, 2):
+                input_reads[i] = join(input_reads_dir, '{name}.{i}.mRNA.fastq'.format(name=readset.name, i=i))
+                sai[i] = join(output_dir, '{name}.{i}.trinity.sai'.format(name=readset.name, i=i))
+
+                # bwa aln job
+                jobs.append(
+                    bwa.aln(query=contigs,
+                            target=input_reads[i],
+                            output=sai[i],
+                            num_threads=4,
+                            name='{step}.aln.{name}.{i}'.format(step=self.align_to_contigs.__name__,
+                                                                name=readset.name,
+                                                                i=i)))
+
+            output_sam = join(output_dir, '{name}.trinity.sam'.format(name=readset.name))
+
+            # bwa sampe job
+            jobs.append(
+                bwa.sampe(target=contigs,
+                          sai1=sai[1],
+                          sai2=sai[2],
+                          fastq1=input_reads[1],
+                          fastq2=input_reads[2],
+                          output=output_sam,
+                          name='{step}.sampe.{name}'.format(step=self.align_to_contigs.__name__, name=readset.name)))
+
+        return jobs
+
     @property
     def steps(self):
         return [
@@ -740,6 +795,7 @@ class Metatranscriptomics(common.Illumina):
             self.return_duplicates,
             self.trinity,
             self.index_contigs,  # 15
+            self.align_to_contigs
         ]
 
 

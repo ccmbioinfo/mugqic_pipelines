@@ -29,7 +29,7 @@ def get_ids(id_file):
     Example JSON file:
     {
         "rows": [
-                    {"id": "@SRR5"}
+                    {"id": "@SRR5"},
                     {"id": "@SRR7"}
                 ]
     }

@@ -26,6 +26,7 @@ import os
 from core.config import *
 from core.job import *
 
+
 def index(input, options=''):
     return Job(
         [input],
@@ -34,8 +35,8 @@ def index(input, options=''):
         command="""\
 bwa index {options} \\
   {input}""".format(
-        options=options,
-        input=input
+            options=options,
+            input=input
         ),
         local=config.param('bwa_mem', 'use_localhd', required=False)
     )
@@ -52,12 +53,12 @@ def mem(in1fastq, in2fastq=None, out_sam=None, read_group=None, ref=None, ini_se
 bwa mem {other_options}{read_group} \\
   {idxbase} \\
   {in1fastq}{in2fastq}{out_sam}""".format(
-        other_options=" \\\n  " + other_options if other_options else "",
-        read_group=" \\\n  -R " + read_group if read_group else "",
-        idxbase=ref if ref else config.param(ini_section, 'genome_bwa_index', type='filepath'),
-        in1fastq=in1fastq,
-        in2fastq=" \\\n  " + in2fastq if in2fastq else "",
-        out_sam=" \\\n  > " + out_sam if out_sam else ""
+            other_options=" \\\n  " + other_options if other_options else "",
+            read_group=" \\\n  -R " + read_group if read_group else "",
+            idxbase=ref if ref else config.param(ini_section, 'genome_bwa_index', type='filepath'),
+            in1fastq=in1fastq,
+            in2fastq=" \\\n  " + in2fastq if in2fastq else "",
+            out_sam=" \\\n  > " + out_sam if out_sam else ""
         ),
         removable_files=[out_sam],
         local=config.param('bwa_mem', 'use_localhd', required=False)
@@ -71,13 +72,14 @@ def aln(query, target, output, num_threads=4, name='bwa_aln'):
         output_files=[output],
         module_entries=[['bwa_mem', 'module_bwa']],
         command='bwa aln -t {num_threads} '
-                 '{query} {target} > {output}'.format(
+                '{query} {target} > {output}'.format(
             num_threads=num_threads,
             query=query,
             target=target,
             output=output
         )
     )
+
 
 def sampe(target, sai1, sai2, fastq1, fastq2, output, name='bwa_sampe'):
     return Job(
@@ -86,9 +88,9 @@ def sampe(target, sai1, sai2, fastq1, fastq2, output, name='bwa_sampe'):
         output_files=[output],
         module_entries=[['bwa_mem', 'module_bwa']],
         command='bwa sampe {target} {sai1} {sai2} '
-                '{fastq1} {fastq2}'.format(target=target,
-                                           sai1=sai1,
-                                           sai2=sai2,
-                                           fastq1=fastq1,
-                                           fastq2=fastq2))
-
+                '{fastq1} {fastq2} > {output}'.format(target=target,
+                                                      sai1=sai1,
+                                                      sai2=sai2,
+                                                      fastq1=fastq1,
+                                                      fastq2=fastq2,
+                                                      output=output))

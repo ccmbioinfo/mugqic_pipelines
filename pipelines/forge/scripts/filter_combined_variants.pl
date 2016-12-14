@@ -8,13 +8,11 @@ sub fitsSSEProfile($$$$$$$$);
 
 (@ARGV == 0) and usage("");
 
-my ($vcfFile, $variantType, $minReadCount, $minAltCount, $minSNVReadRatio, $minIndelReadRatio, $minQuality, $minMapQ, $cnvMaxP, $maxCNVs, $filterVarTypes, $keepOnlyVarTypes, $filterSSE, $filterRandoms, $prevSeenThreshold, $maxMAF, $minQD, $minReadPosRankSumIndel, $maxFSIndel, $minReadPosRankSumSNP, $maxFSSNP, $minMapQSNP, $minMQRankSumSNP, $printFilteredFile, $doNotRemoveFiltered, $help, $verbose);
+my ($vcfFile, $variantType, $minReadCount, $minAltCount, $minQuality, $minMapQ, $cnvMaxP, $maxCNVs, $filterVarTypes, $keepOnlyVarTypes, $filterSSE, $filterRandoms, $maxMAF, $minQD, $minReadPosRankSumIndel, $maxFSIndel, $minReadPosRankSumSNP, $maxFSSNP, $minMapQSNP, $minMQRankSumSNP, $printFilteredFile, $doNotRemoveFiltered, $help, $verbose);
 GetOptions(	'vcf=s' => \$vcfFile,
 			'variantType=s', \$variantType,
 			'minReadCount=i', \$minReadCount,
 			'minAltCount=i', \$minAltCount,
-			'minSNVReadRatio=f', \$minSNVReadRatio,
-			'minIndelReadRatio=f', \$minIndelReadRatio,
 			'minQ=i', \$minQuality,
 			'minMapQ=i', \$minMapQ,
 			'cnvMaxP=f', \$cnvMaxP,
@@ -23,7 +21,6 @@ GetOptions(	'vcf=s' => \$vcfFile,
 			'keepOnlyVarTypes=s', \$keepOnlyVarTypes,
 			'filterSSE', \$filterSSE,
 			'filterRandoms', \$filterRandoms,
-			'prevSeenThreshold=i', \$prevSeenThreshold,
 			'maxMAF=f', \$maxMAF,
 			'minQD=f', \$minQD,
 			'minReadPosRankSumIndel=f', \$minReadPosRankSumIndel,
@@ -51,12 +48,9 @@ my $variantTypeStrict = 0;
 
 (defined $minReadCount) or $minReadCount = 3;
 (defined $minAltCount) or $minAltCount = 3;
-(defined $minSNVReadRatio) or $minSNVReadRatio = 0.2;
-(defined $minIndelReadRatio) or $minIndelReadRatio = 0.15;
 (defined $minQuality) or $minQuality = 20;
 (defined $minMapQ) or $minMapQ = 15;
 (defined $filterVarTypes) or $filterVarTypes = "";
-(defined $prevSeenThreshold) or $prevSeenThreshold = 9999999;
 (defined $maxMAF) or $maxMAF = 9;
 (defined $minQD) or $minQD = 2.0;
 (defined $minReadPosRankSumIndel) or $minReadPosRankSumIndel = -20.0;
@@ -230,10 +224,6 @@ while(<VCF_FILE>)
 		{
 			$newFilter = "MapQ<$minMapQ";
 		}
-		elsif ($numPrevSamples > $prevSeenThreshold)
-		{
-			$newFilter = "num_prev_seen_samples>$prevSeenThreshold";
-		}
 		elsif ($thgMaf > $maxMAF or $evsMaf > $maxMAF)
 		{
 			$newFilter = "MAF>$maxMAF";
@@ -242,16 +232,6 @@ while(<VCF_FILE>)
 		{
 			$newFilter = "Extended_splicing_variant";
 		}
-		elsif (!$isIndel and ($altCount / $readCount) < $minSNVReadRatio)
-		{
-			$newFilter = "Alt_read_ratio<$minSNVReadRatio";
-		}
-		elsif ($isIndel and ($altCount / $readCount) < $minIndelReadRatio)
-		{
-			$newFilter = "Alt_read_ratio<$minIndelReadRatio";
-		}
-
-
 		elsif ($isIndel and ($readposranksum < $minReadPosRankSumIndel or $qd < $minQD or $fs > $maxFSIndel))
 		{
 			$newFilter = "Indel_failed_GATKHardIndel_filter(ReadPosRankSum,QD_or_FS)";
@@ -342,12 +322,9 @@ OPTIONS:
 --vcf               FILE  File that is output by combine_annovar_files.pl
 --minReadCount      int   Filters variants with read count < minReadCount
 --minAltCount       int   Filters variants with alt count < minAltCount
---minSNVReadRatio   float Filters SNV variants with read ratio < minSNVReadRatio
---minIndelReadRatio float Filters INDEL variants with read count < minIndelReadRatio
 --minQ              int   Filters variants with variant quality < minQ
 --minMapQ           int   Filters variants with RMS mapping quality < minMapQ
 --filterSSE               Filters variants with characteristics of sequence-specific error
---prevSeenThreshold int   Filters variants seen in > prevSeenThreshold total samples
 --maxMAF            float Filters variants with MAF > maxMAF
 --printFiltered     FILE  Removes filtered variants from output, but writes them to FILE
 --doNotRemoveFiltered     Puts a note in the Filter column of the output but does not remove variants

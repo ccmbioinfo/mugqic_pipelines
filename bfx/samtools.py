@@ -72,7 +72,9 @@ def mpileup(input_bams, output, other_options="", region=None, regionFile=None):
     return Job(
         input_bams,
         [output],
-        [['samtools_mpileup', 'module_samtools']],
+        [
+	    ['samtools_mpileup', 'module_samtools']
+	],
         command="""\
 samtools mpileup {other_options} \\
   -f {reference_fasta}{region}{regionFile}{input_bams}{output}""".format(

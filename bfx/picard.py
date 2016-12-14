@@ -242,7 +242,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME
     )
 
 # Convert SAM/BAM file to fastq format
-def sam_to_fastq(input, fastq, second_end_fastq=None):
+def sam_to_fastq(input, output_dir, fastq, second_end_fastq=None):
 
     return Job(
         [input],
@@ -255,11 +255,13 @@ def sam_to_fastq(input, fastq, second_end_fastq=None):
 java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME/SamToFastq.jar \\
   VALIDATION_STRINGENCY=LENIENT \\
   INPUT={input} \\
-  FASTQ={fastq}{second_end_fastq}""".format(
+  FASTQ={fastq}{second_end_fastq}
+  OUTPUT_DIR={output_dir}""".format(
         tmp_dir=config.param('picard_sam_to_fastq', 'tmp_dir'),
         java_other_options=config.param('picard_sam_to_fastq', 'java_other_options'),
         ram=config.param('picard_sam_to_fastq', 'ram'),
         input=input,
+	output_dir=output_dir,
         fastq=fastq,
         second_end_fastq=" \\\n  SECOND_END_FASTQ=" + second_end_fastq if second_end_fastq else ""
         ),
@@ -300,7 +302,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME
 def sort_vcfs(inputs, output, ini_section='picard_sort_vcf'):
 
     return Job(
-        inputs,
+        [inputs],
         # Add SAM/BAM index as output only when writing a coordinate-sorted BAM file
         [output],
         [
@@ -317,7 +319,9 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $PICARD_HOME
         tmp_dir=config.param(ini_section, 'tmp_dir'),
         java_other_options=config.param(ini_section, 'java_other_options'),
         ram=config.param(ini_section, 'ram'),
-        inputs=" \\\n  ".join(["INPUT=" + input for input in inputs]),
+        #inputs=" \\\n  ".join(["INPUT=" + input for input in inputs]),
+        inputs="INPUT=" + inputs,
+	#inputs=inputs,
         output=output,
         seq_dict=config.param(ini_section, 'genome_dictionary', type='filepath')
         ),

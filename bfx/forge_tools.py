@@ -440,3 +440,21 @@ def vcf2columns(input, output, cols, escape_cols, col_headers):
             output=output
          ))
 
+
+def vcfs_switch_columns(inputVCF1, inputVCF2, output):
+
+    return Job(
+	[inputVCF1, inputVCF2],
+	[output],
+	command="""\
+{script_path}/scripts/vcfs_columns_switch.py \\
+  {inputVCF1} \\
+  {inputVCF2} \\
+  {output}""".format(
+            script_path=config.param("DEFAULT", "forge_location"),
+	    inputVCF1=inputVCF1,
+	    inputVCF2=inputVCF2,
+	    output=output
+	))
+
+

@@ -69,3 +69,27 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $VARSCAN_JAR
         output=" \\\n  > " + output if output else ""
         )
     )
+
+
+def mpileupcns_jacek_indivChr(input_bam, output, other_options=None):
+
+    return Job(
+        [input_bam],
+        [output],
+        [
+            ['varscan', 'module_java'],
+            ['varscan', 'module_varscan'],
+        ],
+        command="""\
+myfile=$(echo "{input_bam}" | sed 's/.bam//') && \\
+for chr in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y MT; do \\
+java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} -jar $VARSCAN_JAR mpileup2cns $myfile.REF_$chr.bam{other_options} $myfile.REF_$chr_varscan.vcf;
+done""".format(
+        tmp_dir=config.param('varscan', 'tmp_dir'),
+        java_other_options=config.param('varscan', 'java_other_options'),
+        ram=config.param('varscan', 'ram'),
+        input_bam="\\\n  " + input_bam if input_bam else "",
+        other_options=" \\\n  " + other_options,
+        output=" \\\n  > " + output if output else ""
+        )
+    )

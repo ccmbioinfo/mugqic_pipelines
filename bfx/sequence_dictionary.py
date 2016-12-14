@@ -56,7 +56,7 @@ def split_by_size(sequence_dictionary, nbSplits):
     currentChrs = []
     for sequence in sequence_dictionary:
         # Stop if we already reached our limit.
-        # This can gappen since the size of chromosomes vary
+        # This can happen since the size of chromosomes vary
         if len(split_list) == nbSplits:
             break
 

@@ -44,7 +44,7 @@ def write_ids(ids, file):
             'rows': [
                 {'id': id} for id in ids
             ]
-        }, f)
+        }, f, indent=4)
 
 
 args = parse_args()

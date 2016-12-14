@@ -125,7 +125,7 @@ def write_rrna_ids(ids, output_ids):
     with open(output_ids, 'w+') as f:
         json.dump({
             'rows': [{'id': id} for id in ids]
-        }, f)
+        }, f, indent=4)
 
 
 args = parse_args()

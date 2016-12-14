@@ -9,6 +9,7 @@ from argparse import ArgumentParser
 
 HEADER_SYMBOL = '@'
 
+
 def parse_args():
     arg_parser = ArgumentParser(description=__doc__)
     arg_parser.add_argument('--sam', help='Output from samtools')
@@ -43,7 +44,7 @@ def write_ids(ids, file):
             'rows': [
                 {'id': id} for id in ids
             ]
-        }, f)
+        }, f, indent=4)
 
 
 args = parse_args()

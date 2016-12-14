@@ -69,6 +69,7 @@ def aln(query, target, output, num_threads=4, name='bwa_aln'):
         name=name,
         input_files=[query, target],
         output_files=[output],
+        module_entries=[['bwa_mem', 'module_bwa']],
         command='bwa aln -t {num_threads} '
                  '{query} {target} > {output}'.format(
             num_threads=num_threads,

@@ -41,9 +41,13 @@ def get_id_to_length(read_description_file):
         return {row['id']: int(row['length']) for row in read_dict['rows']}
 
 
-class InfernalFileParser:
+class InfernalParser:
     """
-    Namespace for functions that parse *.infernalout
+    Bunch of staticmethod's for parsing the output of infernal
+
+    Example:
+    InfernalParser.get_id("my line")
+    InfernalParser.get_evalue("my other line")
     """
     @staticmethod
     def get_id(line):
@@ -85,10 +89,10 @@ def parse_infernalout(infernalout, id_to_length, args):
             # Skip comment lines
             if line.startswith('#'): continue
 
-            id = InfernalFileParser.get_id(line)
-            seq_from = InfernalFileParser.get_seq_from(line)
-            seq_to = InfernalFileParser.get_seq_to(line)
-            evalue = InfernalFileParser.get_evalue(line)
+            id = InfernalParser.get_id(line)
+            seq_from = InfernalParser.get_seq_from(line)
+            seq_to = InfernalParser.get_seq_to(line)
+            evalue = InfernalParser.get_evalue(line)
 
             if id not in rrna_ids:
                 if id not in id_to_length:
@@ -121,7 +125,7 @@ def write_rrna_ids(ids, output_ids):
     with open(output_ids, 'w+') as f:
         json.dump({
             'rows': [{'id': id} for id in ids]
-        }, f)
+        }, f, indent=4)
 
 
 args = parse_args()

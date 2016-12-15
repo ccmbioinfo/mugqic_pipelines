@@ -309,7 +309,7 @@ def parse_pbs_job_data(in_file):
                 entries.append(Task(entry))
     else:  # Read from stdin
         f = sys.stdin
-        for line in f:
+        for line in f:  # WARNING: WILL BLOCK!
             if line.startswith(delim):
                 if entry:  # If we hit a delimiter, create object
                     entries.append(Task(entry))

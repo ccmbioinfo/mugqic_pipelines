@@ -288,6 +288,7 @@ class EpiSeq(Illumina):
         """
         # Variable preparations
         ref_seq = config.param('bismark_prepare_genome', 'genome_file', type='filepath')
+
         local_ref_seq = os.path.join('bismark_prepare_genome', os.path.basename(ref_seq))
         output_idx = "bismark_prepare_genome/Bisulfite_Genome"
         modules = [['bismark_prepare_genome', 'module_bowtie2'],
@@ -295,20 +296,27 @@ class EpiSeq(Illumina):
                    ['bismark_prepare_genome', 'module_perl'],
                    ['bismark_prepare_genome', 'module_bismark']]
 
-        # Job creation
-        mkdir_job = Job(command='mkdir -p bismark_prepare_genome')
-        link_job = Job(input_files=[ref_seq],
-                       command='cp -sfu ' + os.path.abspath(ref_seq) + ' ' + os.path.abspath(local_ref_seq),
-                       removable_files=[local_ref_seq])
-        main_job = Job(output_files=[output_idx], module_entries=modules,
-                       command="bismark_genome_preparation --verbose bismark_prepare_genome/",
-                       removable_files=[output_idx])
-        nuc_count = Job(output_files=[], module_entries=modules,
-                        command="bam2nuc --genomic_composition_only --genome_dir bismark_prepare_genome/ "
-                                "--dir bismark_prepare_genome/",
-                        removable_files=[])
-        return [concat_jobs([mkdir_job, link_job, main_job, nuc_count],
-                            name='bismark_prepare_genome.' + os.path.basename(ref_seq))]
+        # Job creation - If ref_seq appears to be processed already, just make a symlink
+        if os.path.isdir(os.path.join(os.path.dirname(ref_seq), 'Bisulfite_Genome')):
+            job = Job(input_files=[ref_seq],
+                      output_files=[output_idx],
+                      removable_files=[output_idx],
+                      command='cp -sL ' + os.path.dirname(ref_seq) + ' ' + 'bismark_prepare_genome')
+        else:  # Process genome file
+            mkdir_job = Job(command='mkdir -p bismark_prepare_genome')
+            link_job = Job(input_files=[ref_seq],
+                           command='cp -sfu ' + os.path.abspath(ref_seq) + ' ' + os.path.abspath(local_ref_seq),
+                           removable_files=[local_ref_seq])
+            main_job = Job(output_files=[output_idx], module_entries=modules,
+                           command="bismark_genome_preparation --verbose bismark_prepare_genome/",
+                           removable_files=[output_idx])
+            nuc_count = Job(output_files=[], module_entries=modules,
+                            command="bam2nuc --genomic_composition_only --genome_dir bismark_prepare_genome/ "
+                                    "--dir bismark_prepare_genome/",
+                            removable_files=[])
+            job = concat_jobs([mkdir_job, link_job, main_job, nuc_count],
+                              name='bismark_prepare_genome.' + os.path.basename(ref_seq))
+        return [job]
 
     def pre_qc_check(self):  # Step 2
         """
@@ -900,7 +908,6 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} \\
                         inputs=" \\\n  ".join(["INPUT=" + in_put for in_put in input_files]),
                         output=output_bam,
                         max_records_in_ram=config.param('picard_merge_sam_files', 'max_records_in_ram', type='int')),
-                    # removable_files=[output_bam, re.sub("\.([sb])am$", ".\\1ai", output_bam)],
                     local=config.param('picard_merge_sam_files', 'use_localhd', required=False))
                 job = concat_jobs([mkdir_job, picard_v2], name="picard_merge_sam_files." + sample.name)
 

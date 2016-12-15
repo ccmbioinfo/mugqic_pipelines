@@ -30,7 +30,7 @@ Quick Start
     
         `./episeq/readset_gen.py <manifest_file> <output_readset_file> <output_design_file> <root data directory>`
         
-        **Note:** The data files should be organized as `<data_dir>/<sample_name>/<sample_name>*.{bam,fastq}`
+        **Note:** If using script, the data files should be organized as `<data_dir>/<sample_name>/<sample_name>*.{bam,fastq}`
 
 1. Run `./generate-qsub.sh` and check the `./debug.log` and `./qsub.sh` files for any errors.
 
@@ -99,13 +99,16 @@ Steps:
 ```
 
 ## Reports
-The pipeline generates a massive amount of data, many of which is not immediately visualized. Reports help provide a summary of results that is more readily understood. As such, it is one of the easier ways towards understanding the results. [Later](#epi-seq-pipeline-steps)
-### Pipeline-wide reporting
-A final report comes from running the Epi-Seq script with the `--report` option. This will generate a new `qsub.sh` script that will generate a report.
+The pipeline generates a massive amount of data, many of which is not immediately visualized. Reports help provide a summary of results that is more readily understood. As such, it is one of the easier ways towards understanding the results. Thus, it is our responsibility to ensure that the data is organized in a way that others can look over the results. Essential information for each step can be found [here](#epi-seq-pipeline-steps).
 
-### 
+### Pipeline-wide reporting
+A final report comes from running the Epi-Seq script with the `--report` option. This will generate a new `qsub.sh` script that will generate a report. The report will be located in the `report` directory, within the output directory. The report will contain information from steps 1-3,10-13, which is representative of the entire pipeline.
+
+### Processing and Quality Control
+The [Bismark HTML report](#11-bismark_html_report_generator) provides an abundance of information the pre-processing steps that each sample went through. This visual report helps summarize the output for steps 4-10 of the pipeline. From step 11 alone, this report gives the user a good understanding on any possible problems with the input data.
 
 ## Epi-Seq Pipeline Steps
+**NOTE:** For each step below, the logs containing stdout and stderr messages can be found at `job_output/<output_directory_name>`.
 ### 1. bismark_prepare_genome
 This step takes in a reference genome fasta file and convert the sequence for methylation alignment and sequencing. This is a pre-processing step for [bismark_align](#4-bismark_align). The step will link the reference genome to the output directory (if needed), and create the methylome sequence in the directory called `Bisulfite_Genome`, which contains two subdirectories within it. Each subdirectory contains a converted sequence of either C->T and G->A conversions. Each of these converted sequences are used to align the bisulfite-treated reads. Since bisulfite sequencing causes unmethylated C to covert to U and later interpreted as T, this step allows alignment to be made without excessive mismatches due to the bisulfite treatment. This step only needs to be done once within a project's output folder.
 
@@ -120,6 +123,8 @@ This step takes in a reference genome fasta file and convert the sequence for me
 __Note:__ Depending on the size of the genome, this step can take several hours to complete.
 
 ### 2. pre_qc_check
+This step gives the user information about the input data before any processing steps are done. This helps everyone determine if a problem comes from the pipeline or the sequencing experiment. This output is recorded in the final report.
+
 | Job Attribute | Value |
 |:----------|:------|
 | Output directory name: | `pre_qc_check` |
@@ -128,7 +133,7 @@ __Note:__ Depending on the size of the genome, this step can take several hours 
 | Blocks | None |
 
 ### 3. trim_galore
-This step helps improve the alignment efficiency by performing quality trimming via the open source package Trim Galore!. Briefly, this package addresses many of the issues that occur when analyzing bisulfite sequencing libraries. The pipeline does trimming using only the default options in Trim Galore. Additional options such as stricter or more relaxed trimming can be entered through the `other_options` parameter in the configuration file. Output files are gzipped `.fq` files. This step can be ignored if the readset has a `.BAM` file.
+This step helps improve the alignment efficiency by performing quality trimming via the open source package Trim Galore!. Briefly, this package addresses many of the issues that occur when analyzing bisulfite sequencing libraries. The pipeline does trimming using only the default options in Trim Galore. Additional options such as stricter or more relaxed trimming can be entered through the `other_options` parameter in the configuration file. Output files are gzipped `.fq` files. This step can be ignored if the readset has a `.BAM` file. This step is recorded in the final pipeline report.
 
 | Job Attribute | Value |
 |:----------|:------|
@@ -138,7 +143,7 @@ This step helps improve the alignment efficiency by performing quality trimming 
 | Blocks | [bismark_align](#4-bismark_align) |
 
 ### 4. bismark_align
-This step aligns the trimmed reads to a reference genome from `bismark_prepare_genome`. The alignment is done by the open source package Bismark using the default stringency settings. By default, the settings can be somewhat strict, but is essential to avoid mismatches from sequencing error. Additional options can be entered through the "`other_options`" parameter in the configuration file. Output files are `.bam` files, but may be configured to output `cram` or `sam` files. This step can be ignored if the readset contains `.BAM` files
+This step aligns the trimmed reads to a reference genome from `bismark_prepare_genome`. The alignment is done by the open source package Bismark using the default stringency settings. By default, the settings can be somewhat strict, but is essential to avoid mismatches from sequencing error. Additional options can be entered through the "`other_options`" parameter in the configuration file. Output files are `.bam` files, but may be configured to output `cram` or `sam` files. This step can be ignored if the readset contains `.BAM` files. This step is recorded in the final pipeline report.
 
 | Job Attribute | Value |
 |:----------|:------|
@@ -213,7 +218,7 @@ The following input files are accepted:
 | Blocks | [bismark_html_report_generator](#11-bismark_html_report_generator) <br/> [differential_methylated_pos](#12-differential_methylated_pos) <br/>[differential_methylated_regions](13-differential_methylated_regions) |
 
 ### 11. bismark_html_report_generator
-This job summarizes all data from steps 3-10 into one HTML report file. It contains diagrams that summarizes the various report files Bismark creates in it's proccessing toolkit. This can serve as an excellent overview for the quality of the sample data and could make all other Bismark output reports redundant.
+This job summarizes all data from steps 5-10 into one HTML report file. It contains diagrams that summarizes the various report files Bismark creates in it's proccessing toolkit. This can serve as an excellent overview for the quality of the sample data and could make all other Bismark output reports redundant. This step is recorded in the final pipeline report.
 
 | Job Attribute | Value |
 |:----------|:------|
@@ -228,7 +233,7 @@ phenotype (controls vs. cases). The `BedGraph` files from the previous methylati
 to a `BSRaw` object with the R package `BiSeq`. Then, the `dmpFinder` function from the R package `minfi` is used to
 compute a F-test statistic on the beta values for the assayed CpGs in each sample. A p-value is then returned
 for each site with the option of correcting them for multiple testing. Differential analysis is done for each
-contrast specified in the design file
+contrast specified in the design file. This step is recorded in the final pipeline report.
 
 | Job Attribute | Value |
 |:----------|:------|
@@ -237,8 +242,10 @@ contrast specified in the design file
 | Requires | [bismark_methylation_caller](#10-bismark_methylation_caller) |
 | Blocks | None |
 
+__WARNING:__ This step is slow and requires large amounts of memory!
+
 ### 13. differential_methylated_regions
-This step runs the bumphunting algorithm to locate regions of differential methylation. CpG sites with an average methylation level difference < `delta_beta_threshold` between cases and controls are ignored in the permutation scheme. 
+This step runs the bumphunting algorithm to locate regions of differential methylation. CpG sites with an average methylation level difference < `delta_beta_threshold` between cases and controls are ignored in the permutation scheme. This step is recorded in the final pipeline report.
 
 | Job Attribute | Value |
 |:----------|:------|

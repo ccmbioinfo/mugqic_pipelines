@@ -341,9 +341,9 @@ class EpiSeq(Illumina):
         tmpdir = config.param('pre_qc_check', 'temp_dir', required=False) or config.param('DEFAULT', 'tmp_dir')
         template_var_hold = 'pre_qc_check/' + datetime.datetime.now().strftime('%Y_%m_%d') + "_template_var_strings.txt"
         report_file = 'report/EpiSeq.pre_qc_check.md'
-        report_data = 'report/data/pre_qc_check'
-        fill_in_templ = "| {sample} | {readset} | [Report 1]({fq1_report}) [Download 1]({fq1_download}) | " \
-                        "[Report 2]({fq2_report}) [Download 2]({fq2_download}) | {start} | {completion} |"
+        report_data = 'data/pre_qc_check'
+        fill_in_templ = "| {sample} | {readset} | [Report 1]({fq1_report})<br>[Download 1]({fq1_download}) | " \
+                        "[Report 2]({fq2_report})<br>[Download 2]({fq2_download}) | {start} | {completion} |"
         # Generate jobs
         for sample in self.samples:
             for readset in sample.readsets:
@@ -408,11 +408,11 @@ pandoc \\
                     report_template_dir=self.report_template_dir,
                     basename_report_file=os.path.basename(report_file),
                     output_file=" ".join(output),
-                    data_loc=report_data,
+                    data_loc=os.path.join('report', report_data),
                     table_hold=template_var_hold,
                     report_file=report_file)
                 update_template = Job(
-                    output_files=[os.path.join(report_data, os.path.basename(out_log))
+                    output_files=[os.path.join('report', report_data, os.path.basename(out_log))
                                   for out_log in output] + [report_file],
                     module_entries=[['pre_qc_check', 'module_pandoc']],
                     command=command,
@@ -440,10 +440,10 @@ pandoc \\
         """
         # Report Prep
         report_file = 'report/EpiSeq.trim_galore.md'
-        report_data = 'report/data/trim_galore'
+        report_data = 'data/trim_galore'
         template_string_file = 'trimmed/' + datetime.datetime.now().strftime('%Y_%m_%d') + "_template_var_strings.txt"
-        fill_in_entry = '| {sample} | {readset} | {trim1_view} {trim1_download} {trim2_view} {trim2_download} | ' \
-                        '{qc1_view} {qc1_download} {qc2_view} {qc2_download} | {start} | {completion} |'
+        fill_in_entry = '| {sample} | {readset} | {trim1_view} {trim1_download}<br>{trim2_view} {trim2_download} | ' \
+                        '{qc1_view} {qc1_download}<br>{qc2_view} {qc2_download} | {start} | {completion} |'
         # Awk script to parse trim reports view easy viewing
         # It will read the start of each line to determine if it is something that we want to keep, or discard.
         # Headers have to be reformatted to a lower level, making the document make sense within the template.
@@ -619,15 +619,16 @@ pandoc \\
                     basename_report_file=os.path.basename(report_file),
                     output_file=" ".join(output_reports),
                     individual_page=" ".join([os.path.basename(loc) for loc in key_report]),
-                    data_loc=report_data,
+                    data_loc=os.path.join('report', report_data),
                     table_hold=template_string_file,
                     script=output_parser,
                     report_file=report_file)
 
                 report_job = Job(
                     output_files=[report_file] +
-                                 [os.path.join(report_data, os.path.basename(item)) for item in output_reports] +
-                                 [os.path.join(report_data, rep) + '.md' for rep in key_report],
+                                 [os.path.join('report', report_data,
+                                               os.path.basename(item)) for item in output_reports] +
+                                 [os.path.join('report', report_data, rep) + '.md' for rep in key_report],
                     command=command,
                     module_entries=[['trim_galore', 'module_pandoc']],
                     report_files=[report_file],
@@ -656,7 +657,7 @@ pandoc \\
         """
         # Report Generation Setup
         report_file = 'report/EpiSeq.bismark_align.md'
-        report_data = 'report/data/bismark_align'
+        report_data = 'data/bismark_align'
         template_string_file = 'aligned/' + datetime.datetime.now().strftime('%Y_%m_%d') + "_template_var_strings.txt"
         fill_in_entry = '| {sample} | {readset} | {report_view} | {coverage_view} | {start} | {completion} |'
         awk_script = """\
@@ -766,14 +767,14 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                 )
 
                 # Generate report stub
-                new_logs = [os.path.join(report_data, os.path.basename(txt)) for txt in report_log]
+                new_logs = [os.path.join('report', report_data, os.path.basename(txt)) for txt in report_log]
                 report_entry = fill_in_entry.format(
                     sample=sample.name,
                     readset=readset.name,
-                    report_view='[View HTML]({a}) [Download Raw]({b})'.format(
+                    report_view='[View HTML]({a})<br>[Download Raw]({b})'.format(
                         a=os.path.join(report_data, report_log[0] + '.md'),
                         b=os.path.join(report_data, report_log[0])),
-                    coverage_view='[View HTML]({a}) [Download Text] {b}'.format(
+                    coverage_view='[View HTML]({a})<br>[Download Text]({b})'.format(
                         a=os.path.join(report_data, report_log[1] + '.md'),
                         b="(" + os.path.join(report_data, report_log[1]) + ")" if report_log[1] else "N/A"),
                     start="$START",
@@ -794,7 +795,7 @@ pandoc \\
 > {report_file}""".format(
                     table_hold=template_string_file,
                     entry=report_entry,
-                    data_dir=report_data,
+                    data_dir=os.path.join('report', report_data),
                     reports=' '.join(report_log),
                     logs=' '.join(new_logs),
                     script=awk_script,
@@ -1099,7 +1100,7 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
         """
         # Report Generation Setup
         report_file = 'report/EpiSeq.bismark_html_report_generator.md'
-        report_data = 'report/data/bismark_html_report_generator'
+        report_data = 'data/bismark_html_report_generator'
         template_string_file = 'bismark_summary_report/' + \
                                datetime.datetime.now().strftime('%Y_%m_%d') + "_template_var_strings.txt"
         fill_in_entry = '| {sample} | {report} | {methyl_calls} | {start} | {completion} |'
@@ -1169,16 +1170,16 @@ bismark_methylation_extractor {library_type} {other} --multicore {core} --output
             > {report_file}""".format(
                 table_hold=template_string_file,
                 entry=report_entry,
-                data_dir=report_data,
+                data_dir=os.path.join('report', report_data),
                 methyl_calls='methyl_calls/' + sample.name + '/' + sample.name + '.merged.deduplicated.*',
-                zip_file=zip_file,
+                zip_file=os.path.join('report', zip_file),
                 report=html_report,
                 report_template_dir=self.report_template_dir,
                 basename_report_file=os.path.basename(report_file),
                 report_file=report_file
             )
             report_job = Job(output_files=[report_file,
-                                           os.path.join(report_data, os.path.basename(html_report)),
+                                           os.path.join('report', report_data, os.path.basename(html_report)),
                                            zip_file],
                              report_files=[report_file],
                              removable_files=[template_string_file + '.lock'],

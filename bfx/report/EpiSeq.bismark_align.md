@@ -3,6 +3,6 @@ These are [Bismark]([@bismark]) reports for individual readsets are displayed. I
  
  In addition to alignment statistics, a nucleotide coverage report is given to help convey read depth and library coverage. The ideal values depend on the sequencing experiment and library, but in general, the read depth for covered loci should be high enough to be confident of any methylation calls.
 
-| Sample | Alignment Report | Coverage Report | Date Submitted | Date Completed |
-|--------|------------------|-----------------|----------------|----------------|
+| Sample | Readset | Alignment Report | Coverage Report | Date Submitted | Date Completed |
+|--------|---------|------------------|-----------------|----------------|----------------|
 $data_table$

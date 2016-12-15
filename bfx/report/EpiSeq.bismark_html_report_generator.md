@@ -4,5 +4,5 @@
 This report contains the data from alignment, de-duplication, and methylation calling steps. As such, this report is a replacement for other Bismark report.
 
 | Sample | Alignment Report | Methylation Data (ZIP)   | Date Submitted | Date Completed |
-|--------|------------------|-----------------|----------------|----------------|
+|--------|------------------|--------------------------|----------------|----------------|
 $data_table$

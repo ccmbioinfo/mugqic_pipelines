@@ -1070,7 +1070,7 @@ java -Djava.io.tmpdir={tmp_dir} {java_other_options} -Xmx{ram} \\
             run_type = sample.readsets[0].run_type
 
             job = Job(
-                merged_sample + ['bismark_prepare_genome/'],
+                merged_sample + ['bismark_prepare_genome/Bisulfite_Genome'],
                 report_files + other_files,
                 [['bismark_methylation_caller', 'module_samtools'],
                  ['bismark_methylation_caller', 'module_perl'],

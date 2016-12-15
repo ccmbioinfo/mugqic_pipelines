@@ -343,7 +343,7 @@ class EpiSeq(Illumina):
         report_file = 'report/EpiSeq.pre_qc_check.md'
         report_data = 'data/pre_qc_check'
         fill_in_templ = "| {sample} | {readset} | [Report 1]({fq1_report})<br>[Download 1]({fq1_download}) | " \
-                        "[Report 2]({fq2_report})<br>[Download 2]({fq2_download}) | {start} | {completion} |"
+                        "{fq2_report}<br>{fq2_download} | {start} | {completion} |"
         # Generate jobs
         for sample in self.samples:
             for readset in sample.readsets:
@@ -385,10 +385,12 @@ class EpiSeq(Illumina):
                 report_body = fill_in_templ.format(
                     sample=sample.name,
                     readset=readset.name,
-                    fq1_report=os.path.join(report_data, id_name[0]),
+                    fq1_report=os.path.join(report_data, id_name[0]) + '_fastqc.html',
                     fq1_download=os.path.join(report_data, id_name[0] + '.zip'),
-                    fq2_report=os.path.join(report_data, id_name[1]) if len(id_name) == 2 else '',
-                    fq2_download=os.path.join(report_data, id_name[1] + '.zip') if len(id_name) == 2 else '',
+                    fq2_report='[Report 2](' + os.path.join(report_data, id_name[1]) + '_fastqc.html' + ')'
+                               if len(id_name) == 2 else '',
+                    fq2_download='[Download 2](' + os.path.join(report_data, id_name[1] + '.zip') + ')'
+                                 if len(id_name) == 2 else '',
                     start="$START",
                     completion="$(date \"+%Y-%m-%d %H:%M:%S\")"
                 )
@@ -579,11 +581,11 @@ BEGIN {table=0;}
                     sample=sample.name,  # For report jobs.
                     readset=readset.name,
                     trim1_view='[View details 1](' +
-                               os.path.join(report_data, os.path.basename(input1_logs[0])) + '.md)',
+                               os.path.join(report_data, os.path.basename(input1_logs[0])) + '.html)',
                     trim1_download='[Download details 1](' +
                                    os.path.join(report_data, os.path.basename(input1_logs[0])) + ')',
                     trim2_view='[View details 2](' +
-                               os.path.join(report_data, os.path.basename(input2_logs[0])) + '.md)'
+                               os.path.join(report_data, os.path.basename(input2_logs[0])) + '.html)'
                     if input2_logs else '',
                     trim2_download='[Download details 2](' +
                                    os.path.join(report_data, os.path.basename(input2_logs[0])) + ')'
@@ -605,7 +607,10 @@ flock -x "{table_hold}.lock" -c "echo \\"{entry}\\" >> {table_hold}" && \\
 mkdir -p {data_loc} && \\
 cp -f {output_file} {data_loc}; \\
 for i in {individual_page}; do
-    sed -r 's%^([^0-9S][a-z ].+):(\s+.+)%|\\1|\\2|%g' $i | sed 's/\t/|/g' | awk '{script}' > "{data_loc}/$i.md"; \\
+    sed -r 's%^([^0-9S][a-z ].+):(\s+.+)%|\\1|\\2|%g' $i | \\
+        sed 's/\t/|/g' | \\
+        awk '{script}' | \\
+        pandoc --output "{data_loc}/$i.html"; \\
 done
 table=$(cat {table_hold}) && \\
 pandoc \\
@@ -760,7 +765,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                         directory=align_directory,
                         other=config.param("bismark_align", "other_options"),
                         tmpdir=config.param('bismark_align', 'tmp_dir', required=False) or
-                            config.param('DEFAULT', 'tmp_dir', required='True'),
+                               config.param('DEFAULT', 'tmp_dir', required='True'),
                         input=cmd_in,
                         basename=readset.name + '_aligned'),
                     removable_files=out_files
@@ -772,11 +777,12 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                     sample=sample.name,
                     readset=readset.name,
                     report_view='[View HTML]({a})<br>[Download Raw]({b})'.format(
-                        a=os.path.join(report_data, report_log[0] + '.md'),
-                        b=os.path.join(report_data, report_log[0])),
+                        a=os.path.join(report_data, os.path.basename(report_log[0]) + '.html'),
+                        b=os.path.join(report_data, os.path.basename(report_log[0]))),
                     coverage_view='[View HTML]({a})<br>[Download Text]({b})'.format(
-                        a=os.path.join(report_data, report_log[1] + '.md'),
-                        b="(" + os.path.join(report_data, report_log[1]) + ")" if report_log[1] else "N/A"),
+                        a=os.path.join(report_data, os.path.basename(report_log[1]) + '.html'),
+                        b="(" + os.path.join(report_data, os.path.basename(report_log[1])) + ")"
+                          if '--nucleotide_coverage' in user_options else ""),
                     start="$START",
                     completion="$(date '+%Y-%m-%d %H:%M:%S')")
                 command = """\
@@ -784,7 +790,7 @@ flock -x {table_hold}.lock -c "echo \\"{entry}\\" >> {table_hold}" && \\
 mkdir -p {data_dir} && \\
 cp -f {reports} {data_dir}; \\
 for i in {logs}; do
-    sed -r 's/:\s+/|/g' $i | egrep -v "^Option" | egrep -v "^=+$" | awk '{script}' > $i".md"; \\
+    sed -r 's/:\s+/|/g' $i | egrep -v "^Option" | egrep -v "^=+$" | awk '{script}' | pandoc --output $i".html"; \\
 done
 table=$(cat {table_hold}) && \\
 pandoc \\

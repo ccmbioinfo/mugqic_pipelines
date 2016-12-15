@@ -31,6 +31,7 @@ def get_unique_ids(uc_file):
     def get_id(line):
         return re.match('^(\S+\t){8}(\S+)', line).group(2)
 
+    # Lines that start with 'S' are not duplicates
     return {get_id(line) for line in open(uc_file) if line.startswith('S')}
 
 

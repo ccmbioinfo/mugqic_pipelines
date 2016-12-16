@@ -74,22 +74,6 @@ Output Reports
 - Bismark HTML Sample Summary:
     - bismark_summary_report/{sample.name}_final_bismark_report.html
 
-Report Generation
------------------
-Reports can be generating by rerunning the command line with the `--report` flag. The report will contain the minimum
-set of data that can describe the results of the pipeline. When the report is generated, it can be found at `report/`,
-under your designated output directory. The report provides the metrics collection from the readset level as well as
-the metrics from the sample level. While the read output of interest is from the differential analysis results, no
-visualization has been made. Instead, a copy of the contrasts are copied for the user to download.
-
-- Pre-QC Metrics
-- Trimming Report
-- Post-Trim QC Report
-- Alignment Report
-- Bismark HTML Sample Summary
-- Differentially Methylated Positions
-- Differentially Methylated Regions
-
 Workflow
 --------
 Below is the steps defined in this pipeline. The alphabetical designation shows which steps run concurrently in the

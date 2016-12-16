@@ -298,11 +298,13 @@ class EpiSeq(Illumina):
 
         # Job creation - If ref_seq appears to be processed already, just make a symlink
         if os.path.isdir(os.path.join(os.path.dirname(ref_seq), 'Bisulfite_Genome')):
+            log.info("Found converted genome from given genome file. Creating symlink instead.")
             job = Job(input_files=[ref_seq],
                       output_files=[output_idx],
                       removable_files=[output_idx],
                       command='cp -sL ' + os.path.dirname(ref_seq) + ' ' + 'bismark_prepare_genome')
         else:  # Process genome file
+            log.info("Unable to find any signs of preprocessing. Will prepare genome for pipeline.")
             mkdir_job = Job(command='mkdir -p bismark_prepare_genome')
             link_job = Job(input_files=[ref_seq],
                            command='cp -sfu ' + os.path.abspath(ref_seq) + ' ' + os.path.abspath(local_ref_seq),
@@ -311,7 +313,7 @@ class EpiSeq(Illumina):
                            command="bismark_genome_preparation --verbose bismark_prepare_genome/",
                            removable_files=[output_idx])
             nuc_count = Job(output_files=[], module_entries=modules,
-                            command="bam2nuc --genomic_composition_only --genome_dir bismark_prepare_genome/ "
+                            command="bam2nuc --genomic_composition_only --genome_folder bismark_prepare_genome/ "
                                     "--dir bismark_prepare_genome/",
                             removable_files=[])
             job = concat_jobs([mkdir_job, link_job, main_job, nuc_count],
@@ -607,7 +609,7 @@ flock -x "{table_hold}.lock" -c "echo \\"{entry}\\" >> {table_hold}" && \\
 mkdir -p {data_loc} && \\
 cp -f {output_file} {data_loc}; \\
 for i in {individual_page}; do
-    sed -r 's%^([^0-9S][a-z ].+):(\s+.+)%|\\1|\\2|%g' $i | \\
+    sed -r 's%^([^0-9S][a-z ].+):(\s+.+)%|\\1|\\2|%g' {data_loc}/$i | \\
         sed 's/\t/|/g' | \\
         awk '{script}' | \\
         pandoc --output "{data_loc}/$i.html"; \\
@@ -1276,6 +1278,7 @@ result <- result[abs(result["Avg Delta Beta"]) > {delta_beta_threshold}]
 write.csv(result, file="{dmps_file}", quote=FALSE, row.names=FALSE)
 
 EOF
+mkdir -p {data_dir} && \\
 zip {zip_file} {dmps_file} && \\
 pandoc \\
     {report_template_dir}/{basename_report_file} \\
@@ -1293,6 +1296,7 @@ pandoc \\
                     delta_beta_threshold=config.param("differential_methylated_pos", "delta_beta_threshold",
                                                       type="float"),
                     dmps_file=dmps_file,
+                    data_dir=report_data,
                     zip_file=os.path.join(report_data, zip_file),
                     report_template_dir=self.report_template_dir,
                     basename_report_file=os.path.basename(report_file),
@@ -1372,7 +1376,7 @@ dmrs <- na.omit(dmrs)
 write.csv(dmrs\$table, "{dmrs_file}", quote=FALSE, row.names=FALSE)
 
 EOF
-
+mkdir -p {data_dir}
 zip {zip_file} {dmrs_file} && \\
 pandoc \\
     {report_template_dir}/{basename_report_file} \\
@@ -1388,6 +1392,7 @@ pandoc \\
                                                       type="float"),
                     permutations=config.param("differential_methylated_regions", "permutations", type="int"),
                     dmrs_file=dmrs_file,
+                    data_dir=report_data,
                     zip_file=os.path.join(report_data, zip_file),
                     report_template_dir=self.report_template_dir,
                     basename_report_file=os.path.basename(report_file),

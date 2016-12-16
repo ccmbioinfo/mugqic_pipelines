@@ -1,0 +1,13 @@
+Sample	Readset	Library	RunType	FASTQ1	FASTQ2
+in273_19	in273_19_s1	RRBS	PAIRED_END	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_19_s1_R1.fastq.gz	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_19_s1_R2.fastq.gz
+in273_19	in273_19_s2	RRBS	PAIRED_END	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_19_s2_R1.fastq.gz	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_19_s2_R2.fastq.gz
+in273_20	in273_20_s1	RRBS	PAIRED_END	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_20_s1_R1.fastq.gz	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_20_s1_R2.fastq.gz
+in273_20	in273_20_s2	RRBS	PAIRED_END	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_20_s2_R1.fastq.gz	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_20_s2_R2.fastq.gz
+in273_21	in273_21_s1	RRBS	PAIRED_END	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_21_s1_R1.fastq.gz	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_21_s1_R2.fastq.gz
+in273_21	in273_21_s2	RRBS	PAIRED_END	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_21_s2_R1.fastq.gz	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_21_s2_R2.fastq.gz
+in273_4	in273_4_s1	RRBS	PAIRED_END	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_4_s1_R1.fastq.gz	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_4_s1_R2.fastq.gz
+in273_4	in273_4_s2	RRBS	PAIRED_END	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_4_s2_R1.fastq.gz	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_4_s2_R2.fastq.gz
+in273_5	in273_5_s1	RRBS	PAIRED_END	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_5_s1_R1.fastq.gz	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_5_s1_R2.fastq.gz
+in273_5	in273_5_s2	RRBS	PAIRED_END	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_5_s2_R1.fastq.gz	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_5_s2_R2.fastq.gz
+in273_6	in273_6_s1	RRBS	PAIRED_END	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_6_s1_R1.fastq.gz	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_6_s1_R2.fastq.gz
+in273_6	in273_6_s2	RRBS	PAIRED_END	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_6_s2_R1.fastq.gz	/hpf/projects/brudno/lmichael/rrbs_testrun/data-RRBS/in273_6_s2_R2.fastq.gz

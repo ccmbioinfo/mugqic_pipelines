@@ -5,8 +5,11 @@ All analysis parameters are described in this [configuration file](config.ini).
 ## References
 <span />
 
+[BiSeq]: http://bioconductor.org/packages/release/bioc/html/BiSeq.html
+[Bismark]: http://www.bioinformatics.babraham.ac.uk/projects/bismark/
 [BLASR]: https://github.com/PacificBiosciences/blasr
 [BLAST]: http://www.ncbi.nlm.nih.gov/books/NBK52640/
+[Bumphunter]: http://bioconductor.org/packages/release/bioc/html/bumphunter.html
 [BWA]: http://bio-bwa.sourceforge.net/
 [Celera Assembler]: http://wgs-assembler.sourceforge.net/
 [Cuffdiff]: http://cole-trapnell-lab.github.io/cufflinks/cuffdiff/
@@ -15,6 +18,7 @@ All analysis parameters are described in this [configuration file](config.ini).
 [Cuffnorm]: http://cole-trapnell-lab.github.io/cufflinks/cuffnorm/
 [DESeq]: http://bioconductor.org/packages/release/bioc/html/DESeq.html
 [edgeR]: http://bioconductor.org/packages/release/bioc/html/edgeR.html
+[FastQC]: http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
 [GATK]: https://www.broadinstitute.org/gatk/
 [goseq]: http://www.bioconductor.org/packages/release/bioc/html/goseq.html
 [HGAP]: https://github.com/PacificBiosciences/Bioinformatics-Training/wiki/HGAP
@@ -22,6 +26,7 @@ All analysis parameters are described in this [configuration file](config.ini).
 [HTSeq]: http://www-huber.embl.de/users/anders/HTSeq/doc/overview.html
 [IGV]: https://www.broadinstitute.org/igv/
 [MACS]: https://github.com/taoliu/MACS
+[Minfi]: http://bioconductor.org/packages/release/bioc/html/minfi.html
 [PacBio]: http://www.pacificbiosciences.com/news_and_events/publications/
 [Picard]: http://broadinstitute.github.io/picard/
 [RSEM]: http://deweylab.biostat.wisc.edu/rsem/
@@ -29,12 +34,46 @@ All analysis parameters are described in this [configuration file](config.ini).
 [SnpEff]: http://snpeff.sourceforge.net/
 [SnpSift]: http://snpeff.sourceforge.net/SnpSift.html
 [STAR]: https://github.com/alexdobin/STAR
+[Trim Galore!]: http://www.bioinformatics.babraham.ac.uk/projects/trim_galore/
 [Trimmomatic]: http://www.usadellab.org/cms/index.php?page=trimmomatic
 [Trinity]: https://trinityrnaseq.github.io/
 [UCSC]: http://genome.ucsc.edu/
 
 ---
 references:
+- link-citations: True
+
+- id: biseq
+  type: webpage
+  title: 'BiSeq: Processing and analyzing bisulfite sequencing data'
+  author:
+    - family: Hebestreit
+      given: Katja
+    - family: Klein
+      given: Hans-Ulrich
+  URL: 'http://bioconductor.org/packages/release/bioc/html/BiSeq.html'
+  issued:
+    year: 2015
+
+- id: bismark
+  title: 'Bismark: a flexible aligner and methylation caller for Bisulfite-Seq applications'
+  author:
+    - family: Krueger
+      given: Felix
+    - family: Andrews
+      given: Simon
+  container-title: Bioinformatics
+  volume: 27
+  issue: 11
+  page: 1571–1572
+  issued:
+    year: 2011
+    month: 6
+    day: 1
+  DOI: 10.1093/bioinformatics/btr167
+  URL: 'https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3102221/'
+  type: article-journal
+
 - id: blasr
   title: 'Mapping single molecule sequencing reads using basic local alignment with successive refinement (BLASR): application and theory'
   author:
@@ -50,6 +89,31 @@ references:
   type: article-journal
   issued:
     year: 2012
+
+- id: bumphunter
+  title: 'Bump hunting to identify differentially methylated regions in epigenetic epidemiology studies'
+  author:
+    - family: Jaffe
+      given: A.E.
+    - family: Murakami
+      given: P.
+    - family: Lee
+      given: H.
+    - family: Leek
+      given: J.T.
+    - family: Feinberg
+      given: A.P.
+    - family: Irizarry
+      given: R.A.
+  issued:
+    year: 2012
+  container-title: International journal of epidemiology
+  volume: 41
+  issue: 1
+  pages: 200-209
+  URL: 'http://bioconductor.org/packages/release/bioc/html/bumphunter.html'
+  DOI: 10.1093/ije/dyr238
+  type: article-journal
 
 - id: bwa
   title: 'Fast and accurate long-read alignment with Burrows–Wheeler transform'
@@ -239,6 +303,18 @@ references:
   issued:
     year: 2010
 
+- id: fastqc
+  title: 'Babraham Bioinformatics - FastQC A Quality Control tool for High Throughput Sequence Data'
+  container-title: Babraham Bioinformatics
+  author:
+    - family: Andrews
+      given: Simon
+  issued:
+    year: 2016
+  type: website
+  URL: 'http://www.bioinformatics.babraham.ac.uk/projects/fastqc/'
+  
+
 - id: gatk
   title: 'A framework for variation discovery and genotyping using next-generation DNA sequencing data'
   author:
@@ -378,6 +454,33 @@ references:
   type: article-journal
   issued:
     year: 2008
+
+- id: minfi
+  title: 'Minfi: A flexible and comprehensive Bioconductor package for the analysis of Infinium DNA Methylation microarrays'
+  author:
+    - family: Aryee
+      given: M.J.
+    - family: Jaffe
+      given: A.E.
+    - family: Corrada-Bravo
+      given: H.
+    - family: Ladd-Acosta
+      given: C.
+    - family: Feinberg
+      given: A.P.
+    - family: Hansen
+      given: K.D.
+    - family: Irizarry
+      given: R.A.
+  container-title: Bioinformatics
+  issued:
+    year: 2014
+  volume: 30
+  issue: 10
+  pages: 1363-1369
+  URL: 'http://bioconductor.org/packages/release/bioc/html/minfi.html'
+  DOI: 10.1093/bioinformatics/btu049
+  type: article-journal
 
 - id: quantifying_rnaseq
   title: 'Mapping and quantifying mammalian transcriptomes by RNA-Seq'
@@ -536,6 +639,17 @@ references:
   type: article-journal
   issued:
     year: 2012
+
+- id: trim_galore
+  title: 'Babraham Bioinformatics - Trim Galore!'
+  type: website
+  URL: 'http://www.bioinformatics.babraham.ac.uk/projects/trim_galore/'
+  container-title: Babraham Bioinformatics
+  author:
+    - family: Krueger
+      given: Felix
+  issued:
+    year: 2016
 
 - id: trimmomatic
   title: 'Trimmomatic: a flexible trimmer for Illumina sequence data'

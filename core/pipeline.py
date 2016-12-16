@@ -29,6 +29,7 @@ import argparse
 import collections
 import datetime
 import hashlib
+import inspect
 import logging
 import os
 import re
@@ -168,7 +169,8 @@ Steps:
 
     @property
     def report_template_dir(self):
-        return os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0])))), "bfx", "report")
+        return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(inspect.getsourcefile(Pipeline)))), "bfx",
+                            "report")
 
     @property
     def scheduler(self):
@@ -304,7 +306,7 @@ Steps:
 # Exit immediately on error
 set -eu -o pipefail
 
-module load {module_pandoc}
+module load {module_mugqic} {module_pandoc}
 cd {output_dir}
 mkdir -p report
 cp -r \\
@@ -329,6 +331,7 @@ pandoc \\
   {report_files} \\
   report/config_and_references.md \\
   --output report/index.html""".format(
+                module_mugqic=config.param('DEFAULT', 'module_mugqic'),
                 module_pandoc=config.param('report', 'module_pandoc'),
                 output_dir=output_dir,
                 config_file=config.filepath,

@@ -364,38 +364,40 @@ def parse_showjobs_output(id_to_showjobs_entry, job_log):
     :param id_to_showjobs_entry: dict mapping from job id -> list of showjobs output lines
     :return: modified JobLog
     """
-    # Get the relevant part of the showjobs output for this job
-    entry = id_to_showjobs_entry[job_log.job_id]
+    # Make sure that we have showjobs output for this job
+    if job_log.job_id in id_to_showjobs_entry.keys():
+        # Get the relevant part of the showjobs output for this job
+        entry = id_to_showjobs_entry[job_log.job_id]
 
-    for line in entry:
-        if RE.search('^Job Id *: (\d+)$', line):
-            job_log.job_full_id = RE.group(1)
-        elif RE.search('^Start Time *: (.*)$', line):
-            job_log.start_date = datetime.strptime(RE.group(1), '%a %b %d %X %Y')
-        elif RE.search('^User Name *: (\S+)$', line):
-            job_log.username = RE.group(1)
-        elif RE.search('^Group Name *: (\S+)$', line):
-            job_log.group = RE.group(1)
-        elif RE.search('^CPUTime *: (\d+):(\d+):(\d+)$', line):
-            job_log.cput = timedelta(hours=int(RE.group(1)), minutes=int(RE.group(2)), seconds=int(RE.group(3)))
-        elif RE.search('^Memory Used *: (\S+)$', line):
-            job_log.mem = MemorySize(RE.group(1))
-        elif RE.search('^vmem Used *: (\S+)$', line):
-            job_log.vmem = MemorySize(RE.group(1))
-        elif RE.search('^Wallclock Duration *: (\d+):(\d+):(\d+)$', line):
-            job_log.walltime = timedelta(hours=int(RE.group(1)), minutes=int(RE.group(2)), seconds=int(RE.group(3)))
-        elif RE.search('^Queue Name *: (\S+)$', line):
-            job_log.queue = RE.group(1)
-        elif RE.search('^Exit Code *: (\S+)$', line):
-            status = RE.group(1)
-            job_log.exit_status = status
-            # status is SUCCESS if and only if exit_status == '0'
-            if status == '0':
-                conditional_assign(job_log, 'status', 'SUCCESS')
-            else:
-                conditional_assign(job_log, 'status', 'FAILED')
-        elif RE.search('^End Time *: (.*)$', line):
-            job_log.end_date = datetime.strptime(RE.group(1), '%a %b %d %X %Y')
+        for line in entry:
+            if RE.search('^Job Id *: (\d+)$', line):
+                job_log.job_full_id = RE.group(1)
+            elif RE.search('^Start Time *: (.*)$', line):
+                job_log.start_date = datetime.strptime(RE.group(1), '%a %b %d %X %Y')
+            elif RE.search('^User Name *: (\S+)$', line):
+                job_log.username = RE.group(1)
+            elif RE.search('^Group Name *: (\S+)$', line):
+                job_log.group = RE.group(1)
+            elif RE.search('^CPUTime *: (\d+):(\d+):(\d+)$', line):
+                job_log.cput = timedelta(hours=int(RE.group(1)), minutes=int(RE.group(2)), seconds=int(RE.group(3)))
+            elif RE.search('^Memory Used *: (\S+)$', line):
+                job_log.mem = MemorySize(RE.group(1))
+            elif RE.search('^vmem Used *: (\S+)$', line):
+                job_log.vmem = MemorySize(RE.group(1))
+            elif RE.search('^Wallclock Duration *: (\d+):(\d+):(\d+)$', line):
+                job_log.walltime = timedelta(hours=int(RE.group(1)), minutes=int(RE.group(2)), seconds=int(RE.group(3)))
+            elif RE.search('^Queue Name *: (\S+)$', line):
+                job_log.queue = RE.group(1)
+            elif RE.search('^Exit Code *: (\S+)$', line):
+                status = RE.group(1)
+                job_log.exit_status = status
+                # status is SUCCESS if and only if exit_status == '0'
+                if status == '0':
+                    conditional_assign(job_log, 'status', 'SUCCESS')
+                else:
+                    conditional_assign(job_log, 'status', 'FAILED')
+            elif RE.search('^End Time *: (.*)$', line):
+                job_log.end_date = datetime.strptime(RE.group(1), '%a %b %d %X %Y')
 
     return job_log
 

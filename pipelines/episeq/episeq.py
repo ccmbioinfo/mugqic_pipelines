@@ -268,8 +268,7 @@ class EpiSeq(Illumina):
         ]
 
     # Pipeline steps start here
-    @staticmethod
-    def bismark_prepare_genome():  # Step 1
+    def bismark_prepare_genome(self):  # Step 1
         """
         Bismark requires a processed reference genome to compare with the epigenome. This step can take several hours,
         depending on the size of the genome. It creates an index of bisulfite conversions and takes make space than
@@ -307,7 +306,8 @@ class EpiSeq(Illumina):
             log.info("Unable to find any signs of preprocessing. Will prepare genome for pipeline.")
             mkdir_job = Job(command='mkdir -p bismark_prepare_genome')
             link_job = Job(input_files=[ref_seq],
-                           command='cp -sfu ' + os.path.abspath(ref_seq) + ' ' + os.path.abspath(local_ref_seq),
+                           command='cp -sfu ' + os.path.abspath(ref_seq) + ' ' + os.path.abspath(self.output_dir,
+                                                                                                 local_ref_seq),
                            removable_files=[local_ref_seq])
             main_job = Job(output_files=[output_idx], module_entries=modules,
                            command="bismark_genome_preparation --verbose bismark_prepare_genome/",

@@ -2,6 +2,8 @@
 
 # This is the RNAseq pipeline with modifications to allow alternative splicing
 # from tools such as Miso, Vast Tools, Cufflinks and JunctionSeq.
+# It was developed by Vincent Talbot at the Hospital for Sick Children, Toronto.
+# April-December 2016
 
 ################################################################################
 # Copyright (C) 2014, 2015 GenAP, McGill University and Genome Quebec Innovation Centre

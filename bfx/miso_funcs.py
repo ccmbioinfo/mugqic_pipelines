@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
-################################################################################
+# This is part of the RNAseq pipeline with modifications to allow alternative splicing
+# from tools such as Miso, Vast Tools, Cufflinks and JunctionSeq.
+# It was developed by Vincent Talbot at the Hospital for Sick Children, Toronto.
+# April-December 2016
 
-# New Miso step
-#
-
-################################################################################
+#########################################
+# This file is part of MUGQIC Pipelines.
+#########################################
 
 # Python Standard Modules
 import os

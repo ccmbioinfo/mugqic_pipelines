@@ -15,6 +15,8 @@ results are included in the report. The report includes also the main references
 and methods used during the analysis, together with the full list of parameters that have been passed 
 to the pipeline main script.
 
+It was developed by Vincent Talbot at the Hospital for Sick Children in Toronto from April-December 2016.
+
 Running RNAseq_AS Pipeline
 -----
 

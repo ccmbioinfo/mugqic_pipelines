@@ -46,7 +46,7 @@ generate-qsub.sh
 #!/bin/bash
 
 /path-to-mugqic-code/pipelines/rnaseq_AS/RNAseq_AS.py \
- -s 1-23 \
+ -s 1,4-26 \
  -o /path-to-your-folder/output \
  -j pbs \
  -l debug \
@@ -66,7 +66,7 @@ Report Generation
 
 As the pipeline is running, it automatically creates the report in parts (based on the step). However, a further step must be taken to combine the segments into one report.
 
-At any time during the pipeline processing, you can run the same pipeline command and add the option --report for the compilation of all the reports already created into a single HTML document (`output/report/index.html`).
+At any time during the pipeline processing, you can run the same pipeline command and add the option `--report` for the compilation of all the reports already created into a single HTML document (`output/report/index.html`).
 
 To create the report, follow these steps:
 
@@ -77,7 +77,7 @@ Example
 #!/bin/bash
 
 /path-to-mugqic-code/pipelines/rnaseq_AS/RNAseq_AS.py \
- -s 1-26 \
+ -s 1,4-26 \
  -o /path-to-your-folder/output \
  -j pbs \
  -l debug \
@@ -390,10 +390,14 @@ Important Config Settings:
 
 1. `nCores` is the number of cores that the will be used when `runJunctionSeqAnalyses` is called in the next step.
 
+NOTE: If you are having issues with this step, make sure you use the `-d` flag in your generate-qsub.sh script instead of the `--design` flag.
+
 This step is only needed if you are running JunctionSeq.
 
 26- jctseq_diff
 ------------
 Tests for differential usage of exons and splice junctions. It will also plot the results of JunctionSeq.
+
+NOTE: If this step does not complete and the are no error messages, try increasing the memory or walltime in the config file.
 
 This step is only needed if you are running JunctionSeq.

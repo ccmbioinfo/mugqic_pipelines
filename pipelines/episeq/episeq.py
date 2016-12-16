@@ -306,8 +306,8 @@ class EpiSeq(Illumina):
             log.info("Unable to find any signs of preprocessing. Will prepare genome for pipeline.")
             mkdir_job = Job(command='mkdir -p bismark_prepare_genome')
             link_job = Job(input_files=[ref_seq],
-                           command='cp -sfu ' + os.path.abspath(ref_seq) + ' ' + os.path.abspath(self.output_dir,
-                                                                                                 local_ref_seq),
+                           command='cp -sfu ' + os.path.abspath(ref_seq) + ' ' +
+                                   os.path.abspath(os.path.join(self.output_dir, local_ref_seq)),
                            removable_files=[local_ref_seq])
             main_job = Job(output_files=[output_idx], module_entries=modules,
                            command="bismark_genome_preparation --verbose bismark_prepare_genome/",
@@ -767,7 +767,7 @@ bismark -q {other} --temp_dir {tmpdir} --output_dir {directory} \
                         directory=align_directory,
                         other=config.param("bismark_align", "other_options"),
                         tmpdir=config.param('bismark_align', 'tmp_dir', required=False) or
-                               config.param('DEFAULT', 'tmp_dir', required='True'),
+                            config.param('DEFAULT', 'tmp_dir', required='True'),
                         input=cmd_in,
                         basename=readset.name + '_aligned'),
                     removable_files=out_files

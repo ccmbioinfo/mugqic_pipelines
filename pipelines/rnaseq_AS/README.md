@@ -373,7 +373,7 @@ Uses [QoRTs](http://hartleys.github.io/QoRTs/index.html) to calculate gene-level
 Important Config Settings:
 
 1. `library_type` should be `single` or `paired`. QoRTs will run in `--singleEnded` mode or not depending on this value for this step and the next.
-2. `strand` should be `stranded` or `unstranded. QoRTs will run in `--stranded` mode or not for this step and the next.
+2. `strand` should be `stranded` or `unstranded`. QoRTs will run in `--stranded` mode or not for this step and the next.
 2. `QoRTs_other_options` can be any other options for `java -jar QoRTs.jar QC`.
 
 This step is only needed if you are running JunctionSeq.

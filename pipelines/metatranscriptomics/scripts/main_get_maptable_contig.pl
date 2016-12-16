@@ -26,19 +26,21 @@ if ($data_type eq 'assembly') {
     $out_ids = $output_dir."/".$read_files."_contigs_IDs.txt";
     $out_length = $output_dir."/".$read_files."_contigs_IDs_length.txt";
     print "Outputfile: $out_length\n\n";
-} elsif ($data_type eq 'bwa') {
-    $IDfile = $workpath.$read_files."_contigs_IDs.txt";
-    $IDfile2 = $workpath.$read_files."_contigs_micro_cds_bwa_IDs.txt";
-    $IDfile21 = $workpath.$read_files."_singletons_micro_cds_bwa_IDs.txt";
-} elsif ($data_type eq 'blat') {
-    $IDfile = $workpath.$read_files."_contigs_IDs.txt";
-    $IDfile2 = $workpath.$read_files."_contigs_n_micro_cds_blat_IDs.txt";
-    $IDfile21 = $workpath.$read_files."_singletons_n_micro_cds_blat_IDs.txt";
-} elsif ($data_type eq 'diamond') {
-    $IDfile = $workpath.$read_files."_contigs_IDs.txt";
-    $IDfile2 = $workpath.$read_files."_contigs_nr_diamond_IDs.txt";
-    $IDfile21 = $workpath.$read_files."_singletons_nr_diamond_IDs.txt";
 }
+# Not necessary (see below)
+#} elsif ($data_type eq 'bwa') {
+#    $IDfile = $workpath.$read_files."_contigs_IDs.txt";
+#    $IDfile2 = $workpath.$read_files."_contigs_micro_cds_bwa_IDs.txt";
+#    $IDfile21 = $workpath.$read_files."_singletons_micro_cds_bwa_IDs.txt";
+#} elsif ($data_type eq 'blat') {
+#    $IDfile = $workpath.$read_files."_contigs_IDs.txt";
+#    $IDfile2 = $workpath.$read_files."_contigs_n_micro_cds_blat_IDs.txt";
+#    $IDfile21 = $workpath.$read_files."_singletons_n_micro_cds_blat_IDs.txt";
+#} elsif ($data_type eq 'diamond') {
+#    $IDfile = $workpath.$read_files."_contigs_IDs.txt";
+#    $IDfile2 = $workpath.$read_files."_contigs_nr_diamond_IDs.txt";
+#    $IDfile21 = $workpath.$read_files."_singletons_nr_diamond_IDs.txt";
+#}
 
 if ($data_type eq 'assembly') {
     my %id_to_num_reads;
@@ -77,6 +79,7 @@ if ($data_type eq 'assembly') {
     print "number of all contigs:  ".keys( %id_to_length ).".\n";
     print "total number of reads mapping to contigs = $total.\n\n\n";
 }
+# This code does not accomplish a purpose other than printing some information
 #} else {
 #    my %IDs;
 #    open(INPUT0, $IDfile) or die "Error opening $IDfile : $!\n";

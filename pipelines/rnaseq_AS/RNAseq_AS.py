@@ -534,7 +534,7 @@ pandoc --to=markdown \\
 
     def miso_index(self):
         """
-        Creates the indexed folder needed to compute the Psi values from a gff file
+        Creates the indexed folder MISO needs to compute the PSI values from a gff file.
 
         """
         jobs = []
@@ -564,7 +564,7 @@ pandoc --to=markdown \\
 
     def miso_paired_end(self):
         """
-        Calculates the mean insert length and standard deviation for paired end reads
+        Calculates the mean insert length and standard deviation for paired end reads that MISO needs to calculate PSI.
         """
 
         jobs = []
@@ -606,6 +606,9 @@ pandoc --to=markdown \\
         return jobs
 
     def miso_summarize(self):
+        """
+        Summarizes the MISO output and provides confidence intervals for the PSI values.
+        """
        
         jobs = []
 
@@ -623,6 +626,10 @@ pandoc --to=markdown \\
         return jobs
 
     def miso_diff(self):
+        """
+        Completes differential analysis on the events.
+        """
+
         jobs = []
 
         summaries = []
@@ -653,7 +660,9 @@ pandoc --to=markdown \\
         return jobs
 
     def miso_plot(self):
-
+        """
+        Plots output via Sashimi Plot.
+        """
         jobs = []
 
         report_dependencies = []
@@ -741,6 +750,10 @@ pandoc --to=markdown \\
         return jobs
 
     def bam_to_fastq(self):
+        """
+        Uses Tophat to convert BAM files into FASTQ files for Vast Tools to use.
+        """
+
         jobs = []
 
         for sample in self.samples:
@@ -757,6 +770,10 @@ pandoc --to=markdown \\
         return jobs
 
     def vast_tools_align(self):
+        """
+        Outputs the alignment data in a suitable format for Vast Tools usage and computes PSI values.
+        """
+
         jobs = []
 
         for sample in self.samples:
@@ -771,6 +788,10 @@ pandoc --to=markdown \\
         return jobs
 
     def vast_tools_combine(self):
+        """
+        Combines the Vast Tools output.
+        """
+
         jobs = []
         
         align_out_list = []
@@ -788,6 +809,10 @@ pandoc --to=markdown \\
         return jobs
 
     def vast_tools_diff(self):
+        """
+        Completes differential analysis on Vast Tools data.
+        """
+
         jobs = []
                 
         num_samples = 0
@@ -817,6 +842,9 @@ pandoc --to=markdown \\
         return jobs
 
     def vast_tools_plot(self):
+        """
+        Plots the significant events from Vast Tools.
+        """
         
         jobs = []
         
@@ -857,6 +885,9 @@ pandoc --to=markdown \\
         return jobs
 
     def jctseq_raw_counts(self):
+        """
+        Uses QoRTs to calculate the read and junction counts.
+        """
 
         jobs = []
 
@@ -877,7 +908,9 @@ pandoc --to=markdown \\
         return jobs
 
     def jctseq_make_gff(self):
-
+        """
+        Uses QoRTs to generate an annotation file for JunctionSeq to use.
+        """
         jobs = []
 
         bfx_dir = os.path.dirname(jctseq.__file__)
@@ -889,6 +922,9 @@ pandoc --to=markdown \\
         return jobs
 
     def jctseq_diff_prep(self):
+        """
+        Prepares directories and files for JunctionSeq's differential analysis.
+        """
         
         jobs = []
 
@@ -910,6 +946,9 @@ pandoc --to=markdown \\
         return jobs
 
     def jctseq_diff(self):
+        """
+        Performs differential analysis.
+        """
 
         jobs = []
 

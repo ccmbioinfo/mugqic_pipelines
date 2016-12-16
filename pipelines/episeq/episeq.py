@@ -1273,7 +1273,7 @@ result["Avg Control Beta"] = rowMeans(beta[,controls])
 result["Avg Case Beta"] = rowMeans(beta[,cases])
 result["Avg Delta Beta"] = result[,"Avg Case Beta"] - result[,"Avg Control Beta"]
 result <- merge(result, dmp, by=0)
-result <- result[abs(result["Avg Delta Beta"]) > {delta_beta_threshold}]
+result <- result[abs(result["Avg Delta Beta"]) > {delta_beta_threshold},]
 
 write.csv(result, file="{dmps_file}", quote=FALSE, row.names=FALSE)
 
@@ -1373,7 +1373,7 @@ dmrs <- bumphunterEngine(beta,
 
 dmrs <- na.omit(dmrs)
 
-write.csv(dmrs\$table, "{dmrs_file}", quote=FALSE, row.names=FALSE)
+write.csv(dmrs$table, "{dmrs_file}", quote=FALSE, row.names=FALSE)
 
 EOF
 mkdir -p {data_dir}

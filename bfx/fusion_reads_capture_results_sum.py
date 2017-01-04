@@ -33,9 +33,10 @@ def merge_and_summary(sum_files, out_dir, ini_section='merge_and_summary'):
 	return Job(
 		sum_files,
 		[os.path.join(out_dir, "merged.summary.stat")],
+		[["fusion_reads_capture_results_sum", "module_fusiontools"]],
 		command="""\
 cat {sum_files} |grep ^SUM> {out_dir}/merged.summary &&
-/hpf/largeprojects/ccmbio/jiangyue/DIPG_analysis_by_samples/Scripts/generate_summary_stats_meregd.py {out_dir}/merged.summary > {out_dir}/merged.summary.stat""".format(
+generate_summary_stats_meregd.py {out_dir}/merged.summary > {out_dir}/merged.summary.stat""".format(
 		sum_files=" \\\n".join(sum_files),
 		out_dir=out_dir,
 		),

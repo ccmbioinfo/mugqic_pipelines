@@ -30,9 +30,9 @@ def extract_captured_reads_and_realn(captured_bam, realigned_bam, hg_and_trans_j
 	return Job(
 		[captured_bam],
 		[realigned_bam],
-		[["bwa_mem", "module_bwa"]],
+		[["extract_captured_reads_and_realn", "module_fusiontools"]],
 		command="""\
-/hpf/largeprojects/ccmbio/jiangyue/DIPG_analysis_by_samples/Scripts/extract_fusion_reads_DIPG_merged.py {captured_bam} && \\
+extract_fusion_reads_DIPG_merged.py {captured_bam} && \\
 bwa mem {other_options} \\
   {hg_and_trans_junc_ref} \\
   {captured_bam}.fa > {realigned_bam}""".format(

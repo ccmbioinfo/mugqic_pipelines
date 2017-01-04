@@ -31,9 +31,9 @@ def filter_caputred_reads(captured_bam, realigned_bam, cram, sample_info, out_di
 	return Job(
 		[captured_bam, realigned_bam],
 		[out_file],
-		[["bwa_mem", "module_bwa"]],
+		[["filter_caputred_reads", "module_fusiontools"]],
 		command="""\
-/hpf/largeprojects/ccmbio/jiangyue/DIPG_analysis_by_samples/Scripts/filter_caputred_reads.py {captured_bam} {realigned_bam} {cram} {sample_info} > {out_file}
+filter_caputred_reads.py {captured_bam} {realigned_bam} {cram} {sample_info} > {out_file}
 """.format(
 		captured_bam=" \\\n " + captured_bam,
 		realigned_bam=" \\\n " + realigned_bam,

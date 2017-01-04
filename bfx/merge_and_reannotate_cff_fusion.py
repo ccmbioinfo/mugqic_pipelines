@@ -34,10 +34,11 @@ def merge_and_reannotate_cff_fusion(input_cff, out_dir, annotation_file=None, re
 	return Job(
 		input_cff,
 		[os.path.join(out_dir,  merged_cff+".reann")],
+		[["merge_and_reannotate_cff_fusion", "module_fusiontools"]],
 		command="""\
 cat {cff_files} > {out_dir}/merged.cff &&
-/hpf/largeprojects/ccmbio/jiangyue/DIPG_analysis_by_samples/Scripts/reann_cff_fusion.py {merged_cff} {annotation_file} {reference_file} > {merged_cff}.reann && 
-/hpf/largeprojects/ccmbio/jiangyue/DIPG_analysis_by_samples/Analysis/generate_common_fusion_stats.py {merged_cff}.reann > {merged_cff}.reann.cluster
+reann_cff_fusion.py {merged_cff} {annotation_file} {reference_file} > {merged_cff}.reann && 
+generate_common_fusion_stats.py {merged_cff}.reann > {merged_cff}.reann.cluster
 """.format(
 		cff_files=" \\\n".join(input_cff),
 		out_dir=out_dir,

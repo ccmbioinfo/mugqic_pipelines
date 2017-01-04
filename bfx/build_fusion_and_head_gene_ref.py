@@ -31,9 +31,9 @@ def build_fusion_genes_ref(cff_file, out_dir, annotation_file=None, reference_fi
 	return Job(
 		[cff_file],
 		[os.path.join(out_dir, out_file_name)],
-		[['bwa_mem', 'module_bwa']],
+		[['build_fusion_and_head_gene_ref', 'module_fusiontools']],
 		command="""\
-/hpf/largeprojects/ccmbio/jiangyue/DIPG_analysis_by_samples/Scripts/build_fusion_genes_ref.py {cff_file} {annotation_file} {reference_file} > \\
+build_fusion_genes_ref.py {cff_file} {annotation_file} {reference_file} > \\
 {out_dir}/{out_file_name} &&
 bwa index {out_dir}/{out_file_name}
 """.format(
@@ -51,9 +51,9 @@ def build_fusion_and_head_gene_ref(cff_file, out_dir, annotation_file=None, refe
 	return Job(
 		[cff_file],
 		[os.path.join(out_dir, out_file_name)],
-		[['bwa_mem', 'module_bwa']],
+		[['build_fusion_and_head_gene_ref', 'module_fusiontools']],
 		command="""\
-/hpf/largeprojects/ccmbio/jiangyue/DIPG_analysis_by_samples/Scripts/build_fusion_and_head_transcript_ref.py {cff_file} {annotation_file} {reference_file} > \\
+build_fusion_and_head_transcript_ref.py {cff_file} {annotation_file} {reference_file} > \\
 {out_dir}/{out_file_name} &&
 bwa index {out_dir}/{out_file_name}
 """.format(

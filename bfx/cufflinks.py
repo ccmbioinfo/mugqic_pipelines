@@ -102,7 +102,7 @@ cufflinks -q {other_options}{gtf} \\
   --num-threads {num_threads} \\
   {input_bam}""".format(
         other_options=config.param('cufflinks', 'other_options', required=False),
-        gtf=" \\\n  --GTF-guide " + gtf if gtf else "",
+        gtf=" \\\n  -G " + gtf if gtf else "",
         max_bundle_frags=config.param('cufflinks', 'max_bundle_frags', type='int'),
         library_type=config.param('cufflinks', 'strand_info'),
         output_directory=output_directory,

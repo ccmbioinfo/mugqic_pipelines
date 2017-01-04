@@ -38,9 +38,9 @@ def cff_convert(sample, fusion_result_file, sample_type, disease_name, tool, out
 	return Job(
 		[fusion_result_file],
 		[os.path.join(out_dir, sample+"."+tool+".cff")],
-		[],
+		[['cff_convertion', 'module_fusiontools']],
 		command="""\
-/hpf/largeprojects/ccmbio/jiangyue/DIPG_analysis_by_samples/Scripts/convert_fusion_results_to_cff.py {sample} {sample_type} {disease_name} {tool} {fusion_result_file} {out_dir}
+convert_fusion_results_to_cff.py {sample} {sample_type} {disease_name} {tool} {fusion_result_file} {out_dir}
 """.format(
 		sample=sample,
 		sample_type=sample_type,

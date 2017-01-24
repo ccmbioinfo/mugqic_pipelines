@@ -26,7 +26,7 @@ import os
 from core.config import *
 from core.job import *
 
-def split(input_bam, output=None, other_options=None):
+def split(input_bam, output, other_options=None):
 
     return Job(
         [input_bam],
@@ -36,10 +36,8 @@ def split(input_bam, output=None, other_options=None):
         ],
         command="""\
 bamtools split -in {input_bam}  \\
-  -reference """.format(
+  -reference && touch {output}""".format(
         tmp_dir=config.param('bamtools', 'tmp_dir'),
-	#reference_fasta=config.param('bamtools','genome_fasta',type='filepath'),
-	#bamtools_options=config.param("bamtools","bamtools_other_options"),
         ram=config.param('bamtools', 'ram'),
         other_options=other_options,
         input_bam=" \\\n " + input_bam if input_bam else "",
@@ -48,10 +46,10 @@ bamtools split -in {input_bam}  \\
     )
 
 
-def index(input_bam, output, other_options=None):
+def index(input_bam, bamtools_split_done, output, other_options=None):
 
     return Job(
-        [input_bam],
+        [input_bam, bamtools_split_done],
         [output],
         [
             ['bamtools', 'module_bamtools']
@@ -62,8 +60,6 @@ for chr in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y MT; do
     bamtools index -in $myfile.REF_$chr.bam;  \\
 done && touch {output}""".format(
         tmp_dir=config.param('bamtools', 'tmp_dir'),
-	#reference_fasta=config.param('bamtools','genome_fasta',type='filepath'),
-	#bamtools_options=config.param("bamtools","bamtools_other_options"),
         ram=config.param('bamtools', 'ram'),
         other_options=other_options,
         input_bam=" \\\n " + input_bam if input_bam else "",

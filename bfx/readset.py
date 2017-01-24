@@ -70,6 +70,13 @@ class IlluminaReadset(Readset):
         return self._run_type
 
     @property
+    def cram(self):
+	if not hasattr(self, "_cram"):
+	    return None
+	else:
+	    return self._cram
+
+    @property
     def bam(self):
         if not hasattr(self, "_bam"):
             return None
@@ -134,6 +141,7 @@ def parse_illumina_readset_file(illumina_readset_file):
                 line[format] = os.path.normpath(line[format])
 
         readset._bam = line.get('BAM', None)
+	readset._cram = line.get('CRAM', None)
         readset.fastq1 = line.get('FASTQ1', None)
         readset.fastq2 = line.get('FASTQ2', None)
         readset._library = line.get('Library', None)

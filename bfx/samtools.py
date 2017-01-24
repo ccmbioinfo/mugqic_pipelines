@@ -206,9 +206,54 @@ perl {vcfutils} varFilter {other_options}{input} \\
         )
     )
 
+'''
+def cram_2_fastq (input_cram, sample_name, output_dir, fastq, second_end_fastq=None):
+    return Job(
+	[input_cram],
+	[fastq, second_end_fastq],
+	[
+            ['cram_to_fastq', 'module_java'],
+            ['cram_to_fastq', 'module_samtools']
+        ],
+        command="""\
+samtools view -h -u -@ {num_threads} {input_cram} -T {cram_reference} | \\
+samtools sort - | \\
+java -jar -Xmx{ram} /hpf/tools/centos6/picard-tools/2.5.0/picard.jar SamToFastq I=/dev/stdin F={fastq1} {fastq2} \\
+VALIDATION_STRINGENCY=LENIENT""".format(
+	num_threads=config.param('cram_to_fastq','threads'),
+	input_cram=input_cram,
+	cram_reference=config.param('cram_to_fastq','reference_fasta'),
+	ram=config.param('cram_to_fastq','ram'),
+	fastq1=fastq,
+	fastq2=" \\\n  F2=" + second_end_fastq if second_end_fastq else ""
+	)
+    )
 
-# ORIGINAL BCFTOOLS VIEW FUNCTION -- for samtools 0.1.19
-# def bcftools_view(input, output, options="", pair_calling=False):
+'''
+def cram_2_fastq (input_cram, sample_name, output_dir, fastq, second_end_fastq=None):
+    return Job(
+        [input_cram],
+        [fastq, second_end_fastq],
+        [
+            ['cram_to_fastq', 'module_java'],
+            ['cram_to_fastq', 'module_samtools']
+        ],
+        command="""\
+samtools view -h -u -@ {num_threads} {input_cram} -T {cram_reference} -o {sample_name}.bam && \\
+samtools sort {sample_name}.bam -o {sample_name}.sorted.bam && \\
+java -jar -Xmx{ram} /hpf/tools/centos6/picard-tools/2.5.0/picard.jar SamToFastq I={sample_name}.sorted.bam F={fastq1} {fastq2} \\
+VALIDATION_STRINGENCY=LENIENT && rm {sample_name}.bam {sample_name}.sorted.bam""".format(
+        num_threads=config.param('cram_to_fastq','threads'),
+        input_cram=input_cram,
+        cram_reference=config.param('cram_to_fastq','reference_fasta'),
+	sample_name=sample_name,
+        ram=config.param('cram_to_fastq','ram'),
+        fastq1=fastq,
+        fastq2=" \\\n  F2=" + second_end_fastq if second_end_fastq else ""
+        )
+    )
+
+
 #     return Job(
 #         [input],
 #         [output],

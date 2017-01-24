@@ -99,6 +99,38 @@ class Forge(common.Illumina):
         return config.param("DEFAULT", "module_" + module).split("/")[-1]
 
 
+
+    def cram_to_fastq(self):
+	jobs= []
+	for readset in self.readsets:
+	    alignment_dir = os.path.join("alignment", readset.sample.name)
+	    # If readset FASTQ files are available, skip this step
+            if not readset.fastq1:
+                if readset.cram:
+                    if readset.run_type == "PAIRED_END":
+                        #Change the path of FastQ files, which is passed to the bfx/picard.py, to the "alignmnet" folder, regardless of the position of original BAM file
+                        fastq1 = os.path.join(alignment_dir, re.sub("\.cram$", ".pair1.fastq.gz", os.path.basename(readset.cram)))
+                        fastq2 = os.path.join(alignment_dir, re.sub("\.cram$", ".pair2.fastq.gz", os.path.basename(readset.cram)))
+                    elif readset.run_type == "SINGLE_END":
+                        fastq1 = os.path.join(alignment_dir, re.sub("\.cram$", ".single.fastq.gz", os.path.basename(readset.cram)))
+                        fastq2 = None
+                    else:
+                        raise Exception("Error: run type \"" + readset.run_type +
+                        "\" is invalid for readset \"" + readset.name + "\" (should be PAIRED_END or SINGLE_END)!")
+
+                    job = concat_jobs([
+                        Job(command="mkdir -p " + alignment_dir),
+                        samtools.cram_2_fastq(readset.cram, readset.name, alignment_dir, fastq1, fastq2)
+                    ], name = "cram_to_fastq." + readset.name)
+
+                    jobs.append(job)
+                else:
+                    raise Exception("Error: CRAM file not available for readset \"" + readset.name + "\"!")
+
+	return jobs
+
+
+
     def picard_sam_to_fastq(self):
         """
 	Copied from common.py and modified ; following conversion from BAM files, the Fastq files will be written to "alignment/sample" file rather than original BAM folder
@@ -196,8 +228,11 @@ END
             if readset.run_type == "PAIRED_END":
                 candidate_input_files = [[readset.fastq1, readset.fastq2]]
                 if readset.bam:
-		    # Changes made so that the Fastq files would be read from "alignment/sample" folder
+		    # Changes made so that the Fastq files would be read from "alignment/sample" folder following BAM -> Fastq conversion
                     candidate_input_files.append([os.path.join(alignment_dir, re.sub("\.bam$", ".pair1.fastq.gz", os.path.basename(readset.bam))), os.path.join(alignment_dir, re.sub("\.bam$", ".pair2.fastq.gz", os.path.basename(readset.bam)))])
+                if readset.cram:
+		    # Changes made so that the Fastq files would be read from "alignment/sample" folder following CRAM -> Fastq conversion
+                    candidate_input_files.append([os.path.join(alignment_dir, re.sub("\.cram$", ".pair1.fastq.gz", os.path.basename(readset.cram))), os.path.join(alignment_dir, re.sub("\.cram$", ".pair2.fastq.gz", os.path.basename(readset.cram)))])
                 [fastq1, fastq2] = self.select_input_files(candidate_input_files)
                 job = trimmomatic.trimmomatic(
                     fastq1,
@@ -211,11 +246,15 @@ END
                     adapter_fasta,
                     trim_log
                 )
+
             elif readset.run_type == "SINGLE_END":
                 candidate_input_files = [[readset.fastq1]]
                 if readset.bam:
-                    # Changes made so that the Fastq files would be read from "alignment/sample" folder
+                    # Changes made so that the Fastq files would be read from "alignment/sample" folder following BAM -> Fastq conversion
                     candidate_input_files.append(os.path.join(alignment_dir, re.sub("\.bam$", ".single.fastq.gz", os.path.basename(readset.bam))))
+                if readset.cram:
+                    # Changes made so that the Fastq files would be read from "alignment/sample" folder following CRAM -> Fastq conversion
+                    candidate_input_files.append(os.path.join(alignment_dir, re.sub("\.cram$", ".single.fastq.gz", os.path.basename(readset.cram))))
                 [fastq1] = self.select_input_files(candidate_input_files)
                 job = trimmomatic.trimmomatic(
                     fastq1,
@@ -1251,13 +1290,14 @@ cp \\
 
 	for sample in self.samples:
 	    freebayes_folder = os.path.join("alignment", sample.name, "freebayes")
+	    bamtools_split_done = os.path.join("alignment", sample.name, sample.name + ".bamtools_split_done.txt") #The existence of this file indicates this pipeline step was completed
 	    bamtools_donefile = os.path.join(freebayes_folder, sample.name + ".bamtools_done.txt") #The existence of this file indicates this pipeline step was completed
 	    input_bam = os.path.join("alignment", sample.name, sample.name + ".sorted.dup.recal.bam")
 
 	    jobs.append(concat_jobs([
 		Job(command="mkdir -p " + freebayes_folder),
-		bamtools.split(input_bam),
-		bamtools.index(input_bam, bamtools_donefile),
+		bamtools.split(input_bam, bamtools_split_done),
+		bamtools.index(input_bam, bamtools_split_done, bamtools_donefile),
 		], name="bamtools_split_index." + sample.name))
 
 	return jobs
@@ -1522,8 +1562,7 @@ cp \\
 
 
 
-    # If both "VEP" and "SnpEff" are specified in the [gemini_annotations] section of the configuration file, two database files are generated in the annotation folder: Sample.snpeff-annotated.db and 
-    # Sample.vep-annotated.db files, which can then be used to extract the required variants based on the user-specified filters. More information can be found at https://gemini.readthedocs.io/en/latest/
+
     def gemini_load(self):
         """
         Load each vcf into a db
@@ -1863,6 +1902,7 @@ cp \\
     @property
     def steps(self):
         return [
+	    self.cram_to_fastq,
             self.picard_sam_to_fastq,
             # Part one of the pipeline [alignment_pipeline.pl]
 

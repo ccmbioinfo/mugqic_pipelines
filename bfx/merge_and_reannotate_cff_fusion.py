@@ -33,18 +33,32 @@ def merge_and_reannotate_cff_fusion(input_cff, out_dir, annotation_file=None, re
 	merged_cff = os.path.join(out_dir, "merged.cff")
 	return Job(
 		input_cff,
-		[os.path.join(out_dir,  merged_cff+".reann")],
+		[merged_cff+".reann"],
 		[["merge_and_reannotate_cff_fusion", "module_fusiontools"]],
 		command="""\
 cat {cff_files} > {out_dir}/merged.cff &&
-reann_cff_fusion.py {merged_cff} {annotation_file} {reference_file} > {merged_cff}.reann && 
-generate_common_fusion_stats.py {merged_cff}.reann > {merged_cff}.reann.cluster
-""".format(
+reann_cff_fusion.py {merged_cff} {annotation_file} {reference_file} > {merged_cff}.reann""".format(
 		cff_files=" \\\n".join(input_cff),
 		out_dir=out_dir,
 		merged_cff=merged_cff,
 		annotation_file=annotation_file if annotation_file else config.param(ini_section, 'annotation_file', type='filepath'),
 		reference_file=reference_file if reference_file else config.param(ini_section, 'reference_file', type='filepath')
+		),
+		removable_files=[]
+	)
+def cluster_reann_dnasupp_file(out_dir, ini_section='merge_and_reannotate_cff_fusion'):
+	other_options = config.param(ini_section, 'other_options', required=False)
+	reann_dnasupp_file = os.path.join(out_dir, "merged.cff.reann.dnasupp")
+	output_file = reann_dnasupp_file + ".cluster"
+	return Job(
+		[reann_dnasupp_file],
+		[output_file],
+		[["merge_and_reannotate_cff_fusion", "module_fusiontools"]],
+		command="""\
+generate_common_fusion_stats.py {reann_dnasupp_file} > {out_file}
+""".format(
+		reann_dnasupp_file=reann_dnasupp_file,
+		out_file=output_file
 		),
 		removable_files=[]
 	)

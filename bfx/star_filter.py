@@ -21,33 +21,22 @@
 
 # Python Standard Modules
 import os
-
 # MUGQIC Modules
 from core.config import *
 from core.job import *
-
-
-
-def cff_convert(sample, fusion_result_file, sample_info_file, tool, out_dir, ini_section='cff_convertion'):
-	#defuse_result = os.path.join("fusions", "defuse", sample, "results.filtered.tsv")
-	#fusionmap_result = os.path.join("fusions", "fusionmap", sample, "02_RNA.FusionReport.txt")
-	#ericscript_result = os.path.join("fusions", "ericscript", sample, "fusion.results.filtered.tsv")
-	#integrate_result = os.path.join("fusions", "integrate", sample, "breakpoints.tsv")
-
-
+def star_filter(star_bam, out_dir, ini_section='star_filter'):
+	other_options = config.param(ini_section, 'other_options', required=False)
+	out_fastq1 = os.path.join(out_dir, os.path.basename(star_bam) + ".star.filtered.pair1.fastq")
+	out_fastq2 = os.path.join(out_dir, os.path.basename(star_bam) + ".star.filtered.pair2.fastq")
 	return Job(
-		[fusion_result_file],
-		[os.path.join(out_dir, sample+"."+tool+".cff")],
-		[['cff_convertion', 'module_fusiontools']],
+		[star_bam],
+		[out_fastq1, out_fastq2],
+		[["star_filter", "module_fusiontools"]],
 		command="""\
-convert_fusion_results_to_cff.py {sample} {sample_info_file} {tool} {fusion_result_file} {out_dir}
-""".format(
-		sample=sample,
-		sample_info_file=sample_info_file,
-		fusion_result_file=fusion_result_file,
-		tool=tool,
-		out_dir=out_dir
-		),
-		removable_files=[]
+filter_star_alignment.py {star_bam} {out_fastq1} {out_fastq2}""".format(
+		star_bam=star_bam,	
+		out_dir=out_dir,
+		out_fastq1=out_fastq1,
+		out_fastq2=out_fastq2
+		)
 	)
-

@@ -671,7 +671,7 @@ rm {output_directory}/tmpSort.txt {output_directory}/tmpMatrix.txt""".format(
             metrics.rpkm_saturation(count_file, gene_size_file, rpkm_directory, saturation_directory)
         ], name="rpkm_saturation")
         jobs.append(job)
-
+	'''
         report_file = os.path.join("report", "RnaSeq.raw_counts_metrics.md")
         jobs.append(
             Job(
@@ -697,7 +697,7 @@ pandoc --to=markdown \\
                 report_files=[report_file],
                 name="raw_count_metrics_report")
         )
-
+	'''
         return jobs
 
     def cufflinks(self):

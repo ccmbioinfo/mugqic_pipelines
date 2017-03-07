@@ -28,26 +28,21 @@ from core.job import *
 
 
 
-def cff_convert(sample, fusion_result_file, sample_info_file, tool, out_dir, ini_section='cff_convertion'):
-	#defuse_result = os.path.join("fusions", "defuse", sample, "results.filtered.tsv")
-	#fusionmap_result = os.path.join("fusions", "fusionmap", sample, "02_RNA.FusionReport.txt")
-	#ericscript_result = os.path.join("fusions", "ericscript", sample, "fusion.results.filtered.tsv")
-	#integrate_result = os.path.join("fusions", "integrate", sample, "breakpoints.tsv")
-
-
+def check_dna_support_before_next_exon(input_reann, bam_list_file, tmp_dir, annotation_file=None, ini_section='check_dna_support_before_next_exon'):
+	other_options = config.param(ini_section, 'other_options', required=False)
+	output_file = input_reann + ".dnasupp"
 	return Job(
-		[fusion_result_file],
-		[os.path.join(out_dir, sample+"."+tool+".cff")],
-		[['cff_convertion', 'module_fusiontools']],
+		[input_reann],
+		[output_file],
+		[["check_dna_support_before_next_exon", "module_fusiontools"]],
 		command="""\
-convert_fusion_results_to_cff.py {sample} {sample_info_file} {tool} {fusion_result_file} {out_dir}
-""".format(
-		sample=sample,
-		sample_info_file=sample_info_file,
-		fusion_result_file=fusion_result_file,
-		tool=tool,
-		out_dir=out_dir
+get_fusion_dna_supp_before_end_of_gene.py {reann_file} {bam_list_file} {annotation_file} {tmp_dir} > {output_file}""".format(
+		reann_file=input_reann,
+		output_file=output_file,
+		bam_list_file=bam_list_file,
+		tmp_dir=tmp_dir,
+		annotation_file=annotation_file if annotation_file else config.param(ini_section, 'annotation_file', type='filepath'),
 		),
-		removable_files=[]
+		removable_files=[os.path.join(tmp_dir, "dicordant.bam"), os.path.join(tmp_dir, "dicordant.bam.bai")]
 	)
 

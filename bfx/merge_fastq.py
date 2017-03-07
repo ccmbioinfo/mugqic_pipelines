@@ -21,33 +21,27 @@
 
 # Python Standard Modules
 import os
-
+import zipfile
 # MUGQIC Modules
 from core.config import *
 from core.job import *
-
-
-
-def cff_convert(sample, fusion_result_file, sample_info_file, tool, out_dir, ini_section='cff_convertion'):
-	#defuse_result = os.path.join("fusions", "defuse", sample, "results.filtered.tsv")
-	#fusionmap_result = os.path.join("fusions", "fusionmap", sample, "02_RNA.FusionReport.txt")
-	#ericscript_result = os.path.join("fusions", "ericscript", sample, "fusion.results.filtered.tsv")
-	#integrate_result = os.path.join("fusions", "integrate", sample, "breakpoints.tsv")
-
-
+def merge_fastq(fastq1_list, fastq2_list, out_dir, ini_section='merge_fastq'):
+	other_options = config.param(ini_section, 'other_options', required=False)
+	
+	outfastq1 = os.path.join(out_dir, "merged.pair1.fastq")
+	outfastq2 = os.path.join(out_dir, "merged.pair2.fastq")
 	return Job(
-		[fusion_result_file],
-		[os.path.join(out_dir, sample+"."+tool+".cff")],
-		[['cff_convertion', 'module_fusiontools']],
+		fastq1_list + fastq2_list,
+		[outfastq1, outfastq2],
+		[],
 		command="""\
-convert_fusion_results_to_cff.py {sample} {sample_info_file} {tool} {fusion_result_file} {out_dir}
-""".format(
-		sample=sample,
-		sample_info_file=sample_info_file,
-		fusion_result_file=fusion_result_file,
-		tool=tool,
-		out_dir=out_dir
-		),
-		removable_files=[]
+cat \\
+{input1} > {output1} && \\
+cat \\
+{input2} > {output2}""".format(
+		input1=" ".join(fastq1_list),	
+		output1=outfastq1,
+		input2=" ".join(fastq2_list),	
+		output2=outfastq2
+		)
 	)
-

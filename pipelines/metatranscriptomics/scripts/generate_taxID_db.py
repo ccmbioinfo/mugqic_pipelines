@@ -1,10 +1,14 @@
+"""
+Reads accession2taxID files and generate microbial_taxID_all.txt database
+"""
+
 from argparse import ArgumentParser
 
 def parse_args():
     arg_parser = ArgumentParser()
-    arg_parser.add_argument('--tax-gi', nargs='+')
+    arg_parser.add_argument('--tax-gi', nargs='+', help='accession2tax files')
     arg_parser.add_argument('--id-file', help='File containing gi|#|ref|Acc|, gi, species name')
-    arg_parser.add_argument('--out')
+    arg_parser.add_argument('--out', help='output name')
 
     return arg_parser.parse_args()
 

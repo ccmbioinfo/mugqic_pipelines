@@ -34,10 +34,12 @@ if (defined $IDfile) {
 #            $accession =~ s/.*?\|//;
 #            $accession =~ s/.*?\|//;
 #            $accession =~ s/\|.*?$//;
-	     if($line1[0] =~ /([A-Z].*?)\|/){
+	     if($line1[0] =~ /([A-Z].*?)(?:\||$)/){
 		$accession = $1;
 	     } else {
 		$accession = $line1[0];
+		# Print errorneous line
+		print "$line1[0]\n";
 	    }
 	    $genes{$accession} = join("\t", @Zo);
 	}
@@ -97,7 +99,7 @@ while  ( my $line = <INPUT2>) {
 #        $accession =~ s/.*?\|//;
 #        $accession =~ s/.*?\|//;
 #        $accession =~ s/\|.*?$//;
-	if($line1[1] =~ /([A-Z].*?)\|/){
+	if($line1[1] =~ /([A-Z].*?)(?:\||$)/){
 	    $accession = $1;
 	} else {
 	    $accession = $line1[1];

@@ -32,7 +32,7 @@ while  ( my $line = <INPUT1>) {
 #	$accession =~ s/.*?\|//;
 #	$accession =~ s/.*?\|//;
 #	$accession =~ s/\|.*?$//;
-	if($tmp[0] =~ /([A-Z].*?)\|/){
+	if($tmp[0] =~ /([A-Z].*?)(?:\||$)/){
 	    $accession = $1;
 	} else {
 	    $accession = $tmp[0];
@@ -60,7 +60,7 @@ while  ( my $line = <INPUT2>) {
 #	$accession =~ s/.*?\|//;
 #	$accession =~ s/.*?\|//;
 #	$accession =~ s/\|.*?$//;
-	if($tmp[0] =~ /([A-Z].*?)\|/){
+	if($tmp[0] =~ /([A-Z].*?)(?:\||$)/){
 	    $accession = $1;
 	} else {
 	    $accession = $tmp[0];
@@ -120,7 +120,7 @@ while  ( my $line = <INPUT4>) {
 #	$accession =~ s/.*?\|//;
 #	$accession =~ s/.*?\|//;
 #	$accession =~ s/\|.*?$//;
-	if($tmp[0] =~ /([A-Z].*?)\|/){
+	if($tmp[0] =~ /([A-Z].*?)(?:\||$)/){
 	    $accession = $1;
 	} else {
 	    $accession = $tmp[0];

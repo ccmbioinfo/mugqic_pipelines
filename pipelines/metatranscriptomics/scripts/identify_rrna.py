@@ -10,7 +10,7 @@ DEFAULT_READ_LENGTH = 100
 def parse_args():
     arg_parser = ArgumentParser()
     arg_parser.add_argument('--read-description',
-                            help="JSON file describing the unique reads.  Contains 'id' and 'length'")
+                            help="TXT file describing the unique reads.  Contains 'id' and 'length'")
     arg_parser.add_argument('--infernalout', help='Output from cmscan')
     arg_parser.add_argument('--apply-cutoff', help='Whether to apply cutoff values', action='store_true')
     arg_parser.add_argument('--max-evalue', help='The maximum e-value to accept a read as being rRNA')
@@ -36,9 +36,21 @@ def get_id_to_length(read_description_file):
     :param read_description_file: JSON file
     :return: dict
     """
+#    with open(read_description_file) as f:
+#        read_dict = json.load(f)
+#        return {row['id']: int(row['length']) for row in read_dict['rows']}
+    read_dict = {}
     with open(read_description_file) as f:
-        read_dict = json.load(f)
-        return {row['id']: int(row['length']) for row in read_dict['rows']}
+        for line in f:
+            line = line.strip()
+            if(line.startswith("@") or not line): continue
+
+            _id = line.split('\t')[0]
+            length = int(line.split('\t')[2])
+
+            read_dict[_id] = length
+
+    return read_dict
 
 
 class InfernalParser:
@@ -122,10 +134,15 @@ def write_rrna_ids(ids, output_ids):
     :param ids: iterable of str
     :param output_ids: JSON filename
     """
+#    with open(output_ids, 'w+') as f:
+#        json.dump({
+#            'rows': [{'id': id} for id in ids]
+#        }, f, indent=4)
+
     with open(output_ids, 'w+') as f:
-        json.dump({
-            'rows': [{'id': id} for id in ids]
-        }, f, indent=4)
+        f.write("@id\n")
+        for _id in ids:
+            f.write("{_id}\n".format(_id=_id))
 
 
 args = parse_args()

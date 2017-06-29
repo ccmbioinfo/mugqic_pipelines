@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl -w
 
 #my ($read_files, $db_type, $map_type, $read_type) = @ARGV;
-my ($infile1, $infile2, $outfile1, $outfile2, $outfile3) = @ARGV;
+my ($infile1, $infile2, $outfile1, $outfile2, $outfile3, $BLASTDB) = @ARGV;
 
 my $Datapath = "~/CourseData/metagenomics/metatranscriptomics/";
 my $Workpath = "";
@@ -30,11 +30,15 @@ open(INPUT1, $infile1) or die "Error opening $infile1 : $!\n";
 while( my $line = <INPUT1> ) {
     chomp($line);
 
-    my $mycmd = "grep \"".$line."\" ".$infile2;
+    next if $line =~ /^\s*@/;
+
+    $id = (split /\t/, $line)[0];
+
+    my $mycmd = "grep \"".$id."\" ".$infile2;
     my @hits_sub = `$mycmd`;
     my $n = @hits_sub;
 
-    $IDs{$line} = $hits_sub[0];
+    $IDs{$id} = $hits_sub[0];
     my @tmp0 = split(/\t/, $hits_sub[0]);
     $hits{$tmp0[1]} += 1;
 
@@ -43,10 +47,10 @@ while( my $line = <INPUT1> ) {
     if ($n > 1) {
         for (my $i = 0; $i < $n; $i++) {
             my @tmp = split(/\t/, $hits_sub[$i]);
-            my $mycmd = "blastdbcmd -db \$BLASTDB/nr_microbial  -dbtype 'prot' -entry '".$tmp[1]."' -outfmt %l";
+            my $mycmd = "blastdbcmd -db $BLASTDB -dbtype 'prot' -entry '".$tmp[1]."' -outfmt %l";
             my $tmp2 = `$mycmd`;
             if (scalar $tmp2) {
-                $IDs{$line} = $hits_sub[$i];
+                $IDs{$id} = $hits_sub[$i];
                 $hits{$tmp[1]} += 1;
                 $hits{$tmp0[1]} -= 1;
                 $bachits{$tmp[1]} = 1;
@@ -54,18 +58,18 @@ while( my $line = <INPUT1> ) {
             }
         }
     } elsif ($n == 1) {
-        my $mycmd = "blastdbcmd -db \$BLASTDB/nr_microbial  -dbtype 'prot' -entry '".$tmp0[1]."' -outfmt %l";
+        my $mycmd = "blastdbcmd -db $BLASTDB -dbtype 'prot' -entry '".$tmp0[1]."' -outfmt %l";
         my $tmp2 = `$mycmd`;
         if (scalar $tmp2) {
             $bachits{$tmp0[1]} = 1;
         }
     }
-    print OUTPUT2 "$IDs{$line}";
+    print OUTPUT2 "$IDs{$id}";
 }
 close INPUT1;
 close OUTPUT2;
 print "number of reads:  ".keys( %IDs ).".\n";
-#print "number of bachits:  " . keys( %bachits ) . ".\n";
+print "number of bachits:  " . keys( %bachits ) . ".\n";
 
 
 unlink($outfile1);

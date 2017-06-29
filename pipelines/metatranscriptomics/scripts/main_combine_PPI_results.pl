@@ -1,14 +1,14 @@
 #!/usr/local/bin/perl -w
 
-my ($read_files) = @ARGV;
+my ($infile1, $infile2, $outfile) = @ARGV;
 
 my $Datapath = "~/CourseData/metagenomics/metatranscriptomics/";
 my $Workpath = "";
 
-my $infile1 = $Workpath."microbial_cds_sub_ecoli_ppi_pairs.txt";
-my $infile2 = $Workpath."nr_all_sub_ecoli_ppi_pairs.txt";
-my $outfile = $Workpath."PPI_pairs.txt";
-print "Outputfile: $outfile\n\n";
+#my $infile1 = $Workpath."microbial_cds_sub_ecoli_ppi_pairs.txt";
+#my $infile2 = $Workpath."nr_all_sub_ecoli_ppi_pairs.txt";
+#my $outfile = $Workpath."PPI_pairs.txt";
+#print "Outputfile: $outfile\n\n";
 
 my %genes;
 open(INPUT1, $infile1) or die "Error opening $infile1 : $!\n";

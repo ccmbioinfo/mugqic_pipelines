@@ -1,17 +1,17 @@
 #!/usr/local/bin/perl -w
 
 
-my ($read_files, $strain_type) = @ARGV;
+my ($IDfile, $infile, $outfile) = @ARGV;
 
 my $Datapath = "~/CourseData/metagenomics/metatranscriptomics/";
 my $Workpath = "";
 
-my %db_strain = ('micro_cds' => "microbial_cds_sub", 'nr' => "nr_all_sub");
-
-my $IDfile = $ENV{'BLASTDB'}."/taxid_all_categories.txt";    #[taxonID phylum taxonIDs]
-my $infile = $Workpath.$db_strain{$strain_type}."_IDs_map_taxid.txt";    ##[geneID/proteinID refID/giID specie taxonID]
-my $outfile = $Workpath.$db_strain{$strain_type}."_IDs_map_taxid_phylum.txt";    ##[geneID/proteinID refID/giID specie taxonID phylum]
-print "Outputfile: $outfile\n\n";
+#my %db_strain = ('micro_cds' => "microbial_cds_sub", 'nr' => "nr_all_sub");
+#
+#my $IDfile = $ENV{'BLASTDB'}."/taxid_all_categories.txt";    #[taxonID phylum taxonIDs]
+#my $infile = $Workpath.$db_strain{$strain_type}."_IDs_map_taxid.txt";    ##[geneID/proteinID refID/giID specie taxonID]
+#my $outfile = $Workpath.$db_strain{$strain_type}."_IDs_map_taxid_phylum.txt";    ##[geneID/proteinID refID/giID specie taxonID phylum]
+#print "Outputfile: $outfile\n\n";
 
 
 ### for mapped genes/proteins

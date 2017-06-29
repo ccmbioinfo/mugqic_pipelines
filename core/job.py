@@ -147,6 +147,7 @@ class Job:
 
         # If any .done, input or output file is missing, job is not up to date
         for file in [abspath_done] + abspath_input_files + abspath_output_files:
+        # for file in abspath_input_files + abspath_output_files:
             # Use 'exists' instead of 'isfile' since input/output files can be directories
             if not os.path.exists(file):
                 log.debug("Job " + self.name + " NOT up to date")

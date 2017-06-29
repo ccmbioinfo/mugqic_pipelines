@@ -89,3 +89,10 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# Database, output, daniel's personal stuff
+output/
+personal/
+database/
+original_perl/
+danielm710/

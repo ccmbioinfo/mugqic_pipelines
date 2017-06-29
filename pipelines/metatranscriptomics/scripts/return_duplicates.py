@@ -40,9 +40,22 @@ def get_id_to_cluster_size(read_description_file):
     :param read_description_file: JSON filename
     :return: dict
     """
+#    with open(read_description_file) as f:
+#        read_dict = load(f)
+#        return {row['id']: int(row['cluster_size']) for row in read_dict['rows']}
+
+    read_dict = {}
     with open(read_description_file) as f:
-        read_dict = load(f)
-        return {row['id']: int(row['cluster_size']) for row in read_dict['rows']}
+        for line in f:
+            line = line.strip()
+            if(line.startswith("@") or not line): continue
+
+            _id = line.split('\t')[0]
+            size = int(line.split('\t')[1])
+
+            read_dict[_id] = size
+
+    return read_dict
 
 
 def duplicate(read, i):

@@ -9,8 +9,8 @@ my $Workpath = "";
 for (my $i = 1; $i <= 2; $i++) {
 #    $infile = $Workpath.$read_files.$i.".fastq";
 #    $outfile = $Workpath.$read_files.$i."_new.fastq";
-    $infile = shift;
-    $outfile = shift;
+    $infile = shift @ARGV;
+    $outfile = shift @ARGV;
     print "Outputfile: $outfile\n";
 
     unlink($outfile);

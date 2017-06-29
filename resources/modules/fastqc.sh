@@ -4,7 +4,7 @@
 ################### FASTQC
 ###################
 VERSION="0.11.2"
-INSTALL_PATH=$MUGQIC_INSTALL_HOME/software/fastqc/fastqc_v"$VERSION" # where to install..
+INSTALL_PATH=/hpf/projects/brudno/daniel/mugqic_pipelines/software/fastqc/fastqc_v"$VERSION" # where to install..
 mkdir -p $INSTALL_PATH
 cd $INSTALL_PATH
 wget http://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v"$VERSION".zip
@@ -20,7 +20,7 @@ proc ModulesHelp { } {
 }
 module-whatis \"MUGQIC -FASTQC \"
                       
-set             root                \$::env(MUGQIC_INSTALL_HOME)/software/fastqc/fastqc_v"$VERSION"/FastQC
+set             root                \$::env /hpf/projects/brudno/daniel/mugqic_pipelines/software/fastqc/fastqc_v"$VERSION"/FastQC
 prepend-path    PATH               \$root
 " > $VERSION
 
@@ -29,7 +29,7 @@ echo "#%Module1.0
 set ModulesVersion \"$VERSION\"
 " > .version
 
-mkdir -p $MUGQIC_INSTALL_HOME/modulefiles/mugqic/fastqc
-mv .version $VERSION $MUGQIC_INSTALL_HOME/modulefiles/mugqic/fastqc/
+mkdir -p /hpf/projects/brudno/daniel/mugqic_pipelines/modulefiles/mugqic/fastqc
+mv .version $VERSION /hpf/projects/brudno/daniel/mugqic_pipelines/modulefiles/mugqic/fastqc/
 
 

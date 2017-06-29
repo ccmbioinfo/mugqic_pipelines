@@ -94,3 +94,15 @@ def sampe(target, sai1, sai2, fastq1, fastq2, output, name='bwa_sampe'):
                                                       fastq1=fastq1,
                                                       fastq2=fastq2,
                                                       output=output))
+
+def samse(target, sai, fasta, output, name='bwa_samse'):
+    return Job(
+            name=name,
+            input_files=[target, sai, fasta],
+            output_files=[output],
+            module_entries=[['bwa_mem', 'module_bwa']],
+            command='bwa samse {target} {sai} {fasta} > {output}'.format(
+                                                                        target=target,
+                                                                        sai=sai,
+                                                                        fasta=fasta,
+                                                                        output=output))

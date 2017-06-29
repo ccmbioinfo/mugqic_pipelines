@@ -103,12 +103,20 @@ def write_id_to_cluster_size(reads, id_file):
         {"id": "SRR23", "cluster_size": 1}
     ]}
     """
-    id_to_cluster_size = {'rows':
-                              [{'id': read.id, 'cluster_size': read.cluster_size, 'length': len(read.seq)} for read in reads]
-                          }
+#    id_to_cluster_size = {'rows':
+#                              [{'id': read.id, 'cluster_size': read.cluster_size, 'length': len(read.seq)} for read in reads]
+#                          }
+#
+#    with open(id_file, 'w+') as f:
+#        json.dump(id_to_cluster_size, f, indent=4)
 
     with open(id_file, 'w+') as f:
-        json.dump(id_to_cluster_size, f, indent=4)
+        # Write header
+        f.write("@id\tcluster_size\tlength\n")
+        for read in reads:
+            f.write("{_id}\t{cluster_size}\t{length}\n".format(_id=read.id,
+                                                            cluster_size=read.cluster_size,
+                                                            length=len(read.seq)))
 
 
 def write_unique_reads(reads, file, format):

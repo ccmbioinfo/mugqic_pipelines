@@ -1,15 +1,15 @@
 #!/usr/local/bin/perl -w
 
 
-my ($read_files) = @ARGV;
+my ($infile0, $infile, $outfile) = @ARGV;
 
 my $Datapath = "~/CourseData/metagenomics/metatranscriptomics/";
 my $Workpath = "";
 
-my $infile0 = $ENV{'BLASTDB'}."/microbial_all_cds_IDs_map_taxid.txt";
-my $infile = $Workpath."microbial_cds_sub_IDs_length.txt";
-my $outfile = $Workpath."microbial_cds_sub_IDs_map_taxid.txt";
-print "Outputfile: $outfile\n\n";
+#my $infile0 = $ENV{'BLASTDB'}."/microbial_all_cds_IDs_map_taxid.txt";
+#my $infile = $Workpath."microbial_cds_sub_IDs_length.txt";
+#my $outfile = $Workpath."microbial_cds_sub_IDs_map_taxid.txt";
+#print "Outputfile: $outfile\n\n";
 
 my %refseq;
 open(INPUT0, $infile0) or die "Error opening $infile0 : $!\n";
@@ -28,9 +28,13 @@ open(OUTPUT, '>>', $outfile) or die "Error opening $outfile : $!\n";
 open(INPUT, $infile) or die "Error opening $infile : $!\n";
 while( my $line1 = <INPUT> ) {
     chomp($line1);
+
+    next if $line1 =~ /^\s*@/;
+
     my @line = split(/\t/, $line1);
 
     my $myrefseq1 = $line[0];
+
     $geneIDs{$myrefseq1} = 1;
 
     if (not exists $refseq{$myrefseq1}) {

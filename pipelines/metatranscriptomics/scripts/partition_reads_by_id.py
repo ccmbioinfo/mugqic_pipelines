@@ -19,6 +19,7 @@ def parse_args():
 
     arg_parser.add_argument('--included', help='Output filename for reads that are in the IDs')
     arg_parser.add_argument('--excluded', help='Output filename for reads that are not in the IDs')
+    arg_parser.add_argument('--out-format', help='Output format; fasta or fastq')
 
     return arg_parser.parse_args()
 
@@ -40,9 +41,16 @@ def get_ids(id_file):
     :param id_file: JSON filename
     :return: set of str
     """
+    ids = {}
     with open(id_file) as f:
-        return {row['id'] for row in json.load(f)['rows']}
+        for line in f:
+            line = line.strip()
+            if(line.startswith("@") or not line):
+                continue
 
+            _id = line.split('\t')[0]
+            ids[_id] = 1
+    return ids
 
 def partition_reads(all_reads, ids):
     """
@@ -55,7 +63,7 @@ def partition_reads(all_reads, ids):
     included, excluded = set(), set()
 
     for read in all_reads:
-        included.add(read) if read.id in ids else excluded.add(read)
+        included.add(read) if read.id.split('/')[0] in ids else excluded.add(read)
 
     return included, excluded
 
@@ -65,9 +73,10 @@ def get_all_reads(file, format):
 
 
 args = parse_args()
-input, format = (args.fastq, 'fastq') if args.fastq else (args.fasta, 'fasta')
+input, in_format = (args.fastq, 'fastq') if args.fastq else (args.fasta,'fasta')
+format = args.out_format
 
-included, excluded = partition_reads(get_all_reads(input, format), get_ids(args.id_file))
+included, excluded = partition_reads(get_all_reads(input, in_format), get_ids(args.id_file))
 
 SeqIO.write(included, args.included, format)
 SeqIO.write(excluded, args.excluded, format)

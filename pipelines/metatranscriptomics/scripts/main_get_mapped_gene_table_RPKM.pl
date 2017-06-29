@@ -1,20 +1,20 @@
 #!/usr/local/bin/perl -w
 
 
-my ($read_files) = @ARGV;
+my ($outfile1, $outfile2) = @ARGV;
 #my $read_files='cow';
 
 
 my $Datapath = "~/CourseData/metagenomics/metatranscriptomics/";
 my $Workpath = "";
 
-my $infile1 = $Workpath."microbial_cds_sub_table_counts.txt";    ##[geneID, length, taxonID, specie, phylum, #reads b#]
-my $infile2 = $Workpath."nr_all_sub_table_counts.txt";    ##[proteinID, length, taxonID, specie, phylum, #reads, b#]
-my $outfile1 = $Workpath.$read_files."_table_counts_all.txt";    ##[geneID/proteinID, length, taxonID, specie, phylum, #reads, b#]
-my $outfile2 = $Workpath.$read_files."_table_RPKM_all.txt";    ##[geneID/proteinID, length, taxonID, specie, phylum, RPKM, b#]
-print "Outputfile: $outfile2\n\n";
-
-system("cat $infile1 $infile2 > $outfile1");
+#my $infile1 = $Workpath."microbial_cds_sub_table_counts.txt";    ##[geneID, length, taxonID, specie, phylum, #reads b#]
+#my $infile2 = $Workpath."nr_all_sub_table_counts.txt";    ##[proteinID, length, taxonID, specie, phylum, #reads, b#]
+#my $outfile1 = $Workpath.$read_files."_table_counts_all.txt";    ##[geneID/proteinID, length, taxonID, specie, phylum, #reads, b#]
+#my $outfile2 = $Workpath.$read_files."_table_RPKM_all.txt";    ##[geneID/proteinID, length, taxonID, specie, phylum, RPKM, b#]
+#print "Outputfile: $outfile2\n\n";
+#
+#system("cat $infile1 $infile2 > $outfile1");
 
 my $N = 1;
 my @N_total = (0)x $N;

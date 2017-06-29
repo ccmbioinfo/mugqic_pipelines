@@ -7,6 +7,7 @@ Additional information may be specified by an id-file, which fills in the second
 """
 import argparse
 import os
+import json
 from Bio import SeqIO
 
 
@@ -47,16 +48,43 @@ def parse_id_file(id_file, reads):
 
 
 def write_output(reads, output_file):
-    if args.id_file:
-        def write_read(read):
-            return '{id}\t{value}\t{len}\n'.format(id=read.id, value=read.value, len=len(read.seq))
-    else:
-        def write_read(read):
-            return '{id}\t{len}\n'.format(id=read.id, len=len(read.seq))
+  #  if args.id_file:
+  #      def write_read(read):
+  #           return '{id}\t{value}\t{len}\n'.format(id=read.id, value=read.value, len=len(read.seq))
+  #  else:
+  #      def write_read(read):
+  #           return '{id}\t{len}\n'.format(id=read.id, len=len(read.seq))
 
-    with open(output_file, 'w+') as out:
-        for read in reads:
-            out.write(write_read(read))
+    def write_read(read):
+        with_id = '{id}\t{value}\t{len}\n'.format(id=read.id, value=read.value, len=len(read.seq))
+        without_id = '{id}\t{len}\n'.format(id=read.id, len=len(read.seq))
+
+        return with_id if args.id_file else without_id
+
+    if('nr_all_sub' in output_file):
+        with open(output_file, 'w+') as out:
+            # Write header line
+            out.write("@id\tdescription\tlength\n")
+            for read in reads:
+                out.write("{_id}\t{description}\t{length}\n".format(
+                                                                    _id=read.id,
+                                                                    description=read.description,
+                                                                    length=len(read.seq)))
+    elif('microbial_cds' in output_file):
+        with open(output_file, 'w+') as out:
+            # Write header line
+            out.write("@id\tlength\n")
+            for read in reads:
+                out.write("{_id}\t{length}\n".format(_id=read.id,
+                                                        length=len(read.seq)))
+
+    else:
+        with open(output_file, 'w+') as out:
+            # Write header line
+            out.write("@id\tlength\n")
+            for read in reads:
+                out.write("{_id}\t{length}\n".format(_id=read.id,
+                                                        length=len(read.seq)))
 
 
 args = parse_args()

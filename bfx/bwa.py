@@ -65,10 +65,10 @@ bwa mem {other_options}{read_group} \\
     )
 
 
-def aln(query, target, output, num_threads=4, name='bwa_aln'):
+def aln(query, target, index, output, num_threads=4, name='bwa_aln'):
     return Job(
         name=name,
-        input_files=[query, target],
+        input_files=[query, target, index],
         output_files=[output],
         module_entries=[['bwa_mem', 'module_bwa']],
         command='bwa aln -t {num_threads} '

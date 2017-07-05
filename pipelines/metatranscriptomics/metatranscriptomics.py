@@ -230,7 +230,9 @@ class Metatranscriptomics(common.Illumina):
                     seqtk.fastq_to_fasta(
                         fastq=join(input_dir, '{name}.{i}.qual_all.fastq'.format(name=readset.name, i=i)),
                         fasta=join(output_dir, '{name}.{i}.qual_all.fasta'.format(name=readset.name, i=i)),
-                        job_name='{step}.{name}'.format(step=self.fastq_to_fasta.__name__, name=readset.name)))
+                        job_name='{step}.{i}.{name}'.format(step=self.fastq_to_fasta.__name__,
+                                                            i=i,
+                                                            name=readset.name)))
 
         return jobs
 
@@ -473,6 +475,7 @@ class Metatranscriptomics(common.Illumina):
             output_dir = join(output_prefix, readset.name)
 
             host_db = config.param(self.align_to_host.__name__, 'host_db', type='filepath')
+            host_index = config.param(self.align_to_host.__name__, 'host_index', type='filepath')
 
             input_fastq, alignment = {}, {}
             for i in (1, 2):
@@ -484,6 +487,7 @@ class Metatranscriptomics(common.Illumina):
                     bwa.aln(
                         query=host_db,
                         target=input_fastq[i],
+                        index=host_index,
                         output=alignment[i],
                         num_threads=4,
                         name='{step}.aln.{name}.{i}'.format(step=self.align_to_host.__name__, name=readset.name, i=i)))
@@ -758,6 +762,8 @@ class Metatranscriptomics(common.Illumina):
             output_dir = join(output_prefix, readset.name)
 
             contigs = join(input_contigs_dir, '{name}.contigs.fasta'.format(name=readset.name))
+            contigs_index = join(input_contigs_dir,
+                    '{name}.contigs.fasta.bwt'.format(name=readset.name))
 
             input_reads, sai = {}, {}
             for i in (1, 2):
@@ -768,6 +774,7 @@ class Metatranscriptomics(common.Illumina):
                 jobs.append(
                     bwa.aln(query=contigs,
                             target=input_reads[i],
+                            index=contigs_index,
                             output=sai[i],
                             num_threads=4,
                             name='{step}.aln.{name}.{i}'.format(step=self.align_to_contigs.__name__,
@@ -989,6 +996,8 @@ class Metatranscriptomics(common.Illumina):
             output_dir = join(output_prefix, readset.name)
 
             blast_db = config.param(self.bwa_align_contigs.__name__, 'blast_db', type='filepath')
+            blast_index = config.param(self.bwa_align_contigs.__name__,
+                    'blast_index', type='filepath')
 
             input_fasta = join(input_dir, '{name}.contigs.fasta'.format(name=readset.name))
             output_sai = join(output_dir, '{name}.contigs.sai'.format(name=readset.name))
@@ -998,6 +1007,7 @@ class Metatranscriptomics(common.Illumina):
                     bwa.aln(
                         query=blast_db,
                         target=input_fasta,
+                        index=blast_index,
                         output=output_sai,
                         num_threads=4,
                         name='{step}.aln.{name}'.format(step=self.bwa_align_contigs.__name__,
@@ -1143,6 +1153,8 @@ class Metatranscriptomics(common.Illumina):
             input_dir = join(input_prefix, readset.name)
             output_dir = join(output_prefix, readset.name)
             blast_db = config.param(self.bwa_align_singletons.__name__, 'blast_db', type='filepath')
+            blast_index = config.param(self.bwa_align_singletons.__name__,
+                    'blast_index', type='filepath')
 
             input_fastq, alignment = {}, {}
             for i in (1,2):
@@ -1154,6 +1166,7 @@ class Metatranscriptomics(common.Illumina):
                         bwa.aln(
                             query=blast_db,
                             target=input_fastq[i],
+                            index=blast_index,
                             output=alignment[i],
                             num_threads=4,
                             name='{step}.aln.{name}.{i}'.format(step=self.bwa_align_singletons.__name__,
@@ -1694,13 +1707,14 @@ class Metatranscriptomics(common.Illumina):
             # To prevent this, create a dummy file
             dummy = join(output_dir, 'dummy')
 
-            # Let database to be the input requirement for making dummy file
+            # Let database be the input file
             jobs.append(Job(name='{step}.{name}.make_dummy'.format(step=self.diamond_align_contigs.__name__,
                                                                 name=readset.name),
                             input_files=[blast_db],
                             output_files=[dummy],
-                            command='touch {dummy}'.format(dummy=dummy)))
-
+                            command='mkdir -p {output_dir} && '
+                            'touch {dummy}'.format(output_dir=output_dir,
+                                                    dummy=dummy)))
 
             input_fasta = join(input_dir,
                     '{name}.contigs.n_micro_cds_rest.fasta'.format(name=readset.name))

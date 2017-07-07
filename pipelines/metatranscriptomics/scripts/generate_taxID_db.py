@@ -1,5 +1,14 @@
 """
 Reads accession2taxID files and generate microbial_taxID_all.txt database
+
+Input:
+    accession2tax files downloaded from NCBI Taxonomy database
+    ftp://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/
+
+    ID_file generated from extract_gi_species_from_fasta.py
+
+Output:
+    Tab delimited txt file with gi|gi#|ref|accID|, gi#, Species Name, taxID
 """
 
 from argparse import ArgumentParser

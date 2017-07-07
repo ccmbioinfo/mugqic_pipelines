@@ -1,5 +1,12 @@
 """
 Extract geneID, giID, speicies_name, and taxonID from microbial database
+
+Input:
+    Microbial database downloaded from NCBI
+    ftp://ftp.ncbi.nlm.nih.gov/genomes/archive/old_refseq/Bacteria/all.ffn.tar.gz
+
+Output:
+    Tab delimited txt file with gi|gi#|ref|accID|, gi#, Species Name
 """
 
 from argparse import ArgumentParser

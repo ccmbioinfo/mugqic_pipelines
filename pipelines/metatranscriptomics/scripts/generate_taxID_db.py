@@ -1,6 +1,8 @@
 """
 Reads accession2taxID files and generate microbial_taxID_all.txt database
 
+Make sure to request enough memory (minimum mem=40GB,vmem=40G)
+
 Input:
     accession2tax files downloaded from NCBI Taxonomy database
     ftp://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/
@@ -9,6 +11,9 @@ Input:
 
 Output:
     Tab delimited txt file with gi|gi#|ref|accID|, gi#, Species Name, taxID
+
+Example Command:
+    python generate_taxID_db.py --tax-gi tax1 tax2 tax3 --id-file id_file --out microbial_db.txt
 """
 
 from argparse import ArgumentParser

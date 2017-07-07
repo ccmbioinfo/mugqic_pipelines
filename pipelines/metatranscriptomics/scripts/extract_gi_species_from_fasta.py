@@ -7,21 +7,22 @@ Input:
 
 Output:
     Tab delimited txt file with gi|gi#|ref|accID|, gi#, Species Name
+
+Example Command:
+    python extract_gi_species_from_fasta.py --fasta microbial_all.fasta --out id_file
 """
 
 from argparse import ArgumentParser
-import re
 
 def parse_args():
     arg_parser = ArgumentParser()
     arg_parser.add_argument('--fasta', help='Fasta file to extract information from')
-    arg_parser.add_argument('--out', help='output format')
+    arg_parser.add_argument('--out', help='output name')
 
     return arg_parser.parse_args()
 
 def extract_data(args):
     data = []
-    prev = ''
     with open(args.fasta, 'r') as fh:
         for line in fh:
             line = line.strip()

@@ -436,7 +436,9 @@ class Metatranscriptomics(common.Illumina):
                 out_rrna = join(output_dir, '{name}.{i}.rrna.fastq'.format(name=readset.name, i=i))
                 out_not_rrna = join(output_dir, '{name}.{i}.not_rrna.fastq'.format(name=readset.name, i=i))
 
-                jobs.append(Job(name='{step}.{readset}'.format(step=self.remove_rrna.__name__, readset=readset.name),
+                jobs.append(Job(name='{step}.{readset}.{i}'.format(step=self.remove_rrna.__name__,
+                                                                    i=i,
+                                                                    readset=readset.name),
                                 input_files=[rrna_ids, in_fastq],
                                 output_files=[out_rrna, out_not_rrna],
                                 command='python {script_path}/partition_reads_by_id.py '

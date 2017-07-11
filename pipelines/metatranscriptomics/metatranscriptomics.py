@@ -1677,6 +1677,41 @@ class Metatranscriptomics(common.Illumina):
                                                             rest=rest_fasta)))
         return jobs
 
+    def prepare_diamond_dir(self):
+        """
+        Make tmp directories and files needed for DIAMOND search
+
+        Input:
+        nr database (Not related, but Muquic needs some input for every job)
+
+        Output:
+        tmp_dir
+        dir_created
+        """
+        jobs = []
+
+        input_prefix = 'contigs'
+        output_prefix = 'contigs'
+
+        for readset in self.readsets:
+            input_dir = join(input_prefix, readset.name)
+            output_dir = join(output_prefix, readset.name)
+            tmp_dir = join(output_dir, 'diamond_tmp')
+
+            blast_db = config.param(self.prepare_diamond_dir.__name__,
+                    'blast_db', type='filepath')
+            tmp = join(tmp_dir, 'dir_created')
+
+            tmp_job = Job(name='{step}.{name}.Make_tmp'.format(step=self.prepare_diamond_dir.__name__,
+                                                                name=readset.name),
+                                input_files=[blast_db],
+                                output_files=[tmp_dir, tmp],
+                                command='mkdir -p {tmp_dir} && touch {tmp}'.format(tmp_dir=tmp_dir,
+                                                                                    tmp=tmp))
+            jobs.append(tmp_job)
+
+        return jobs
+
     def diamond_align_contigs(self):
         """
         Align contigs against non-redundant protein database using DIAMOND
@@ -1698,25 +1733,10 @@ class Metatranscriptomics(common.Illumina):
             input_dir = join(input_prefix, readset.name)
             output_dir = join(output_prefix, readset.name)
             tmp_dir = join(output_dir, 'diamond_tmp')
+            tmp = join(tmp_dir, 'dir_created')
 
             blast_db = config.param(self.diamond_align_contigs.__name__,
                     'blast_db', type='filepath')
-            tmp = join(tmp_dir, 'dir_created')
-            # Dummy file; Diamond modifies tmp directory as it is running
-            # This makes the latest modification time of the directory more
-            # recent than generated inputs. As a result, isUp2Date function 
-            # in Job.py complains even though all the outputs are up to date
-            # To prevent this, create a dummy file
-            dummy = join(output_dir, 'dummy')
-
-            # Let database be the input file
-            jobs.append(Job(name='{step}.{name}.make_dummy'.format(step=self.diamond_align_contigs.__name__,
-                                                                name=readset.name),
-                            input_files=[blast_db],
-                            output_files=[dummy],
-                            command='mkdir -p {output_dir} && '
-                            'touch {dummy}'.format(output_dir=output_dir,
-                                                    dummy=dummy)))
 
             input_fasta = join(input_dir,
                     '{name}.contigs.n_micro_cds_rest.fasta'.format(name=readset.name))
@@ -1727,20 +1747,6 @@ class Metatranscriptomics(common.Illumina):
             # find its file name. Same for singletons case
             aligned1 = join(output_dir,
                     '{name}.contigs.nr.matches.daa'.format(name=readset.name))
-
-            tmp_dir_job = Job(name='{step}.{name}.Make_tmp_dir'.format(step=self.diamond_align_contigs.__name__,
-                                                                        name=readset.name),
-                                input_files=[dummy],
-                                output_files=[tmp_dir],
-                                command='mkdir -p {tmp}'.format(tmp=tmp_dir))
-
-            tmp_file_job = Job(name='{step}.{name}.make_tmp_file'.format(step=self.diamond_align_contigs.__name__,
-                                                                        name=readset.name),
-                                input_files=[dummy],
-                                output_files=[tmp],
-                                command='touch {tmp}'.format(tmp=tmp))
-
-            jobs.extend([tmp_dir_job, tmp_file_job])
 
             jobs.append(Job(
                 name='{step}.{name}.align'.format(step=self.diamond_align_contigs.__name__,
@@ -2962,25 +2968,26 @@ class Metatranscriptomics(common.Illumina):
             self.blat_search_singletons,  # 27
             self.process_contigs,
             self.process_singletons,
-            self.diamond_align_contigs, # 30
+            self.prepare_diamond_dir,  # 30
+            self.diamond_align_contigs,
             self.diamond_align_singletons,
-            self.diamond_contigs_get_tophits,
-            self.diamond_singletons_get_tophits,  # 33
+            self.diamond_contigs_get_tophits,  # 33
+            self.diamond_singletons_get_tophits,
             self.generate_microbial_sequence,
-            self.get_topbachit_contigs,
-            self.get_topbachit_singletons,  # 36
+            self.get_topbachit_contigs,  # 36
+            self.get_topbachit_singletons,
             self.generate_nr_sequence,
-            self.align_genes_ecoli,
-            self.align_proteins_ecoli,  # 39
+            self.align_genes_ecoli,  # 39
+            self.align_proteins_ecoli,
             self.combine_ppi_results,
-            self.get_taxID_microbial,
-            self.get_taxID_nr,  # 42
+            self.get_taxID_microbial,  # 42
+            self.get_taxID_nr,
             self.get_phylum_microbial,
-            self.get_phylum_nr,
-            self.get_mapped_geneIDs_microbial,  # 45
+            self.get_phylum_nr,  # 45
+            self.get_mapped_geneIDs_microbial,
             self.get_mapped_geneIDs_nr,
-            self.get_mapped_gene_table_microbial,
-            self.get_mapped_gene_table_nr,  # 48
+            self.get_mapped_gene_table_microbial,  # 48
+            self.get_mapped_gene_table_nr,
             self.generate_RPKM
         ]
 

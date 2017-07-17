@@ -747,6 +747,7 @@ class Metatranscriptomics(common.Illumina):
         Input:
         filter_reads/*.{1,2}.mRNA.fastq
         contigs/*.contigs.fasta
+        contigs/*.fasta.bwt
 
         Output:
         contigs/*.trinity.sam
@@ -841,7 +842,7 @@ class Metatranscriptomics(common.Illumina):
                     '{contigs_sam}'.format(sorted_bam=sorted_bam,
                         contigs_sam=contigs_sam))
 
-            # Extract IDs from .bwaout file in JSON format
+            # Extract IDs from .bwaout file in txt format
             extract_ID_job = Job(
                     name='{step}.extract_ids.{name}'.format(step=self.extract_singletons.__name__,
                         name=readset.name),
@@ -862,11 +863,13 @@ class Metatranscriptomics(common.Illumina):
         Extract singletons and mapped putative mRNA
 
         Input:
-        {readset}.{i}.mRNA.fastq
+        contigs/{readset}.trinity_id.txt
+        filter_reads/{readset}.{i}.mRNA.fastq
 
         Output:
-        {readset}.{i}.singleton.fastq
-        {readset}.{i}.mappedreads.fastq
+        contigs/{readset}.{i}.singleton.fastq
+        contigs/{readset}.{i}.mappedreads.fastq
+        contigs/{readset}.singletons_length.txt
         """
         jobs = []
 
@@ -939,11 +942,11 @@ class Metatranscriptomics(common.Illumina):
         contigs
 
         Input:
-        {readset}.trinity_id.txt
-        {readset}.contigs.fasta
+        contigs/{readset}.trinity_id.txt
+        contigs/{readset}.contigs.fasta
 
         Output:
-        {readset}.contigs.IDs_length.txt
+        contigs/{readset}.contigs.IDs_length.txt
         """
         jobs = []
 
@@ -983,10 +986,11 @@ class Metatranscriptomics(common.Illumina):
         Align contigs.fasta (single-ended read) using BWA
 
         Input:
-        {readset}.contigs.fasta
+        contigs/{readset}.contigs.fasta
+        $database/microbial_all_cds.fasta.bwt
 
         Output:
-        {readset}.bwa.sam
+        contigs/{readset}.bwa.sam
         """
         jobs = []
 
@@ -1033,11 +1037,11 @@ class Metatranscriptomics(common.Illumina):
         Map microbial genes to the identified contigs using BWA
 
         Input:
-        {readset}.contigs.sam
+        contigs/{readset}.contigs.sam
 
         Output:
-        {readset}.contig.bam
-        {readset}.contigs.micro_cds.bwaout
+        contigs/{readset}.contig.bam
+        contigs/{readset}.contigs.micro_cds.bwaout
         """
         jobs = []
 
@@ -1081,13 +1085,13 @@ class Metatranscriptomics(common.Illumina):
         Extract microbial and non-microbial genes from BWA search output
 
         Input:
-        {readset}.contigs.micro_cds.bwaout
-        {readset}.contigs.fasta
+        contigs/{readset}.contigs.micro_cds.bwaout
+        contigs/{readset}.contigs.fasta
 
         Output:
-        {readset}.contigs.micro_cds_id_bwa.txt
-        {readset}.contigs.micro_cds.fasta
-        {readset}.contigs.n_micro_cds.fasta
+        contigs/{readset}.contigs.micro_cds_id_bwa.txt
+        contigs/{readset}.contigs.micro_cds.fasta
+        contigs/{readset}.contigs.n_micro_cds.fasta
         """
         jobs = []
 
@@ -1137,14 +1141,15 @@ class Metatranscriptomics(common.Illumina):
 
     def bwa_align_singletons(self):
         """
-        Align putative mRNA using BWA 
+        Align putative mRNA using BWA
 
         Input:
-        {readset}.{1,2}.singletons.fastq
+        contigs/{readset}.{1,2}.singletons.fastq
+        $database/microbial_all_cds.fasta.bwt
 
         Output:
-        {readset}.{1,2}.singletons.sai
-        {readset}.singletons.sam
+        contigs/{readset}.{1,2}.singletons.sai
+        contigs/{readset}.singletons.sam
         """
         jobs = []
 
@@ -1194,11 +1199,11 @@ class Metatranscriptomics(common.Illumina):
         Map microbial database to identified singletons using BWA 
 
         Input:
-        {readset}.singletons.sam
+        contigs/{readset}.singletons.sam
 
         Output:
-        {readset}.singletons.micro_cds.bam
-        {readset}.singletons.micro_cds.bwaout
+        contigs/{readset}.singletons.micro_cds.bam
+        contigs/{readset}.singletons.micro_cds.bwaout
         """
         jobs = []
 
@@ -1240,13 +1245,13 @@ class Metatranscriptomics(common.Illumina):
         Select microbial and non-microbial gene and generate fasta for each
 
         Input:
-        {readset}.singletons.micro_cds.bwaout
-        {readset}.{i}.singletons.fastq
+        contigs/{readset}.singletons.micro_cds.bwaout
+        contigs/{readset}.{i}.singletons.fastq
 
         Output:
-        {readset}.singletons.micro_cds_id_bwa.txt
-        {readset}.{1,2}.singletons.micro_cds.fasta
-        {readset}.{1,2}.singletons.n_micro_cds.fasta
+        contigs/{readset}.singletons.micro_cds_id_bwa.txt
+        contigs/{readset}.{1,2}.singletons.micro_cds.fasta
+        contigs/{readset}.{1,2}.singletons.n_micro_cds.fasta
         """
         jobs = []
 
@@ -1301,12 +1306,12 @@ class Metatranscriptomics(common.Illumina):
         Search contigs against microbial database using BLAT
 
         Input:
-        {readset}.contigs.n_micro_cds.fasta
+        contigs/{readset}.contigs.n_micro_cds.fasta
 
         Output:
-        {readset}.contigs_1.blatout
-        {readset}.contigs_2.blatout
-        {readset}.contigs.n_micro_cds.blatout
+        contigs/{readset}.contigs_1.blatout
+        contigs/{readset}.contigs_2.blatout
+        contigs/{readset}.contigs.n_micro_cds.blatout
         """
         jobs = []
 
@@ -1381,13 +1386,13 @@ class Metatranscriptomics(common.Illumina):
         Search singletons against microbial database using BLAT
 
         Input:
-        {readset}.{1,2}.singletons.n_micro_cds.fasta
+        contigs/{readset}.{1,2}.singletons.n_micro_cds.fasta
 
         Output:
-        {readset}.{1,2}.singletons_1.blatout
-        {readset}.{1,2}.singletons_2.blatout
-        {readset}.{1,2}.singletons.n_micro_cds.blatout
-        {readset}.singletons.n_micro_cds.blatout
+        contigs/{readset}.{1,2}.singletons_1.blatout
+        contigs/{readset}.{1,2}.singletons_2.blatout
+        contigs/{readset}.{1,2}.singletons.n_micro_cds.blatout
+        contigs/{readset}.singletons.n_micro_cds.blatout
         """
         jobs = []
 
@@ -1476,16 +1481,16 @@ class Metatranscriptomics(common.Illumina):
         Process BLAT output; sort, extract tophits, and generate fasta
 
         Input:
-        {readset}.contigs.n_micro_cds.blatout
-        {readset}.contigs.IDs_length.txt
-        {readset}.contigs.n_micro_cds.fasta
+        contigs/{readset}.contigs.n_micro_cds.blatout
+        contigs/{readset}.contigs.IDs_length.txt
+        contigs/{readset}.contigs.n_micro_cds.fasta
 
         Output:
-        {readset}.contigs.n_micro_cds_sorted.blatout
-        {readset}.contigs.n_micro_cds_pairs.txt
-        {readset}.contigs.n_micro_cds_id_blat.txt
-        {readset}.contigs.n_micro_cds_blat.fasta
-        {readset}.contigs.n_micro_cds_rest.fasta
+        contigs/{readset}.contigs.n_micro_cds_sorted.blatout
+        contigs/{readset}.contigs.n_micro_cds_pairs.txt
+        contigs/{readset}.contigs.n_micro_cds_id_blat.txt
+        contigs/{readset}.contigs.n_micro_cds_blat.fasta
+        contigs/{readset}.contigs.n_micro_cds_rest.fasta
         """
         jobs = []
 
@@ -1571,16 +1576,16 @@ class Metatranscriptomics(common.Illumina):
         Process BLAT output; sort, extract tophits, and generate fasta
 
         Input:
-        {readset}.1.singletons.n_micro_cds.blatout
-        {readset}.2.singletons.n_micro_cds.blatout
-        {readset}.{1,2}.singletons.n_micro_cds.fasta
+        contigs/{readset}.1.singletons.n_micro_cds.blatout
+        contigs/{readset}.2.singletons.n_micro_cds.blatout
+        contigs/{readset}.{1,2}.singletons.n_micro_cds.fasta
 
         Output:
-        {readset}.singletons.n_micro_cds_sorted.blatout
-        {readset}.singletons.n_micro_cds_pairs.txt
-        {readset}.singletons.n_micro_cds_IDs.txt
-        {readset}.{1,2}.singletons.n_micro_cds_blat.fasta
-        {readset}.{1,2}.singletons.n_micro_cds_rest.fasta
+        contigs/{readset}.singletons.n_micro_cds_sorted.blatout
+        contigs/{readset}.singletons.n_micro_cds_pairs.txt
+        contigs/{readset}.singletons.n_micro_cds_IDs.txt
+        contigs/{readset}.{1,2}.singletons.n_micro_cds_blat.fasta
+        contigs/{readset}.{1,2}.singletons.n_micro_cds_rest.fasta
         """
         jobs = []
 
@@ -1685,8 +1690,8 @@ class Metatranscriptomics(common.Illumina):
         nr database (Not related, but Muquic needs some input for every job)
 
         Output:
-        tmp_dir
-        dir_created
+        contigs/tmp_dir
+        contigs/dir_created
         """
         jobs = []
 
@@ -1717,11 +1722,12 @@ class Metatranscriptomics(common.Illumina):
         Align contigs against non-redundant protein database using DIAMOND
 
         Input:
-        {readset}.contigs.n_micro_cds_rest.fasta
+        contigs/{readset}.contigs.n_micro_cds_rest.fasta
+        contigs/tmp_dir/dir_created
 
         Output:
-        {readset}.contigs.nr.matches.daa
-        {readset}.contigs.nr.diamondout
+        contigs/{readset}.contigs.nr.matches.daa
+        contigs/{readset}.contigs.nr.diamondout
 
         """
         jobs = []
@@ -1783,11 +1789,12 @@ class Metatranscriptomics(common.Illumina):
         Align singletons against non-redundant protein database using DIAMOND
 
         Input:
-        {readset}.{1,2}.singletons.n_micro_cds_rest.fasta
+        contigs/{readset}.{1,2}.singletons.n_micro_cds_rest.fasta
+        contigs/tmp_dir/dir_created
 
         Output:
-        {readset}.{1,2}.singletons.nr.matches.daa
-        {readset}.singletons.nr.diamondout
+        contigs/{readset}.{1,2}.singletons.nr.matches.daa
+        contigs/{readset}.singletons.nr.diamondout
         """
         jobs = []
 
@@ -1859,12 +1866,12 @@ class Metatranscriptomics(common.Illumina):
         Extract top his from contig DIAMOND serach output
 
         Input:
-        {readset}.contigs.IDs_length.txt
-        {readset}.contigs.nr.diamondout
+        contigs/{readset}.contigs.IDs_length.txt
+        contigs/{readset}.contigs.nr.diamondout
 
         Output:
-        {readset}.contigs.nr_diamond_pairs.txt
-        {readset}.contigs.nr_diamond_IDs.txt
+        contigs/{readset}.contigs.nr_diamond_pairs.txt
+        contigs/{readset}.contigs.nr_diamond_IDs.txt
         """
         jobs = []
 
@@ -1913,13 +1920,13 @@ class Metatranscriptomics(common.Illumina):
         Align singletons against non-redundant protein database using DIAMOND
 
         Input:
-        {readset}.singletons_length.txt
-        {readset}.singletons.nr.diamondout
+        contigs/{readset}.singletons_length.txt
+        contigs/{readset}.singletons.nr.diamondout
 
         Output:
-        {readset}.singletons.nr_sorted.diamondout
-        {readset}.singletons.nr_diamond_pairs.txt
-        {readset}.singletons.nr_diamond_IDs.txt
+        contigs/{readset}.singletons.nr_sorted.diamondout
+        contigs/{readset}.singletons.nr_diamond_pairs.txt
+        contigs/{readset}.singletons.nr_diamond_IDs.txt
         """
         jobs = []
 
@@ -1983,15 +1990,15 @@ class Metatranscriptomics(common.Illumina):
         Generate sequence file of mapped gene from BWA and BLAT mapping result
 
         Input:
-        {readset}.contigs.micro_cds_id_bwa.txt
-        {readset}.contigs.n_micro_cds_id_blat.txt
-        {readset}.singletons.micro_cds_id_bwa.txt
-        {readset}.singletons.n_micro_cds_id_blat.txt
+        contigs/{readset}.contigs.micro_cds_id_bwa.txt
+        contigs/{readset}.contigs.n_micro_cds_id_blat.txt
+        contigs/{readset}.singletons.micro_cds_id_bwa.txt
+        contigs/{readset}.singletons.n_micro_cds_id_blat.txt
 
         Output:
-        {readset}.bwablat_merged_unique.txt
-        {readset}.microbial_cds_sub.fasta
-        {readset}.microbial_cds_sub_IDs_length.txt
+        contigs/{readset}.bwablat_merged_unique.txt
+        contigs/{readset}.microbial_cds_sub.fasta
+        contigs/{readset}.microbial_cds_sub_IDs_length.txt
         """
         jobs = [];
 
@@ -2067,13 +2074,13 @@ class Metatranscriptomics(common.Illumina):
         Extract top hits from multiple proteins with same score
 
         Input:
-        {readset}.contigs.nr_diamond_IDs.txt
-        {readset}.contigs.nr_diamond_pairs.txt
+        contigs/{readset}.contigs.nr_diamond_IDs.txt
+        contigs/{readset}.contigs.nr_diamond_pairs.txt
 
         Output:
-        {readset}.contigs.nr_diamond_pairs_sub.txt
-        {readset}.contigs.nr_diamond_hitsID_sub.txt
-        {readset}.contigs.nr_diamond_hitsID_bacsub.txt
+        contigs/{readset}.contigs.nr_diamond_pairs_sub.txt
+        contigs/{readset}.contigs.nr_diamond_hitsID_sub.txt
+        contigs/{readset}.contigs.nr_diamond_hitsID_bacsub.txt
         """
         jobs = []
 
@@ -2122,13 +2129,13 @@ class Metatranscriptomics(common.Illumina):
         Extract top hits from multiple proteins with same score
 
         Input:
-        {readset}.singletons.nr_diamond_IDs.txt
-        {readset}.singletons.nr_diamond_pairs.txt
+        contigs/{readset}.singletons.nr_diamond_IDs.txt
+        contigs/{readset}.singletons.nr_diamond_pairs.txt
 
         Output:
-        {readset}.singletons.nr_diamond_pairs_sub.txt
-        {readset}.singletons.nr_diamond_hitsID_sub.txt
-        {readset}.singletons.nr_diamond_hitsID_bacsub.txt
+        contigs/{readset}.singletons.nr_diamond_pairs_sub.txt
+        contigs/{readset}.singletons.nr_diamond_hitsID_sub.txt
+        contigs/{readset}.singletons.nr_diamond_hitsID_bacsub.txt
         """
         jobs = []
 
@@ -2177,14 +2184,13 @@ class Metatranscriptomics(common.Illumina):
         Generate sequence file of mapped proteins from DIAMOND searches
 
         Input:
-        {readset}.contigs.nr_diamond_hitsID_sub.txt
-        {readset}.singletons.nr_diamond_hitsID_sub.txt
-        {readset}.nr_diamond_hitsID_sub.txt
+        contigs/{readset}.contigs.nr_diamond_hitsID_sub.txt
+        contigs/{readset}.singletons.nr_diamond_hitsID_sub.txt
 
         Output:
-        {readset}.nr_all_sub.fasta
-        {readset}.nr_all_sub_IDs.txt
-        {readset}.nr_all_sub_IDs_length.txt
+        contigs/{readset}.nr_all_sub.fasta
+        contigs/{readset}.nr_all_sub_IDs.txt
+        contigs/{readset}.nr_all_sub_IDs_length.txt
         """
         jobs = []
 
@@ -2258,14 +2264,14 @@ class Metatranscriptomics(common.Illumina):
         Match BWA and BLAT result to E. coli homologs
 
         Input:
-        {readset}.microbial_cds_sub.fasta
-        {readset}.microbial_cds_sub_IDs_length.txt
+        contigs/{readset}.microbial_cds_sub.fasta
+        contigs/{readset}.microbial_cds_sub_IDs_length.txt
 
         Output:
-        {readset}.microbial_cds_sub_ecoli_ppi.matches.daa
-        {readset}.microbial_cds_sub_ecoli_ppi.diamondout
-        {readset}.microbial_cds_sub_ecoli_ppi_pairs.txt
-        {readset}.microbial_cds_sub_ecoli_ppi_IDs.txt
+        contigs/{readset}.microbial_cds_sub_ecoli_ppi.matches.daa
+        contigs/{readset}.microbial_cds_sub_ecoli_ppi.diamondout
+        contigs/{readset}.microbial_cds_sub_ecoli_ppi_pairs.txt
+        contigs/{readset}.microbial_cds_sub_ecoli_ppi_IDs.txt
         """
         jobs = []
 
@@ -2350,13 +2356,14 @@ class Metatranscriptomics(common.Illumina):
         Match proteins identified through DIAMOND search to E. coli homologs
 
         Input:
-        {readset}.nr_all_sub.fasta
-        {readset}.nr_all_sub_IDs_length.txt
+        contigs/{readset}.nr_all_sub.fasta
+        contigs/{readset}.nr_all_sub_IDs_length.txt
+
         Output:
-        {readset}.nr_all_sub_ecoli_ppi.matches.daa
-        {readset}.nr_all_sub_ecoli_ppi.diamondout
-        {readset}.nr_all_sub_ecoli_ppi_pairs.txt
-        {readset}.nr_all_sub_ecoli_ppi_IDs.txt
+        contigs/{readset}.nr_all_sub_ecoli_ppi.matches.daa
+        contigs/{readset}.nr_all_sub_ecoli_ppi.diamondout
+        contigs/{readset}.nr_all_sub_ecoli_ppi_pairs.txt
+        contigs/{readset}.nr_all_sub_ecoli_ppi_IDs.txt
         """
         jobs = []
 
@@ -2441,10 +2448,11 @@ class Metatranscriptomics(common.Illumina):
         Combine mapped annotated genes and protein
 
         Input:
-        {readset}.microbial_cds_sub_ecoli_ppi_pairs.txt
-        {readset}.nr_all_sub_ecoli_ppi_pairs.txt
+        contigs/{readset}.microbial_cds_sub_ecoli_ppi_pairs.txt
+        contigs/{readset}.nr_all_sub_ecoli_ppi_pairs.txt
+
         Output:
-        {readset}.PPI_pairs.txt
+        contigs/{readset}.PPI_pairs.txt
         """
         jobs = []
 
@@ -2483,10 +2491,10 @@ class Metatranscriptomics(common.Illumina):
         Extract taxonomic information from generated microbial files
 
         Input
-        {readset}.microbial_cds_sub_IDs_length.txt
+        contigs/{readset}.microbial_cds_sub_IDs_length.txt
 
         Output
-        {readset}.microbial_cds_sub_IDs_map_taxid.txt
+        congis/{readset}.microbial_cds_sub_IDs_map_taxid.txt
 
         """
         jobs = []
@@ -2524,11 +2532,12 @@ class Metatranscriptomics(common.Illumina):
         Append taxID to E. coli mapped protein
 
         Input
-        {readset}.nr_all_sub_IDs_length.txt
-        {readset}.nr_all_sub_IDs.txt
+        contigs/{readset}.nr_all_sub_IDs_length.txt
+        contigs/{readset}.nr_all_sub_IDs.txt
+
         Output
-        {readset}.nr_all_sub_IDs_map_taxid.txt
-        {readset}.nr_all_sub_IDs_taxonID.txt
+        contigs/{readset}.nr_all_sub_IDs_map_taxid.txt
+        contigs/{readset}.nr_all_sub_IDs_taxonID.txt
         """
         jobs = []
 
@@ -2572,10 +2581,10 @@ class Metatranscriptomics(common.Illumina):
         Identify the phylum each annotated gene belongs to
 
         Input
-        {readset}.microbial_cds_sub_IDs_map_taxid.txt
+        contigs/{readset}.microbial_cds_sub_IDs_map_taxid.txt
 
         Output
-        {readset}.microbial_cds_sub_IDs_map_taxid_phylum.txt
+        contigs/{readset}.microbial_cds_sub_IDs_map_taxid_phylum.txt
         """
         jobs = []
 
@@ -2611,10 +2620,10 @@ class Metatranscriptomics(common.Illumina):
         Identify the phylum each E. coli mapped protein belongs to
 
         Input
-        {readset}.nr_all_sub_IDs_map_taxid.txt
+        contigs/{readset}.nr_all_sub_IDs_map_taxid.txt
 
         Output
-        {readset}.nr_all_sub_IDs_map_taxid_phylum.txt
+        contigs/{readset}.nr_all_sub_IDs_map_taxid_phylum.txt
         """
         jobs = []
 
@@ -2647,19 +2656,19 @@ class Metatranscriptomics(common.Illumina):
 
     def get_mapped_geneIDs_microbial(self):
         """
-        
+        Get mapped genes for microbial
 
         Input
-        {readset}.microbial_cds_sub_IDs_length.txt'
-        {readset}.contigs.IDs_length.txt
-        {readset}.contigs.micro_cds_id_bwa.txt
-        {readset}.singletons.micro_cds_id_bwa.txt
-        {readset}.contigs.n_micro_cds_id_blat.txt
-        {readset}.singletons.n_micro_cds_id_blat.txt
+        contigs/{readset}.microbial_cds_sub_IDs_length.txt'
+        contigs/{readset}.contigs.IDs_length.txt
+        contigs/{readset}.contigs.micro_cds_id_bwa.txt
+        contigs/{readset}.singletons.micro_cds_id_bwa.txt
+        contigs/{readset}.contigs.n_micro_cds_id_blat.txt
+        contigs/{readset}.singletons.n_micro_cds_id_blat.txt
 
         Output
-        {readset}.microbial_cds_sub_bwablat_pairs.txt
-        {readset}.microbial_cds_sub_IDs_counts.txt
+        contigs/{readset}.microbial_cds_sub_bwablat_pairs.txt
+        contigs/{readset}.microbial_cds_sub_IDs_counts.txt
 
         """
         jobs = []
@@ -2724,16 +2733,17 @@ class Metatranscriptomics(common.Illumina):
 
     def get_mapped_geneIDs_nr(self):
         """
+        get mapped gene for nr
 
         Input
-        {readset}.nr_all_sub_IDs_length.txt
-        {readset}.contigs.IDs_length.txt
-        {readset}.contigs.nr_diamond_pairs_sub.txt
-        {readset}.singletons.nr_diamond_pairs_sub.txt
+        contigs/{readset}.nr_all_sub_IDs_length.txt
+        contigs/{readset}.contigs.IDs_length.txt
+        contigs/{readset}.contigs.nr_diamond_pairs_sub.txt
+        contigs/{readset}.singletons.nr_diamond_pairs_sub.txt
 
         Output
-        {readset}.nr_all_sub_combined_pairs_sub.txt
-        {readset}.nr_all_sub_IDs_counts.txt
+        contigs/{readset}.nr_all_sub_combined_pairs_sub.txt
+        contigs/{readset}.nr_all_sub_IDs_counts.txt
 
         """
         jobs = []
@@ -2789,15 +2799,16 @@ class Metatranscriptomics(common.Illumina):
 
     def get_mapped_gene_table_microbial(self):
         """
+        Map microbial genes to its associated phylum and b-score
 
         Input
-        {readset}.microbial_cds_sub_IDs_length.txt
-        {readset}.microbial_cds_sub_IDs_map_taxid_phylum.txt
-        {readset}.microbial_cds_sub_IDs_counts.txt
-        {readset}.PPI_pairs.txt
+        contigs/{readset}.microbial_cds_sub_IDs_length.txt
+        contigs/{readset}.microbial_cds_sub_IDs_map_taxid_phylum.txt
+        contigs/{readset}.microbial_cds_sub_IDs_counts.txt
+        contigs/{readset}.PPI_pairs.txt
 
         Output
-        {readset}.microbial_cds_sub_table_counts.txt
+        contigs/{readset}.microbial_cds_sub_table_counts.txt
 
         """
         jobs = []
@@ -2837,15 +2848,16 @@ class Metatranscriptomics(common.Illumina):
 
     def get_mapped_gene_table_nr(self):
         """
+        map proteins from nr to their associated phylum and b-score
 
         Input
-        {readset}.nr_all_sub_IDs_length.txt
-        {readset}.nr_all_sub_IDs_map_taxid_phylum.txt
-        {readset}.nr_all_sub_IDs_counts.txt
-        {readset}.PPI_pairs.txt
+        contigs/{readset}.nr_all_sub_IDs_length.txt
+        contigs/{readset}.nr_all_sub_IDs_map_taxid_phylum.txt
+        contigs/{readset}.nr_all_sub_IDs_counts.txt
+        contigs/{readset}.PPI_pairs.txt
 
         Output
-        {readset}.nr_all_sub_table_counts.txt
+        contigs/{readset}.nr_all_sub_table_counts.txt
 
         """
         jobs = []
@@ -2888,11 +2900,11 @@ class Metatranscriptomics(common.Illumina):
         Calculate a normalized expression value for each gene and protein
 
         Input
-        {readset}.microbial_cds_sub_table_counts.txt
-        {readset}.nr_all_sub_table_counts.txt
+        contigs/{readset}.microbial_cds_sub_table_counts.txt
+        contigs/{readset}.nr_all_sub_table_counts.txt
 
         Output
-        {readset}.table_counts_all
+        contigs/{readset}.table_counts_all
 
         """
         jobs = []

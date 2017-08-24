@@ -50,6 +50,7 @@ from bfx import bvatools
 from bfx import rmarkdown
 from pipelines import common
 
+from bfx import samtools_1_1
 from bfx import defuse
 from bfx import fusionmap
 from bfx import tophat2
@@ -60,6 +61,8 @@ from bfx import merge_fastq
 from bfx import cff_convertion
 from bfx import check_dna_support_before_next_exon
 from bfx import merge_and_reannotate_cff_fusion
+from bfx import repeat_filter
+from bfx import delete_fastqs
 
 import utils
 
@@ -1030,7 +1033,14 @@ done""".format(
 					# input fles are fastqs
 					fastq1 = os.path.join(input_dir, os.path.basename(readset.fastq1))
 					fastq2 = os.path.join(input_dir, os.path.basename(readset.fastq2))
-		return fastq1, fastq2	
+			if readset.cram:
+				fastq1 = os.path.join(input_dir, os.path.basename(readset.cram)+".pair1.fastq")
+				fastq2 = os.path.join(input_dir, os.path.basename(readset.cram)+".pair2.fastq")
+		print >> sys.stderr, fastq1
+		print >> sys.stderr, fastq2
+		return fastq1, fastq2
+
+
 	def picard_sam_to_fastq(self):
 		"""
 		Convert SAM/BAM files from the input readset file into FASTQ format
@@ -1041,7 +1051,26 @@ done""".format(
 		for readset in self.readsets:
 			# If readset FASTQ files are available, skip this step
 			if not readset.fastq1:
-				if readset.bam:
+				if readset.cram:
+					# convert cram to bam then to fastq, fastq and bam are saved on localhd
+					out_bam = os.path.join("$TMPDIR", os.path.basename(readset.cram)+".bam")
+					cram2bam_job = samtools_1_1.view(readset.cram, out_bam)
+					if readset.run_type == "PAIRED_END":
+						out_dir = os.path.join("fusions", "picard_sam_to_fastq", readset.sample.name)
+						fastq1 = os.path.join(out_dir, os.path.basename(re.sub("\.bam$", ".pair1.fastq.gz", out_bam)))
+						fastq2 = os.path.join(out_dir, os.path.basename(re.sub("\.bam$", ".pair2.fastq.gz", out_bam)))
+					else:
+						raise Exception("Error: run type \"" + readset.run_type +
+						"\" is invalid for readset \"" + readset.name + "\" (should be PAIRED_END or SINGLE_END)!")
+
+					picard_job = picard.sam_to_fastq(out_bam, fastq1, fastq2)
+					job = concat_jobs([
+						Job(command="mkdir -p " + out_dir),
+						cram2bam_job,
+						picard_job
+					], name= "picard_sam_to_fastq." + readset.name)
+					jobs.append(job)
+				elif readset.bam:
 					if readset.run_type == "PAIRED_END":
 						out_dir = os.path.join("fusions", "picard_sam_to_fastq", readset.sample.name)
 						fastq1 = os.path.join(out_dir, os.path.basename(re.sub("\.bam$", ".pair1.fastq.gz", readset.bam)))
@@ -1059,6 +1088,7 @@ done""".format(
 				else:
 					raise Exception("Error: BAM file not available for readset \"" + readset.name + "\"!")
 		return jobs
+
 
 	def defuse(self):
 		"""
@@ -1088,13 +1118,18 @@ done""".format(
 			out_dir = os.path.join("fusions", "gunzip_fastq", readset.sample.name)
 			# Find input readset FASTQs first from previous trimmomatic job, then from original FASTQs in the readset sheet
 			if readset.run_type == "PAIRED_END":
-				candidate_input_files = [[trim_file_prefix + "pair1.fastq.gz", trim_file_prefix + "pair2.fastq.gz"]]
+				#candidate_input_files = [[trim_file_prefix + "pair1.fastq.gz", trim_file_prefix + "pair2.fastq.gz"]]
+				candidate_input_files = []
 				if readset.fastq1 and readset.fastq2:
 					candidate_input_files.append([readset.fastq1, readset.fastq2])
 				if readset.bam:
 					#candidate_input_files.append([re.sub("\.bam$", ".pair1.fastq.gz", readset.bam), re.sub("\.bam$", ".pair2.fastq.gz", readset.bam)])
 					picard_dir = os.path.join("fusions", "picard_sam_to_fastq", readset.sample.name)
 					candidate_input_files.append([os.path.join(picard_dir, os.path.basename(re.sub("\.bam$", ".pair1.fastq.gz", readset.bam))), os.path.join(picard_dir, os.path.basename(re.sub("\.bam$", ".pair2.fastq.gz", readset.bam)))])
+				if readset.cram:
+					#candidate_input_files.append([re.sub("\.bam$", ".pair1.fastq.gz", readset.bam), re.sub("\.bam$", ".pair2.fastq.gz", readset.bam)])
+					picard_dir = os.path.join("fusions", "picard_sam_to_fastq", readset.sample.name)
+					candidate_input_files.append([os.path.join(picard_dir, os.path.basename(readset.cram)+".pair1.fastq.gz"), os.path.join(picard_dir, os.path.basename(readset.cram)+".pair2.fastq.gz")])
 				[fastq1, fastq2] = self.select_input_files(candidate_input_files)
 			else:
 				raise Exception("Error: run type \"" + readset.run_type +
@@ -1105,7 +1140,7 @@ done""".format(
 				Job(command="mkdir -p " + out_dir),
 				gunzip1_job,
 				gunzip2_job
-			], name="gunzip_fastq." + readset.name)
+			], name="gunzip_fastq." + readset.sample.name + "." + readset.name)
 
 			jobs.append(job)
 
@@ -1329,6 +1364,41 @@ done""".format(
 		jobs.append(job)
 		return jobs
 		
+	def repeat_filter(self):
+		"""
+		filter fusions with repetitive boundary sequences by realigning a certain length of sequnces with BWA
+		"""
+		jobs = []
+		out_dir = os.path.join("fusions", "cff")
+		cff = os.path.join(out_dir, "merged.cff.reann.dnasupp")
+		job = repeat_filter.repeat_filter(cff, out_dir)
+		
+		job = concat_jobs([
+			job	
+		], name="repeat_filter")
+
+		jobs.append(job)
+		return jobs
+		
+	def delete_fastqs(self):
+		"""
+		Delete fastqs when all calers' jobs are finished
+		"""
+		jobs = []
+		for sample in self.samples:
+			defuse_result = os.path.join("fusions", "defuse", sample.name, "results.filtered.tsv")
+			fusionmap_result = os.path.join("fusions", "fusionmap", sample.name, "02_RNA.FusionReport.txt")
+			ericscript_result = os.path.join("fusions", "ericscript", sample.name, "fusion.results.filtered.tsv")
+			integrate_result = os.path.join("fusions", "integrate", sample.name, "breakpoints.cov.tsv")
+			result_file_list = [defuse_result, fusionmap_result, ericscript_result, integrate_result]
+			del_job = delete_fastqs.delete_fastqs(sample.name, result_file_list)
+			job = concat_jobs([
+				Job(command="mkdir -p delete_fastqs"),
+				del_job
+			], name="delete_fastqs." + sample.name)
+			jobs.append(job)
+		return jobs
+
 	@property
 	def steps(self):
 		return [
@@ -1344,7 +1414,9 @@ done""".format(
 			self.convert_fusion_results_to_cff,
 			self.merge_and_reannotate_cff_fusion,
 			self.check_dna_support_before_next_exon,
-			self.cluster_reann_dnasupp_file
+			self.repeat_filter,
+			self.cluster_reann_dnasupp_file,
+			self.delete_fastqs
 		]
 
 if __name__ == '__main__':

@@ -29,7 +29,7 @@ from core.config import *
 from core.job import *
 
 
-def view(input, output=None, options=""):
+def view(input, output=None):
     return Job(
         [input],
         [output],
@@ -38,7 +38,7 @@ def view(input, output=None, options=""):
 export REF_PATH=/hpf/largeprojects/ccmbio/jiangyue/DIPG_analysis_by_samples/Analysis/TCGA_CRAM_BAM/cram_ref && \\
 /hpf/tools/centos6/samtools/1.1/bin/samtools view {options} \\
   {input}{output}""".format(
-        options=options,
+        options="-b",
         input=input,
         output=" \\\n  > " + output if output else ""
         ),

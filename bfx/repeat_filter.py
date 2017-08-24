@@ -28,29 +28,26 @@ from core.job import *
 
 
 
-def ericscript(in1fastq, in2fastq, out_dir, config_file=None, ini_section='ericscript'):
+def repeat_filter(cff_file, out_dir, seq_len=None, ref_file=None, config_file=None, ini_section='repeat_filter'):
 	other_options = config.param(ini_section, 'other_options', required=False)
-	result_file = os.path.join(out_dir, "fusion.results.filtered.tsv")
+	seq_len=seq_len if seq_len else config.param(ini_section, 'seq_len', type='int')
+	result_file = os.path.join(".".join([cff_file, "bwafilter", str(seq_len)]))
 	return Job(
-		[in1fastq, in2fastq, config_file if config_file else None],
+		[cff_file, ref_file, config_file if config_file else None],
 		[result_file],
-		[
-			["ericscript", "module_bedtools"],
-			["ericscript", "module_blat"],
-			["ericscript", "module_samtools"],
-			["ericscript", "module_R_3_1_0"],
-			["ericscript", "module_bwa"]
-
-		],
+		[["bwa", "module_bwa"],['cff_convertion', 'module_fusiontools']],
 		command="""\
-export PATH=$PATH:/hpf/largeprojects/ccmbio/jiangyue/bin && 
-ericscript.pl {other_options} -db /hpf/largeprojects/ccmbio/jiangyue/database/ericscript/ericscript_db_homosapiens_ensembl73 -name "fusion" -o {out_dir} {in1fastq} {in2fastq} && 
-rm -rf {out_dir}/aln && rm -rf {out_dir}/out""".format(
+fusion_gene_seq_to_fasta.py {cff_file} {seq_len} > {cff_file}.fa && 
+bwa mem {bwa_idx} {cff_file}.fa > {cff_file}.fa.sam &&
+filter_fusion_on_bwa_aln.py {cff_file} {cff_file}.fa.sam > {cff_file}.bwafilter.{seq_len} && 
+rm {cff_file}.fa && rm {cff_file}.fa.sam""".format(
 		other_options=" \\\n  " + other_options if other_options else "",
-		in1fastq=in1fastq,
-		in2fastq=in2fastq,
-		out_dir=out_dir
+		cff_file=cff_file,
+		seq_len=seq_len,
+		bwa_idx=ref_file if ref_file else config.param(ini_section, 'genome_bwa_index', type='filepath'),
 		),
-		removable_files=[]
+		removable_files=[os.path.join(out_dir, cff_file + ".fa"), os.path.join(out_dir, cff_file + ".fa.sam")]
+		
+
 	)
 

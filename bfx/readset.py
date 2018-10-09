@@ -75,6 +75,12 @@ class IlluminaReadset(Readset):
             return None
         else:
             return self._bam
+    @property
+    def cram(self):
+        if not hasattr(self, "_cram"):
+            return None
+        else:
+            return self._cram
 
     @property
     def library(self):
@@ -126,7 +132,7 @@ def parse_illumina_readset_file(illumina_readset_file):
 
         # Readset file paths are either absolute or relative to the readset file
         # Convert them to absolute paths
-        for format in ("BAM", "FASTQ1", "FASTQ2"):
+        for format in ("BAM", "FASTQ1", "FASTQ2", "CRAM"):
             if line.get(format, None):
                 line[format] = os.path.expandvars(line[format])
                 if not os.path.isabs(line[format]):
@@ -134,6 +140,7 @@ def parse_illumina_readset_file(illumina_readset_file):
                 line[format] = os.path.normpath(line[format])
 
         readset._bam = line.get('BAM', None)
+        readset._cram = line.get('CRAM', None)
         readset.fastq1 = line.get('FASTQ1', None)
         readset.fastq2 = line.get('FASTQ2', None)
         readset._library = line.get('Library', None)
@@ -286,7 +293,7 @@ def parse_illumina_raw_readset_files(output_dir, run_type, nanuq_readset_file, c
 
     # Searching for a matching reference for the specified species
     for readset in readsets:
-        m = re.search("(?P<build>\w+):(?P<assembly>[\w\.]+)", readset.genomic_database)
+        m = re.search("(?P<build>\w+):(?P<assembly>\w+)", readset.genomic_database)
         genome_build = None
         if m:
             genome_build = GenomeBuild(m.group('build'), m.group('assembly'))

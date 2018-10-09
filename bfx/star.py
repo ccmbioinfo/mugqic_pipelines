@@ -59,8 +59,8 @@ def align(
     num_threads = config.param('star_align', 'threads', type='int')
     ram_limit = config.param('star_align', 'ram')
     max_ram = int(utils.number_symbol_converter(ram_limit))
-    io_limit = config.param('star_align', 'io_buffer')
-    io_max = int(utils.number_symbol_converter(io_limit))
+    #io_limit = config.param('star_align', 'io_buffer')
+    #io_max = int(utils.number_symbol_converter(io_limit))
     stranded = config.param('star_align', 'strand_info')
     wig_prefix = config.param('star_align', 'wig_prefix')
     chimere_segment_min = config.param('star_align','chimere_segment_min', type='int', required=False)
@@ -111,7 +111,7 @@ STAR --runMode alignReads \\
   --outSAMtype BAM {sort_value} \\
   --outFileNamePrefix {output_directory}/ \\
   --outSAMattrRGline {rg_id}\t{rg_platform}\t{rg_platform_unit}\t{rg_library}\t{rg_sample}\t{rg_center} \\
-  --limitGenomeGenerateRAM {ram}{sort_ram}{io_limit_size}{wig_param}{chim_param}{cuff_cmd}{other_options}""".format(
+  --limitGenomeGenerateRAM {ram}{sort_ram}{wig_param}{chim_param}{cuff_cmd}{other_options}""".format(
         output_directory=output_directory,
         genome_index_folder=genome_index_folder,
         reads1=reads1,
@@ -126,7 +126,6 @@ STAR --runMode alignReads \\
         rg_center="CN:\"" + rg_center + "\" " if rg_center != "" else "",
         ram=int(max_ram),
         sort_ram=" \\\n  --limitBAMsortRAM " + str(int(max_ram)) if sort_bam else "",
-        io_limit_size=" \\\n  --limitIObufferSize " + str(io_max) if io_max else "",
         wig_param=" \\\n  " + wig_cmd if wig_cmd else "",
         chim_param=" \\\n  " + chim_cmd if chim_cmd else "",
         cuff_cmd=" \\\n  " + cuff_cmd if cuff_cmd else "",
@@ -167,7 +166,7 @@ STAR --runMode genomeGenerate \\
   --genomeFastaFiles {reference_fasta} \\
   --runThreadN {num_threads} \\
   --limitGenomeGenerateRAM {ram} \\
-  --sjdbFileChrStartEnd {junction_file}{gtf}{io_limit_size}{sjdbOverhang}{other_options}""".format(
+  --sjdbFileChrStartEnd {junction_file}{gtf}{sjdbOverhang}{other_options}""".format(
         genome_index_folder=genome_index_folder,
         reference_fasta=reference_fasta,
         num_threads=num_threads if str(num_threads) != "" and isinstance(num_threads, int) and  num_threads > 0 else 1,

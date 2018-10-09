@@ -1,0 +1,14 @@
+
+log in this directory gets written to sometimes, it seems. 
+/hpf/largeprojects/ccmbio/jiangyue/tools/FusionMap/FusionMap_2015-03-31/CommandJobs/r1a-21/2018.10.3
+For example, in this error file: /hpf/largeprojects/ccmbio/mapostolides/validate_fusion/stjude_validation/stjude_output_Oct3_2018/job_output/fusionmap/fusionmap.SJHGG026_D_2018-10-03T16.36.59.o
+Error occurred from JobRunner.RunJob. Error message=Access to the path "/hpf/largeprojects/ccmbio/jiangyue/tools/FusionMap/FusionMap_2015-03-31/CommandJobs/r1a-21/2018.10.3" is denied.@@@
+The following file uses the fusionmap tool located in Yue's repository
+/hpf/largeprojects/ccmbio/mapostolides/gene_fusion/pipeline/bfx/fusionmap.py
+
+Problem:
+The error is that when a user first uses a node on hpf, a directory corresponding to that node is created in /hpf/largeprojects/ccmbio/jiangyue/tools/FusionMap/FusionMap_2015-03-31/CommandJobs, and ownership of that directory is given to the user who ran the job. Subsequently, when another user submits a fusionmap job that is scheduled to that node, the job will fail because a directory already exists for that node, and the user does not have write permissions to generate files within it.
+
+Solution: Change the write permissions to g+w for all these /hpf/largeprojects/ccmbio/jiangyue/tools/FusionMap/FusionMap_2015-03-31/CommandJobs/<node_id> directories. This way, even though Fusionmap generates a directory without group write permissions, this will be changed such that all users within the ccm group are allowed to write to the directory
+Add a script to the pipeline to automatically change the file permissions of all files in /hpf/largeprojects/ccmbio/jiangyue/tools/FusionMap/FusionMap_2015-03-31/CommandJobs.
+Script will throw errors because there are other directories in the CommandJobs directory which are not owned by the user who is running the pipeline, but this will not affect the running of the script. 
